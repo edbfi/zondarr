@@ -112,7 +112,7 @@ def _extract_retry_after(exc: Exception, /, *, max_delay: float) -> float | None
     Parses the ``Retry-After`` header in both delta-seconds and
     HTTP-date (IMF-fixdate) forms per RFC 9110 §10.2.3, and clamps
     the result to *max_delay*.  Returns ``None`` when the header is
-    absent, unparseable, or the exception is not a 429 status error.
+    absent, unparsable, or the exception is not a 429 status error.
 
     Args:
         exc: The exception to inspect.
