@@ -15,17 +15,6 @@
         "ruff"
       ],
       "groupName": "ruff"
-    },
-    {
-      "matchFileNames": [
-        "automation-canary/**"
-      ],
-      "matchPackageNames": [
-        "@biomejs/biome"
-      ],
-      "groupName": "biome canary",
-      "groupSlug": "biome-canary",
-      "commitMessageTopic": "Biome repair canary"
     }
   ]
 }
