@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-    - uses: edbfi/automation/actions/dispatch-guard@v1.2.0
+    - uses: edbfi/automation/actions/dispatch-guard@v2.0.0
       with:
         token: ${{ github.token }}
         pr-number: ${{ inputs.pr-number }}
@@ -37,14 +37,14 @@ jobs:
         expected-default-sha: ${{ inputs.expected-default-sha }}
   python:
     needs: guard
-    uses: edbfi/automation/.github/workflows/python.yml@v1.2.0
+    uses: edbfi/automation/.github/workflows/python.yml@v2.0.0
     with:
       version: '3.14'
       command: bash .github/scripts/check-python.sh
       timeout-minutes: 30
   frontend:
     needs: guard
-    uses: edbfi/automation/.github/workflows/bun.yml@v1.2.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v2.0.0
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
@@ -81,6 +81,10 @@ jobs:
       run: |-
         bun install --cwd frontend --frozen-lockfile
         uv sync --project backend --frozen --all-extras
+    - name: Validate temporary Renovate repair canary
+      run: |-
+        bun install --cwd automation-canary --frozen-lockfile --ignore-scripts
+        bun run --cwd automation-canary check
     - name: Build frontend and verify generated API declarations
       run: |-
         bun run --cwd frontend build
@@ -99,7 +103,7 @@ jobs:
       run: git diff --exit-code HEAD
   hygiene:
     needs: guard
-    uses: edbfi/automation/.github/workflows/bun.yml@v1.2.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v2.0.0
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
@@ -117,13 +121,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-    - uses: edbfi/automation/actions/dispatch-guard@v1.2.0
+    - uses: edbfi/automation/actions/dispatch-guard@v2.0.0
       with:
         token: ${{ github.token }}
         pr-number: ${{ inputs.pr-number }}
         expected-head-sha: ${{ inputs.expected-head-sha }}
         expected-default-sha: ${{ inputs.expected-default-sha }}
-    - uses: edbfi/automation/actions/gate@v1.2.0
+    - uses: edbfi/automation/actions/gate@v2.0.0
       with:
         needs: ${{ toJSON(needs) }}
         required: guard python frontend integration hygiene
