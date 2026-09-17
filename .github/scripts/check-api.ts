@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -48,7 +48,27 @@ try {
 		);
 	// Litestar's generated example timestamps vary with the date. They are JSDoc,
 	// not API types. Compare the parsed declarations without those comments.
-	if (normalize(generated) !== normalize("frontend/src/lib/api/types.d.ts")) {
+	const expected = normalize("frontend/src/lib/api/types.d.ts");
+	const actual = normalize(generated);
+	if (actual !== expected) {
+		const diagnostics = join(
+			process.env.RUNNER_TEMP ?? tmpdir(),
+			"zondarr-api-diff",
+		);
+		mkdirSync(diagnostics, { recursive: true });
+		const before = join(diagnostics, "committed.d.ts");
+		const after = join(diagnostics, "generated.d.ts");
+		await Bun.write(before, expected);
+		await Bun.write(after, actual);
+		const diff = spawnSync("diff", ["-u", before, after], {
+			encoding: "utf8",
+			maxBuffer: 2_000_000,
+		});
+		if (diff.status !== 1)
+			throw new Error("Could not produce the API declaration diff.");
+		await Bun.write(join(diagnostics, "declarations.diff"), diff.stdout);
+		console.error(diff.stdout.slice(0, 32_000));
+		console.error(`Normalized API diagnostics retained in ${diagnostics}`);
 		throw new Error(
 			"API declarations have drifted. Regenerate frontend API types from the backend schema.",
 		);

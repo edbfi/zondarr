@@ -5,15 +5,18 @@ Integration tests via TestClient following test_env_credentials.py pattern.
 
 from collections.abc import AsyncGenerator
 
+import msgspec
 import pytest
 from litestar import Litestar
 from litestar.datastructures import State
 from litestar.di import Provide
+from litestar.openapi.spec import Schema
 from litestar.testing import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tests.conftest import create_test_engine
 from zondarr.api.errors import validation_error_handler
+from zondarr.api.schemas import SettingValue
 from zondarr.api.settings import SettingsController
 from zondarr.config import Settings
 from zondarr.core.exceptions import ValidationError
@@ -70,6 +73,18 @@ class TestGetCsrfOriginEndpoint:
                 data: dict[str, object] = response.json()  # pyright: ignore[reportAny]
                 assert data["csrf_origin"] is None
                 assert data["is_locked"] is False
+                components = app.openapi_schema.components
+                assert components is not None and components.schemas is not None
+                for name, field in [
+                    ("CsrfOriginResponse", "csrf_origin"),
+                    ("SettingValue", "value"),
+                ]:
+                    schema = components.schemas[name]
+                    assert isinstance(schema, Schema)
+                    assert schema.required is not None and field in schema.required
+                assert b'"value":null' in msgspec.json.encode(
+                    SettingValue(value=None, is_locked=False)
+                )
         finally:
             await engine.dispose()
 

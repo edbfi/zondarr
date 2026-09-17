@@ -1253,7 +1253,7 @@ export interface components {
 		};
 		/** CsrfOriginResponse */
 		CsrfOriginResponse: {
-			csrf_origin?: string | null;
+			csrf_origin: string | null;
 			is_locked: boolean;
 			/** @default false */
 			secure_cookies_auto_enabled: boolean;
@@ -1301,7 +1301,7 @@ export interface components {
 		 * @example {
 		 *       "detail": "FbCGQpmtiObDRbiZpNby",
 		 *       "error_code": "cmaJxsvJnicHImAYyNsC",
-		 *       "timestamp": "2019-09-19T06:44:15.542110",
+		 *       "timestamp": "2020-01-28T08:51:02.542110",
 		 *       "correlation_id": null
 		 *     }
 		 */
@@ -1312,7 +1312,7 @@ export interface components {
 			error_code: string;
 			/**
 			 * Format: date-time
-			 * @example 2011-05-26T14:31:52.249094
+			 * @example 2011-10-04T16:38:39.249094
 			 */
 			timestamp: string;
 			/** @example eXNSQubZGLKpIxlzypMV */
@@ -1589,7 +1589,7 @@ export interface components {
 		 *           "external_user_id": "ThdcdkahSRhbAKyyyVhu",
 		 *           "username": "iIKQjAycEiKZzsXNStUX",
 		 *           "enabled": false,
-		 *           "created_at": "2024-07-05T04:55:55.103809",
+		 *           "created_at": "2024-11-13T07:02:42.103809",
 		 *           "email": "gxJYBtOOVLgZWwIRVLed"
 		 *         }
 		 *       ]
@@ -1618,7 +1618,7 @@ export interface components {
 			 *         "external_user_id": "AufHcSHjwVUDXFiXlEfD",
 			 *         "username": "RpSuNeNziQYWrbRjKhHK",
 			 *         "enabled": true,
-			 *         "created_at": "2008-04-02T03:14:09.626666",
+			 *         "created_at": "2008-08-11T05:20:56.626666",
 			 *         "external_user_type": "QmvHLBSfRBympIYulANf"
 			 *       }
 			 *     ]
@@ -1655,7 +1655,7 @@ export interface components {
 		};
 		/** SettingValue */
 		SettingValue: {
-			value?: string | null;
+			value: string | null;
 			is_locked: boolean;
 		};
 		/** StepInteractionCreate */
