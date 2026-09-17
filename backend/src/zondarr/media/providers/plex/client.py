@@ -535,8 +535,8 @@ class PlexClient:
                 timeout=self.timeout_seconds,
             )
             # plexapi lacks type stubs, myPlexAccount returns MyPlexAccount
-            account: MyPlexAccount = server.myPlexAccount()  # pyright: ignore[reportUnknownVariableType]
-            return server, account  # pyright: ignore[reportUnknownVariableType]
+            account: MyPlexAccount = server.myPlexAccount()
+            return server, account
 
         log.info("plex_client_connecting", url=self.url)
         try:
@@ -676,7 +676,7 @@ class PlexClient:
             def _get_sections() -> list[LibraryInfo]:
                 assert self._server is not None  # noqa: S101
                 # plexapi lacks type stubs, sections() returns list of LibrarySection
-                sections = self._server.library.sections()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                sections = self._server.library.sections()  # pyright: ignore[reportUnknownVariableType]
                 return [
                     LibraryInfo(
                         external_id=str(section.key),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
@@ -830,7 +830,7 @@ class PlexClient:
                     )
                 else:
                     section_ids = []
-                params: dict[str, object] = {
+                params: dict[str, str | dict[str, str | int | list[int]]] = {
                     "server_id": machine_id,
                     "shared_server": {
                         "library_section_ids": section_ids,
