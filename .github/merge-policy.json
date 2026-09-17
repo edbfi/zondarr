@@ -21,7 +21,7 @@
   "deploy_workflows": [],
   "repair_recovery": {
     "enabled": true,
-    "automation_ref": "v1.2.0",
+    "automation_ref": "v2.0.0",
     "package_directory": "frontend",
     "config_files": [
       "biome.json",
