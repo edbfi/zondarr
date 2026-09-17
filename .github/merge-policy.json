@@ -18,5 +18,22 @@
   },
   "renovate_comment": "/merge-when-green",
   "minimum_approvals": 0,
-  "deploy_workflows": []
+  "deploy_workflows": [],
+  "repair_recovery": {
+    "enabled": true,
+    "automation_ref": "v1.2.0",
+    "package_directory": "frontend",
+    "config_files": [
+      "biome.json",
+      "frontend/biome.json"
+    ],
+    "source_roots": [
+      "frontend/src",
+      "frontend/vite.config.ts",
+      "frontend/vitest-setup.ts",
+      "frontend/svelte.config.js",
+      "frontend/uno.config.ts",
+      "frontend/tsconfig.json"
+    ]
+  }
 }
