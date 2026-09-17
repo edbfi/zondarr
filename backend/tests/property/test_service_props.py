@@ -39,7 +39,7 @@ code_strategy = st.uuids().map(lambda u: str(u).replace("-", "")[:12].upper())
 
 
 @pytest.fixture(autouse=True)
-def _bypass_url_validation() -> Iterator[None]:  # pyright: ignore[reportUnusedFunction]
+def _bypass_url_validation() -> Iterator[None]:
     """Patch validate_url_host as a no-op for property tests.
 
     Property tests use Hypothesis-generated URLs with mock clients,

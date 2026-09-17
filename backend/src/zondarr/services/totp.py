@@ -208,7 +208,8 @@ class TOTPService:
 
         # Generate provisioning URI
         totp = pyotp.TOTP(secret, digits=TOTP_DIGITS, interval=TOTP_INTERVAL)
-        uri = totp.provisioning_uri(name=admin.username, issuer_name=TOTP_ISSUER)
+        # PyOTP 2.10 leaves its extra **kwargs untyped; these named arguments and result are typed.
+        uri = totp.provisioning_uri(name=admin.username, issuer_name=TOTP_ISSUER)  # pyright: ignore[reportUnknownMemberType]
 
         # Generate QR code as SVG
         qr = segno.make(uri)

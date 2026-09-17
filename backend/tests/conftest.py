@@ -107,7 +107,7 @@ async def create_test_engine() -> AsyncEngine:
     )
 
     @event.listens_for(engine.sync_engine, "connect")
-    def _set_sqlite_pragma(  # pyright: ignore[reportUnusedFunction]
+    def _set_sqlite_pragma(
         dbapi_connection: object,
         _connection_record: ConnectionPoolEntry,
     ) -> None:
