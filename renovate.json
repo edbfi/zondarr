@@ -8,6 +8,7 @@
   "gitIgnoredAuthors": [
     "41898282+github-actions[bot]@users.noreply.github.com"
   ],
+  "automergeComment": "/merge-when-green v2",
   "packageRules": [
     {
       "matchPackageNames": [

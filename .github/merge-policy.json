@@ -16,7 +16,7 @@
     "login": "renovate[bot]",
     "id": 29139614
   },
-  "renovate_comment": "/merge-when-green",
+  "renovate_comment": "/merge-when-green v2",
   "minimum_approvals": 0,
   "deploy_workflows": [],
   "repair_recovery": {
