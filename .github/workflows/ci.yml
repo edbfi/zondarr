@@ -69,8 +69,10 @@ jobs:
         python-version: '3.14'
     - uses: astral-sh/setup-uv@v10.1.0
       with:
-        version: 0.12.15
+        version: latest
         enable-cache: true
+    - name: Log resolved runtime versions
+      run: uv --version && python --version && bun --version && node --version
     - uses: actions/cache@v6.1.0
       with:
         path: ~/.bun/install/cache
@@ -83,6 +85,14 @@ jobs:
       run: |-
         bun run --cwd frontend build
         bun .github/scripts/check-api.ts
+    - name: Retain normalized API drift diagnostics
+      if: failure()
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: api-declaration-diff
+        path: ${{ runner.temp }}/zondarr-api-diff
+        if-no-files-found: ignore
+        retention-days: 7
     - name: Smoke both production servers and migrations
       run: python .github/scripts/smoke.py
     - name: Reject tracked-file mutation

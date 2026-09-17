@@ -515,14 +515,14 @@ class InvitationService:
         invitation_id: UUID,
         /,
         *,
-        expires_at: datetime | None | UnsetType = UNSET,
-        max_uses: int | None | UnsetType = UNSET,
-        duration_days: int | None | UnsetType = UNSET,
+        expires_at: datetime | UnsetType | None = UNSET,
+        max_uses: int | UnsetType | None = UNSET,
+        duration_days: int | UnsetType | None = UNSET,
         enabled: bool | UnsetType = UNSET,
         server_ids: Sequence[UUID] | UnsetType = UNSET,
         library_ids: Sequence[UUID] | UnsetType = UNSET,
-        pre_wizard_id: UUID | None | UnsetType = UNSET,
-        post_wizard_id: UUID | None | UnsetType = UNSET,
+        pre_wizard_id: UUID | UnsetType | None = UNSET,
+        post_wizard_id: UUID | UnsetType | None = UNSET,
     ) -> Invitation:
         """Update an invitation with the specified fields.
 
