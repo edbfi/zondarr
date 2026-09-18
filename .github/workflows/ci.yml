@@ -26,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   guard:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
     - uses: edbfi/automation/actions/dispatch-guard@v2.0.0
@@ -52,7 +52,7 @@ jobs:
       command: bun run check:biome && bun run check && bun run test
   integration:
     needs: guard
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
     - uses: actions/checkout@v7.0.1
@@ -114,7 +114,7 @@ jobs:
     - frontend
     - integration
     - hygiene
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
     - uses: edbfi/automation/actions/dispatch-guard@v2.0.0
