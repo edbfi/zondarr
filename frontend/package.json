@@ -19,7 +19,7 @@
 		"smoke:browser": "playwright test --config playwright.smoke.config.ts"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.13",
+		"@biomejs/biome": "2.5.14",
 		"@internationalized/date": "^3.12.1",
 		"@lucide/svelte": "^1.14.0",
 		"@sveltejs/kit": "^2.59.0",
