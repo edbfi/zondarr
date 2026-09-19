@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-    - uses: edbfi/automation/actions/dispatch-guard@v3.0.0
+    - uses: edbfi/automation/actions/dispatch-guard@v3.0.1
       with:
         token: ${{ github.token }}
         pr-number: ${{ inputs.pr-number }}
@@ -37,14 +37,14 @@ jobs:
         expected-default-sha: ${{ inputs.expected-default-sha }}
   python:
     needs: guard
-    uses: edbfi/automation/.github/workflows/python.yml@v3.0.0
+    uses: edbfi/automation/.github/workflows/python.yml@v3.0.1
     with:
       version: '3.14'
       command: bash .github/scripts/check-python.sh
       timeout-minutes: 30
   frontend:
     needs: guard
-    uses: edbfi/automation/.github/workflows/bun.yml@v3.0.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v3.0.1
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
@@ -110,7 +110,7 @@ jobs:
       run: git diff --exit-code HEAD
   hygiene:
     needs: guard
-    uses: edbfi/automation/.github/workflows/bun.yml@v3.0.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v3.0.1
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
@@ -128,13 +128,13 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-    - uses: edbfi/automation/actions/dispatch-guard@v3.0.0
+    - uses: edbfi/automation/actions/dispatch-guard@v3.0.1
       with:
         token: ${{ github.token }}
         pr-number: ${{ inputs.pr-number }}
         expected-head-sha: ${{ inputs.expected-head-sha }}
         expected-default-sha: ${{ inputs.expected-default-sha }}
-    - uses: edbfi/automation/actions/gate@v3.0.0
+    - uses: edbfi/automation/actions/gate@v3.0.1
       with:
         needs: ${{ toJSON(needs) }}
         required: guard python frontend integration hygiene
