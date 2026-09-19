@@ -15,7 +15,7 @@ name: ci
         type: string
         default: ''
       expected-default-sha:
-        description: Exact default-branch commit requested after a checked merge
+        description: Exact current default-branch commit for guarded dispatch
         type: string
         default: ''
 permissions:
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-    - uses: edbfi/automation/actions/dispatch-guard@v2.0.0
+    - uses: edbfi/automation/actions/dispatch-guard@v3.0.0
       with:
         token: ${{ github.token }}
         pr-number: ${{ inputs.pr-number }}
@@ -37,17 +37,18 @@ jobs:
         expected-default-sha: ${{ inputs.expected-default-sha }}
   python:
     needs: guard
-    uses: edbfi/automation/.github/workflows/python.yml@v2.0.0
+    uses: edbfi/automation/.github/workflows/python.yml@v3.0.0
     with:
       version: '3.14'
       command: bash .github/scripts/check-python.sh
       timeout-minutes: 30
   frontend:
     needs: guard
-    uses: edbfi/automation/.github/workflows/bun.yml@v2.0.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v3.0.0
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
+      install-directory: frontend
       working-directory: frontend
       command: bun run check:biome && bun run check && bun run test
   integration:
@@ -81,6 +82,8 @@ jobs:
       run: |-
         bun install --cwd frontend --frozen-lockfile
         uv sync --project backend --frozen --all-extras
+    - name: Install Chromium for required browser startup smoke
+      run: bun run --cwd frontend smoke:install --with-deps
     - name: Build frontend and verify generated API declarations
       run: |-
         bun run --cwd frontend build
@@ -95,11 +98,19 @@ jobs:
         retention-days: 7
     - name: Smoke both production servers and migrations
       run: python .github/scripts/smoke.py
+    - name: Retain browser failure evidence
+      if: failure()
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: production-browser-smoke
+        path: frontend/test-results
+        if-no-files-found: ignore
+        retention-days: 7
     - name: Reject tracked-file mutation
       run: git diff --exit-code HEAD
   hygiene:
     needs: guard
-    uses: edbfi/automation/.github/workflows/bun.yml@v2.0.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v3.0.0
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
@@ -117,13 +128,13 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-    - uses: edbfi/automation/actions/dispatch-guard@v2.0.0
+    - uses: edbfi/automation/actions/dispatch-guard@v3.0.0
       with:
         token: ${{ github.token }}
         pr-number: ${{ inputs.pr-number }}
         expected-head-sha: ${{ inputs.expected-head-sha }}
         expected-default-sha: ${{ inputs.expected-default-sha }}
-    - uses: edbfi/automation/actions/gate@v2.0.0
+    - uses: edbfi/automation/actions/gate@v3.0.0
       with:
         needs: ${{ toJSON(needs) }}
         required: guard python frontend integration hygiene
