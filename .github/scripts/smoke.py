@@ -105,8 +105,17 @@ with tempfile.TemporaryDirectory(prefix="zondarr-smoke-") as temporary:
             assert (
                 Path(env["BOOTSTRAP_TOKEN_FILE"]).read_text() == env["BOOTSTRAP_TOKEN"]
             )
+            subprocess.run(
+                ["bun", "run", "--cwd", "frontend", "smoke:browser"],
+                cwd=root,
+                env={**env, "SMOKE_URL": frontend_url},
+                check=True,
+                timeout=90,
+                stdout=log,
+                stderr=log,
+            )
             print(
-                "Migrated backend readiness, frontend API proxy, setup SSR and bootstrap token passed."
+                "Chromium hydration/validation, migrated backend readiness, frontend API proxy, setup SSR and bootstrap token passed."
             )
         except BaseException:
             log.seek(0)

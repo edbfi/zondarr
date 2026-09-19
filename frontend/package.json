@@ -14,7 +14,9 @@
 		"test:watch": "vitest",
 		"generate:api": "openapi-typescript http://localhost:8000/docs/openapi.json -o src/lib/api/types.d.ts",
 		"check:biome": "biome ci ..",
-		"start": "NODE_ENV=production bun ./build/index.js"
+		"start": "NODE_ENV=production bun ./build/index.js",
+		"smoke:install": "playwright install chromium",
+		"smoke:browser": "playwright test --config playwright.smoke.config.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.13",
@@ -43,7 +45,8 @@
 		"unocss-preset-shadcn": "^1.0.1",
 		"vite": "^8.0.10",
 		"vitest": "5.0.1",
-		"zod": "^4.4.2"
+		"zod": "^4.4.2",
+		"@playwright/test": "1.63.0"
 	},
 	"dependencies": {
 		"clsx": "^2.1.1",
