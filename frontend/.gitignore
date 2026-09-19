@@ -24,3 +24,6 @@ vite.config.ts.timestamp-*
 
 # Production browser smoke artifacts
 /test-results/
+
+# Generated native Svelte checker input
+.svelte-check/

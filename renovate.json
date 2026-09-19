@@ -13,6 +13,14 @@
         "ruff"
       ],
       "groupName": "ruff"
+    },
+    {
+      "description": "Keep direct npm versions exact: post-artifact minimumReleaseAge re-extraction is unavailable (renovatebot/renovate#45284).",
+      "matchManagers": [
+        "npm",
+        "bun"
+      ],
+      "rangeStrategy": "pin"
     }
   ],
   "automerge": true,
