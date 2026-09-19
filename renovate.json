@@ -15,8 +15,9 @@
       "groupName": "ruff"
     }
   ],
-  "automerge": false,
+  "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": false,
-  "ignoreTests": false
+  "ignoreTests": false,
+  "automergeStrategy": "rebase"
 }

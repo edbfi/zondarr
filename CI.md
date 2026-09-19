@@ -11,8 +11,10 @@ current branches and native review rules before enabling dependency automerge.
 
 The legacy checked merger and `/merge` commands are retired. Renovate owns ongoing
 automatic dependency merging, with `platformAutomerge: false` and test checking
-retained. Broad automerge remains disabled during the v3 migration and hosted
-canary. Validation is read-only, bounded by timeouts/concurrency, uses immutable
+retained. Native PR rebase merging is enabled after the protected canary
+[automation#39](https://github.com/edbfi/automation/pull/39). Complete current-head
+CI and policy checks, up-to-date branches, release ages, reviews and holds remain
+required. Validation is read-only, bounded by timeouts, uses immutable
 full-version references and rejects tracked-file mutations. This repository has
 no helper-dispatched deployment workflow; normal default-branch CI remains on push.
 
@@ -60,12 +62,11 @@ Bun locks; the frontend reusable job explicitly selects `install-directory: fron
 ## Renovate and remaining limits
 
 The v3 default/mixed presets handle Python/uv, Bun, actions, hooks and Biome
-schema/package versions, grouping non-major updates by ecosystem. The optional
-automerge preset is absent and `automerge: false` stays explicit until protection
-and a native Renovate canary are verified. Preserve the existing Ruff group and
-ignored repair-bot author. Svelte checks remain mandatory for TypeScript updates.
-Only normal GitHub merges are used; choose a merge method that retains genuine
-commit sign-offs. Source policy checks cannot atomically bind a label change to a
+schema/package versions, grouping non-major updates by ecosystem. Root-level
+`automerge: true` preserves the shared manual rule for automation configuration
+updates. The existing Ruff group and ignored repair-bot author are retained.
+Svelte checks remain mandatory and the TypeScript 7 hold remains in place.
+Normal PR rebase merges retain genuine commit sign-offs. Source policy checks cannot atomically bind a label change to a
 merge, so native review enforcement and hosted metadata-event checks are also
 required before opt-in.
 
