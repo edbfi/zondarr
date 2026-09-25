@@ -34,7 +34,7 @@ dev = [
     "pytest-cov>=6.0",
     "pytest-xdist>=3.5",
     "hypothesis>=6.130",
-    "ruff==0.16.8",
+    "ruff==0.16.9",
     "basedpyright>=1.29",
     "granian[reload]>=2.6",
 ]
