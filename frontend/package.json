@@ -31,7 +31,7 @@
 		"@types/jsdom": "30.0.0",
 		"@unocss/preset-icons": "66.10.5",
 		"@unocss/transformer-variant-group": "66.10.5",
-		"bits-ui": "2.19.2",
+		"bits-ui": "2.19.3",
 		"fast-check": "4.10.2",
 		"jsdom": "30.1.1",
 		"mode-watcher": "1.1.0",
