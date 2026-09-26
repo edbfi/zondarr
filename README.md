@@ -21,7 +21,7 @@
 
 ## Development and production frontend
 
-Use Bun **1.4.2**, matching `frontend/package.json` and CI. `uv run dev_cli`
+Use Bun **1.4.2**, matching `frontend/package.json`. `uv run dev_cli`
 remains the launcher for the Python backend and frontend together.
 
 For frontend-only development (with the backend running):
