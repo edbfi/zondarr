@@ -43,7 +43,7 @@ hooks = [
 [[repos]]
 repo = "local"
 hooks = [
-  { id = "biome", name = "Format and lint with Biome", entry = "./frontend/node_modules/.bin/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched", language = "system", types_or = ["javascript", "ts", "svelte", "json", "css"], files = "^frontend/", exclude = "^frontend/(build|\\.svelte-kit|node_modules)/" },
+  { id = "biome", name = "Format and lint with Biome", entry = "./node_modules/.bin/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched", language = "system", types_or = ["javascript", "ts", "svelte", "json", "css"], files = "^frontend/", exclude = "^frontend/(build|\\.svelte-kit|node_modules)/" },
   { id = "typecheck-ts", name = "TypeScript Check", entry = "bun run --cwd frontend check", language = "system", pass_filenames = false, files = "^frontend/", stages = ["pre-push"] },
   { id = "typecheck-py", name = "Python Type Check (basedpyright)", entry = "bash -c 'uv run --project backend --frozen basedpyright --project backend/pyproject.toml && uv run --project backend --frozen basedpyright --project dev_cli/pyproject.toml'", language = "system", files = "^(backend/|dev_cli/)", pass_filenames = false, stages = ["pre-push"] },
   { id = "tests-py", name = "Python Tests", entry = "bash -c '(cd backend && uv run --frozen pytest -n 4) && backend/.venv/bin/pytest -q dev_cli/tests'", language = "system", files = "^(backend/|dev_cli/)", pass_filenames = false, stages = ["pre-push"] },

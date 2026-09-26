@@ -8,12 +8,12 @@ Run these from `frontend/`, or prefix them with `bun run --cwd frontend` from th
 | One file | `bun run test src/lib/api/client.test.ts` |
 | One case | `bun run test src/lib/api/client.test.ts -t "test name"` |
 | Typecheck | `bun run check` (svelte-check, then a second pass with `--tsgo` via `check:native`) |
-| Lint / format | `bun run check:biome` (runs `biome ci ..`, which uses the root `biome.json`); fix with `node_modules/.bin/biome check --write .` |
+| Lint / format | `bun run check:biome` (runs `biome ci ..`, which uses the root `biome.json`); fix with `bunx --no-install biome check --write .`. Biome is installed at the repo root, so run `bun install` there first |
 | Regenerate API types | `bun run generate:api` (backend must be running on `:8000`) |
 
 ## Gotchas
 
-- `src/lib/api/types.d.ts` is generated from the backend OpenAPI schema. Don't edit it by hand. After `generate:api`, run `node_modules/.bin/biome format --write src/lib/api/types.d.ts`. The committed file is Biome-formatted, and `check:biome` checks that form.
+- `src/lib/api/types.d.ts` is generated from the backend OpenAPI schema. Don't edit it by hand. After `generate:api`, run `bunx --no-install biome format --write src/lib/api/types.d.ts`. The committed file is Biome-formatted, and `check:biome` checks that form.
 - Styling is UnoCSS (`uno.config.ts`: presetWind4, presetShadcn, presetIcons). `tailwind.config.js` is an empty stub kept only for the shadcn-svelte CLI, so theme settings there have no effect. The app's own colors are `--cr-*` variables in `src/app.css`, exposed as `cr-*` utilities in `uno.config.ts`.
 - `vitest-setup.ts` mocks `$env/dynamic/public` and `$env/dynamic/private` as `{}`, so `PUBLIC_API_URL` and friends are always unset in tests.
 - Component tests are named `*.svelte.test.ts` (plain `*.test.ts` is for non-component modules). Components that need `children` snippets or `bind:this` are rendered through a `*-test-wrapper.svelte`, as in `src/lib/components/error-boundary-test-wrapper.svelte`.
@@ -48,7 +48,7 @@ Wrappers take the client as their last parameter, defaulting to the browser clie
 
 ## Biome configuration
 
-Biome is pinned to 2.5.14. The configuration uses Git ignores, the recommended lint and assist presets, and experimental full Svelte support. Keep type checking separate from Biome. Project quote, comma and indentation conventions remain explicit in the configuration.
+Biome is pinned to 2.5.13 in the root `package.json` (2.5.14's `check --write` rewrites embedded Svelte expressions, biomejs/biome#11836). The configuration uses Git ignores, the recommended lint and assist presets, and experimental full Svelte support. Keep type checking separate from Biome. Project quote, comma and indentation conventions remain explicit in the configuration.
 
 The exact-file formatter overrides protect components containing `{@const ...}`: Biome 2.5.14 inserts parentheses that Svelte rejects with `expected_pattern`. These files still receive lint and import checks. Recheck them with the Svelte compiler when upgrading Biome before removing the exceptions. Do not run a formatter with these overrides bypassed.
 
