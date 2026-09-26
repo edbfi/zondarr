@@ -12,7 +12,7 @@ Zondarr: invitation and user management for Plex/Jellyfin. `backend/` is Python 
 | Backend tests | `cd backend && uv run pytest` |
 | Frontend tests | `bun run --cwd frontend test` |
 | dev_cli tests | `backend/.venv/bin/pytest -q dev_cli/tests` |
-| Everything CI's `frontend` job runs | `cd frontend && bun run check:biome && bun run check && bun run test` |
+| All frontend checks | `cd frontend && bun run check:biome && bun run check && bun run test` |
 | All prek hooks | `bun run lint` (= `prek run --all-files`) |
 
 The scoped files list single-file and single-case commands.
