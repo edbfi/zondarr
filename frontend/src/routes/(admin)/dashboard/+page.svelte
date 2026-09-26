@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { Clock, Server, Ticket, Users } from '@lucide/svelte';
-	import { invalidateAll } from '$app/navigation';
-	import { getErrorMessage, isNetworkError } from '$lib/api/errors';
-	import DashboardSkeleton from '$lib/components/dashboard/dashboard-skeleton.svelte';
-	import RecentActivity from '$lib/components/dashboard/recent-activity.svelte';
-	import StatCard from '$lib/components/dashboard/stat-card.svelte';
-	import ErrorState from '$lib/components/error-state.svelte';
-	import type { PageData } from './$types';
+import { Clock, Server, Ticket, Users } from '@lucide/svelte';
+import { invalidateAll } from '$app/navigation';
+import { getErrorMessage, isNetworkError } from '$lib/api/errors';
+import DashboardSkeleton from '$lib/components/dashboard/dashboard-skeleton.svelte';
+import RecentActivity from '$lib/components/dashboard/recent-activity.svelte';
+import StatCard from '$lib/components/dashboard/stat-card.svelte';
+import ErrorState from '$lib/components/error-state.svelte';
+import type { PageData } from './$types';
 
-	const { data }: { data: PageData } = $props();
+const { data }: { data: PageData } = $props();
 
-	let isRefreshing = $state(false);
+let isRefreshing = $state(false);
 
-	async function handleRetry() {
-		isRefreshing = true;
-		try {
-			await invalidateAll();
-		} finally {
-			isRefreshing = false;
-		}
+async function handleRetry() {
+	isRefreshing = true;
+	try {
+		await invalidateAll();
+	} finally {
+		isRefreshing = false;
 	}
+}
 </script>
 
 <div class="space-y-6">

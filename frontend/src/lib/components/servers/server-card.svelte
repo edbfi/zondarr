@@ -11,12 +11,12 @@
  * @module $lib/components/servers/server-card
  */
 
-import { Database, ExternalLink, Server } from "@lucide/svelte";
-import type { MediaServerWithLibrariesResponse } from "$lib/api/client";
-import StatusBadge from "$lib/components/status-badge.svelte";
-import { Button } from "$lib/components/ui/button";
-import * as Card from "$lib/components/ui/card";
-import { getProviderBadgeStyle, getProviderLabel } from "$lib/stores/providers.svelte";
+import { Database, ExternalLink, Server } from '@lucide/svelte';
+import type { MediaServerWithLibrariesResponse } from '$lib/api/client';
+import StatusBadge from '$lib/components/status-badge.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
+import { getProviderBadgeStyle, getProviderLabel } from '$lib/stores/providers.svelte';
 
 interface Props {
 	server: MediaServerWithLibrariesResponse;
@@ -33,8 +33,8 @@ const serverTypeLabel = $derived(getProviderLabel(server.server_type));
  */
 const libraryCountText = $derived.by(() => {
 	const count = server.libraries.length;
-	if (count === 0) return "No libraries (sync to populate)";
-	return count === 1 ? "1 library" : `${count} libraries`;
+	if (count === 0) return 'No libraries (sync to populate)';
+	return count === 1 ? '1 library' : `${count} libraries`;
 });
 </script>
 
@@ -50,7 +50,9 @@ const libraryCountText = $derived.by(() => {
 					<Server class="size-5 text-cr-accent" />
 				</div>
 				<div class="min-w-0">
-					<Card.Title class="text-cr-text text-lg truncate" data-field="name">{server.name}</Card.Title>
+					<Card.Title class="text-cr-text text-lg truncate" data-field="name"
+						>{server.name}</Card.Title
+					>
 					<div class="flex items-center gap-2 mt-1">
 						<span
 							class="inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium"

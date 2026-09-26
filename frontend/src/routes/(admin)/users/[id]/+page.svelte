@@ -23,29 +23,27 @@ import {
 	Settings,
 	Trash2,
 	User,
-	Users,
-} from "@lucide/svelte";
-import { goto, invalidateAll } from "$app/navigation";
+	Users
+} from '@lucide/svelte';
+import { goto, invalidateAll } from '$app/navigation';
 import {
 	deleteUser,
 	disableUser,
 	enableUser,
 	removeSharedAccess,
-	withErrorHandling,
-} from "$lib/api/client";
-import { asErrorResponse, getErrorMessage } from "$lib/api/errors";
-import ErrorState from "$lib/components/error-state.svelte";
-import StatusBadge, {
-	type StatusBadgeStatus,
-} from "$lib/components/status-badge.svelte";
-import SteppedDeleteDialog from "$lib/components/stepped-delete-dialog.svelte";
-import { Button } from "$lib/components/ui/button";
-import * as Card from "$lib/components/ui/card";
-import { Label } from "$lib/components/ui/label";
-import UserPermissionsEditor from "$lib/components/users/user-permissions-editor.svelte";
-import { getProviderBadgeStyle, hasProviderCapability } from "$lib/stores/providers.svelte";
-import { showError, showSuccess } from "$lib/utils/toast";
-import type { PageData } from "./$types";
+	withErrorHandling
+} from '$lib/api/client';
+import { asErrorResponse, getErrorMessage } from '$lib/api/errors';
+import ErrorState from '$lib/components/error-state.svelte';
+import StatusBadge, { type StatusBadgeStatus } from '$lib/components/status-badge.svelte';
+import SteppedDeleteDialog from '$lib/components/stepped-delete-dialog.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
+import { Label } from '$lib/components/ui/label';
+import UserPermissionsEditor from '$lib/components/users/user-permissions-editor.svelte';
+import { getProviderBadgeStyle, hasProviderCapability } from '$lib/stores/providers.svelte';
+import { showError, showSuccess } from '$lib/utils/toast';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
@@ -80,47 +78,49 @@ const isExpiringSoon = $derived.by(() => {
  * Derive the status for the badge based on user state.
  */
 const status = $derived.by((): StatusBadgeStatus => {
-	if (!data.user) return "disabled";
-	if (!data.user.enabled) return "disabled";
-	if (isExpired) return "expired";
-	if (isExpiringSoon) return "pending";
-	return "active";
+	if (!data.user) return 'disabled';
+	if (!data.user.enabled) return 'disabled';
+	if (isExpired) return 'expired';
+	if (isExpiringSoon) return 'pending';
+	return 'active';
 });
 
 /**
  * Derive the status label.
  */
 const statusLabel = $derived.by(() => {
-	if (!data.user) return "Unknown";
-	if (!data.user.enabled) return "Disabled";
-	if (isExpired) return "Expired";
-	if (isExpiringSoon) return "Expiring Soon";
-	return "Active";
+	if (!data.user) return 'Unknown';
+	if (!data.user.enabled) return 'Disabled';
+	if (isExpired) return 'Expired';
+	if (isExpiringSoon) return 'Expiring Soon';
+	return 'Active';
 });
 
-const badgeStyle = $derived(data.user ? getProviderBadgeStyle(data.user.media_server.server_type) : '');
+const badgeStyle = $derived(
+	data.user ? getProviderBadgeStyle(data.user.media_server.server_type) : ''
+);
 const supportsEnableDisable = $derived(
 	data.user
-		? hasProviderCapability(data.user.media_server.server_type, "enable_disable_user")
-		: false,
+		? hasProviderCapability(data.user.media_server.server_type, 'enable_disable_user')
+		: false
 );
 
 /**
  * Format date for display.
  */
 function formatDate(dateString: string | null | undefined): string {
-	if (!dateString) return "—";
+	if (!dateString) return '—';
 	try {
 		const date = new Date(dateString);
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
+		return date.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
 		});
 	} catch {
-		return "—";
+		return '—';
 	}
 }
 
@@ -128,7 +128,7 @@ function formatDate(dateString: string | null | undefined): string {
  * Format expiration date with relative indicator.
  */
 const expiresDisplay = $derived.by(() => {
-	if (!data.user?.expires_at) return "Never";
+	if (!data.user?.expires_at) return 'Never';
 	const formatted = formatDate(data.user.expires_at);
 	if (isExpired) return `${formatted} (expired)`;
 	if (isExpiringSoon) return `${formatted} (soon)`;
@@ -145,19 +145,16 @@ async function handleEnable() {
 	enabling = true;
 	try {
 		const result = await withErrorHandling(() => enableUser(userId), {
-			showErrorToast: false,
+			showErrorToast: false
 		});
 
 		if (result.error) {
 			const errorBody = asErrorResponse(result.error);
-			showError(
-				"Failed to enable user",
-				errorBody?.detail ?? "An error occurred",
-			);
+			showError('Failed to enable user', errorBody?.detail ?? 'An error occurred');
 			return;
 		}
 
-		showSuccess("User enabled successfully");
+		showSuccess('User enabled successfully');
 		await invalidateAll();
 	} finally {
 		enabling = false;
@@ -174,19 +171,16 @@ async function handleDisable() {
 	disabling = true;
 	try {
 		const result = await withErrorHandling(() => disableUser(userId), {
-			showErrorToast: false,
+			showErrorToast: false
 		});
 
 		if (result.error) {
 			const errorBody = asErrorResponse(result.error);
-			showError(
-				"Failed to disable user",
-				errorBody?.detail ?? "An error occurred",
-			);
+			showError('Failed to disable user', errorBody?.detail ?? 'An error occurred');
 			return;
 		}
 
-		showSuccess("User disabled successfully");
+		showSuccess('User disabled successfully');
 		await invalidateAll();
 	} finally {
 		disabling = false;
@@ -201,15 +195,15 @@ async function handleRemoveShares() {
 	const userId = data.user.id;
 
 	const result = await withErrorHandling(() => removeSharedAccess(userId), {
-		showErrorToast: false,
+		showErrorToast: false
 	});
 
 	if (result.error) {
 		const errorBody = asErrorResponse(result.error);
-		throw new Error(errorBody?.detail ?? "Failed to remove shared access");
+		throw new Error(errorBody?.detail ?? 'Failed to remove shared access');
 	}
 
-	showSuccess("Shared access removed");
+	showSuccess('Shared access removed');
 	await invalidateAll();
 }
 
@@ -221,16 +215,16 @@ async function handleDelete() {
 	const userId = data.user.id;
 
 	const result = await withErrorHandling(() => deleteUser(userId), {
-		showErrorToast: false,
+		showErrorToast: false
 	});
 
 	if (result.error) {
 		const errorBody = asErrorResponse(result.error);
-		throw new Error(errorBody?.detail ?? "Failed to delete user");
+		throw new Error(errorBody?.detail ?? 'Failed to delete user');
 	}
 
-	showSuccess("User deleted successfully");
-	goto("/users");
+	showSuccess('User deleted successfully');
+	goto('/users');
 }
 
 /**
@@ -270,16 +264,22 @@ function viewLinkedUser(userId: string) {
 		</div>
 		{#if data.user}
 			<StatusBadge {status} label={statusLabel} />
-			{#if data.user.external_user_type === "friend"}
-				<span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+			{#if data.user.external_user_type === 'friend'}
+				<span
+					class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30"
+				>
 					Friend
 				</span>
-			{:else if data.user.external_user_type === "shared"}
-				<span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30">
+			{:else if data.user.external_user_type === 'shared'}
+				<span
+					class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30"
+				>
 					Shared
 				</span>
-			{:else if data.user.external_user_type === "home"}
-				<span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-teal-500/15 text-teal-400 border border-teal-500/30">
+			{:else if data.user.external_user_type === 'home'}
+				<span
+					class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-teal-500/15 text-teal-400 border border-teal-500/30"
+				>
 					Home
 				</span>
 			{/if}
@@ -316,34 +316,48 @@ function viewLinkedUser(userId: string) {
 					<div class="space-y-1" data-field="user_type">
 						<Label class="text-cr-text-muted text-xs uppercase tracking-wide">User Type</Label>
 						<div class="flex flex-col gap-1">
-							{#if data.user.external_user_type === "friend"}
-								<span class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+							{#if data.user.external_user_type === 'friend'}
+								<span
+									class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30"
+								>
 									Friend
 								</span>
 								<span class="text-xs text-cr-text-muted">No shared libraries on this server</span>
-							{:else if data.user.external_user_type === "shared"}
-								<span class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30">
+							{:else if data.user.external_user_type === 'shared'}
+								<span
+									class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30"
+								>
 									Shared
 								</span>
 								<span class="text-xs text-cr-text-muted">Has shared library access</span>
-							{:else if data.user.external_user_type === "home"}
-								<span class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-teal-500/15 text-teal-400 border border-teal-500/30">
+							{:else if data.user.external_user_type === 'home'}
+								<span
+									class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-teal-500/15 text-teal-400 border border-teal-500/30"
+								>
 									Home
 								</span>
 								<span class="text-xs text-cr-text-muted">Plex Home member</span>
 							{:else}
-								<span class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-zinc-500/15 text-zinc-500 border border-zinc-500/30">
+								<span
+									class="inline-flex w-fit items-center rounded px-1.5 py-0.5 text-xs font-medium bg-zinc-500/15 text-zinc-500 border border-zinc-500/30"
+								>
 									Unknown
 								</span>
-								<span class="text-xs text-cr-text-dim">Type not yet determined — run a sync to detect</span>
+								<span class="text-xs text-cr-text-dim"
+									>Type not yet determined — run a sync to detect</span
+								>
 							{/if}
 						</div>
 					</div>
 
 					<!-- External User ID -->
 					<div class="space-y-1" data-field="external_user_id">
-						<Label class="text-cr-text-muted text-xs uppercase tracking-wide">External User ID</Label>
-						<div class="font-mono text-sm text-cr-text bg-cr-bg px-3 py-2 rounded border border-cr-border">
+						<Label class="text-cr-text-muted text-xs uppercase tracking-wide"
+							>External User ID</Label
+						>
+						<div
+							class="font-mono text-sm text-cr-text bg-cr-bg px-3 py-2 rounded border border-cr-border"
+						>
 							{data.user.external_user_id}
 						</div>
 					</div>
@@ -358,7 +372,9 @@ function viewLinkedUser(userId: string) {
 
 					<!-- Expires At -->
 					<div class="space-y-1" data-field="expires_at">
-						<Label class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1">
+						<Label
+							class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1"
+						>
 							<Calendar class="size-3" />
 							Expires
 						</Label>
@@ -424,7 +440,9 @@ function viewLinkedUser(userId: string) {
 									{data.user.media_server.server_type}
 								</span>
 							</div>
-							<div class="text-sm text-cr-text-muted font-mono break-all">{data.user.media_server.url}</div>
+							<div class="text-sm text-cr-text-muted font-mono break-all">
+								{data.user.media_server.url}
+							</div>
 							<div class="mt-2">
 								<StatusBadge
 									status={data.user.media_server.enabled ? 'active' : 'disabled'}
@@ -457,7 +475,9 @@ function viewLinkedUser(userId: string) {
 					<!-- Identity ID -->
 					<div class="space-y-1" data-field="identity_id">
 						<Label class="text-cr-text-muted text-xs uppercase tracking-wide">Identity ID</Label>
-						<div class="font-mono text-xs text-cr-text-muted bg-cr-bg px-2 py-1 rounded border border-cr-border">
+						<div
+							class="font-mono text-xs text-cr-text-muted bg-cr-bg px-2 py-1 rounded border border-cr-border"
+						>
 							{data.user.identity.id}
 						</div>
 					</div>
@@ -472,7 +492,9 @@ function viewLinkedUser(userId: string) {
 
 					<!-- Identity Status -->
 					<div class="space-y-1">
-						<Label class="text-cr-text-muted text-xs uppercase tracking-wide">Identity Status</Label>
+						<Label class="text-cr-text-muted text-xs uppercase tracking-wide"
+							>Identity Status</Label
+						>
 						<StatusBadge
 							status={data.user.identity.enabled ? 'active' : 'disabled'}
 							label={data.user.identity.enabled ? 'Enabled' : 'Disabled'}
@@ -481,7 +503,9 @@ function viewLinkedUser(userId: string) {
 
 					<!-- Identity Created -->
 					<div class="space-y-1">
-						<Label class="text-cr-text-muted text-xs uppercase tracking-wide">Identity Created</Label>
+						<Label class="text-cr-text-muted text-xs uppercase tracking-wide"
+							>Identity Created</Label
+						>
 						<div class="text-cr-text font-data">{formatDate(data.user.identity.created_at)}</div>
 					</div>
 				</Card.Content>
@@ -571,7 +595,9 @@ function viewLinkedUser(userId: string) {
 											>
 												{linkedUser.media_server.server_type}
 											</span>
-											<span class="text-xs text-cr-text-muted truncate">{linkedUser.media_server.name}</span>
+											<span class="text-xs text-cr-text-muted truncate"
+												>{linkedUser.media_server.name}</span
+											>
 										</div>
 									</div>
 									<StatusBadge
@@ -604,7 +630,9 @@ function viewLinkedUser(userId: string) {
 								data-action-enable
 							>
 								{#if enabling}
-									<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+									<span
+										class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+									></span>
 								{:else}
 									<Power class="size-4" />
 								{/if}
@@ -621,7 +649,9 @@ function viewLinkedUser(userId: string) {
 								data-action-disable
 							>
 								{#if disabling}
-									<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+									<span
+										class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+									></span>
 								{:else}
 									<PowerOff class="size-4" />
 								{/if}
@@ -650,7 +680,7 @@ function viewLinkedUser(userId: string) {
 <!-- Stepped Delete Dialog -->
 <SteppedDeleteDialog
 	bind:open={showDeleteDialog}
-	userType={data.user?.external_user_type as "friend" | "shared" | "home" | null | undefined}
+	userType={data.user?.external_user_type as 'friend' | 'shared' | 'home' | null | undefined}
 	onRemoveShares={handleRemoveShares}
 	onDelete={handleDelete}
 	onCancel={() => (showDeleteDialog = false)}

@@ -13,16 +13,14 @@
  * @module $lib/components/invitations/invitation-row
  */
 
-import { Check, Copy, Eye, MoreHorizontal, Pencil, Trash2 } from "@lucide/svelte";
-import { onDestroy } from "svelte";
-import { goto } from "$app/navigation";
-import type { InvitationResponse } from "$lib/api/client";
-import StatusBadge, {
-	type StatusBadgeStatus,
-} from "$lib/components/status-badge.svelte";
-import { Button } from "$lib/components/ui/button";
-import * as Table from "$lib/components/ui/table";
-import { showError, showSuccess } from "$lib/utils/toast";
+import { Check, Copy, Eye, MoreHorizontal, Pencil, Trash2 } from '@lucide/svelte';
+import { onDestroy } from 'svelte';
+import { goto } from '$app/navigation';
+import type { InvitationResponse } from '$lib/api/client';
+import StatusBadge, { type StatusBadgeStatus } from '$lib/components/status-badge.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Table from '$lib/components/ui/table';
+import { showError, showSuccess } from '$lib/utils/toast';
 
 interface Props {
 	invitation: InvitationResponse;
@@ -38,9 +36,7 @@ const { invitation, onEdit, onDelete }: Props = $props();
  * is blocked.
  */
 const isUsedUp = $derived(
-	invitation.max_uses != null &&
-		invitation.remaining_uses != null &&
-		invitation.remaining_uses <= 0,
+	invitation.max_uses != null && invitation.remaining_uses != null && invitation.remaining_uses <= 0
 );
 
 /**
@@ -50,34 +46,34 @@ const isUsedUp = $derived(
  * the server via `is_active` to avoid client-clock-skew false positives.
  */
 const status = $derived.by((): StatusBadgeStatus => {
-	if (!invitation.enabled) return "disabled";
-	if (isUsedUp) return "expired";
-	if (!invitation.is_active) return "expired";
+	if (!invitation.enabled) return 'disabled';
+	if (isUsedUp) return 'expired';
+	if (!invitation.is_active) return 'expired';
 	if (
 		invitation.remaining_uses !== null &&
 		invitation.remaining_uses !== undefined &&
 		invitation.remaining_uses <= 3
 	) {
-		return "limited";
+		return 'limited';
 	}
-	return "active";
+	return 'active';
 });
 
 /**
  * Derive the status label.
  */
 const statusLabel = $derived.by(() => {
-	if (!invitation.enabled) return "Disabled";
-	if (isUsedUp) return "Used up";
-	if (!invitation.is_active) return "Expired";
+	if (!invitation.enabled) return 'Disabled';
+	if (isUsedUp) return 'Used up';
+	if (!invitation.is_active) return 'Expired';
 	if (
 		invitation.remaining_uses !== null &&
 		invitation.remaining_uses !== undefined &&
 		invitation.remaining_uses <= 3
 	) {
-		return "Limited";
+		return 'Limited';
 	}
-	return "Active";
+	return 'Active';
 });
 
 /**
@@ -94,29 +90,26 @@ const useCountDisplay = $derived.by(() => {
  * Format remaining uses display.
  */
 const remainingDisplay = $derived.by(() => {
-	if (
-		invitation.remaining_uses !== null &&
-		invitation.remaining_uses !== undefined
-	) {
+	if (invitation.remaining_uses !== null && invitation.remaining_uses !== undefined) {
 		return `(${invitation.remaining_uses} left)`;
 	}
-	return "";
+	return '';
 });
 
 /**
  * Format date for display.
  */
 function formatDate(dateString: string | null | undefined): string {
-	if (!dateString) return "—";
+	if (!dateString) return '—';
 	try {
 		const date = new Date(dateString);
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
+		return date.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
 		});
 	} catch {
-		return "—";
+		return '—';
 	}
 }
 
@@ -124,7 +117,7 @@ function formatDate(dateString: string | null | undefined): string {
  * Format expiration date with relative indicator.
  */
 const expiresDisplay = $derived.by(() => {
-	if (!invitation.expires_at) return "Never";
+	if (!invitation.expires_at) return 'Never';
 	const date = new Date(invitation.expires_at);
 	const now = new Date();
 	const isExpired = date < now;
@@ -165,11 +158,13 @@ async function copyInviteLink() {
 	try {
 		await navigator.clipboard.writeText(url);
 		copied = true;
-		showSuccess("Invite link copied");
+		showSuccess('Invite link copied');
 		if (copiedTimeoutId) clearTimeout(copiedTimeoutId);
-		copiedTimeoutId = setTimeout(() => { copied = false; }, 2000);
+		copiedTimeoutId = setTimeout(() => {
+			copied = false;
+		}, 2000);
 	} catch {
-		showError("Failed to copy invite link");
+		showError('Failed to copy invite link');
 	}
 }
 
@@ -232,15 +227,14 @@ function handleDelete() {
 
 	<!-- Actions -->
 	<Table.Cell class="text-right">
-		<div
-			class="flex items-center justify-end gap-1"
-			role="toolbar"
-			aria-label="Invitation actions"
-		>
+		<div class="flex items-center justify-end gap-1" role="toolbar" aria-label="Invitation actions">
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				onclick={(e: MouseEvent) => { e.stopPropagation(); copyInviteLink(); }}
+				onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	copyInviteLink();
+}}
 				aria-label="Copy invite link"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -253,7 +247,10 @@ function handleDelete() {
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				onclick={(e: MouseEvent) => { e.stopPropagation(); viewInvitation(); }}
+				onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	viewInvitation();
+}}
 				aria-label="View invitation"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -262,7 +259,10 @@ function handleDelete() {
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				onclick={(e: MouseEvent) => { e.stopPropagation(); handleEdit(); }}
+				onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	handleEdit();
+}}
 				aria-label="Edit invitation"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -271,7 +271,10 @@ function handleDelete() {
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				onclick={(e: MouseEvent) => { e.stopPropagation(); handleDelete(); }}
+				onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	handleDelete();
+}}
 				aria-label="Delete invitation"
 				class="text-cr-text-muted hover:text-rose-400 hover:bg-rose-400/10"
 			>

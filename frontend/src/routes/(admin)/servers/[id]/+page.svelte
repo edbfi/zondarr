@@ -1,5 +1,4 @@
 <script lang="ts">
-
 /**
  * Server detail page.
  *
@@ -23,10 +22,10 @@ import {
 	RefreshCw,
 	Server,
 	ShieldAlert,
-	Trash2,
-} from "@lucide/svelte";
-import { onMount } from "svelte";
-import { goto, invalidateAll } from "$app/navigation";
+	Trash2
+} from '@lucide/svelte';
+import { onMount } from 'svelte';
+import { goto, invalidateAll } from '$app/navigation';
 import {
 	deleteServer,
 	type LibrarySyncResult,
@@ -35,21 +34,21 @@ import {
 	type SyncResult,
 	syncServer,
 	syncServerLibraries,
-	withErrorHandling,
-} from "$lib/api/client";
-import { asErrorResponse, getErrorMessage } from "$lib/api/errors";
-import ConfirmDialog from "$lib/components/confirm-dialog.svelte";
-import ErrorState from "$lib/components/error-state.svelte";
-import LibrarySyncResultsDialog from "$lib/components/servers/library-sync-results-dialog.svelte";
-import SyncResultsDialog from "$lib/components/servers/sync-results-dialog.svelte";
-import StatusBadge from "$lib/components/status-badge.svelte";
-import { Badge } from "$lib/components/ui/badge";
-import { Button } from "$lib/components/ui/button";
-import * as Card from "$lib/components/ui/card";
-import { Label } from "$lib/components/ui/label";
-import { getProviderBadgeStyle, getProviderLabel } from "$lib/stores/providers.svelte";
-import { showError, showSuccess } from "$lib/utils/toast";
-import type { PageData } from "./$types";
+	withErrorHandling
+} from '$lib/api/client';
+import { asErrorResponse, getErrorMessage } from '$lib/api/errors';
+import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+import ErrorState from '$lib/components/error-state.svelte';
+import LibrarySyncResultsDialog from '$lib/components/servers/library-sync-results-dialog.svelte';
+import SyncResultsDialog from '$lib/components/servers/sync-results-dialog.svelte';
+import StatusBadge from '$lib/components/status-badge.svelte';
+import { Badge } from '$lib/components/ui/badge';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
+import { Label } from '$lib/components/ui/label';
+import { getProviderBadgeStyle, getProviderLabel } from '$lib/stores/providers.svelte';
+import { showError, showSuccess } from '$lib/utils/toast';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
@@ -74,14 +73,12 @@ let showDeleteDialog = $state(false);
 const badgeStyle = $derived(data.server ? getProviderBadgeStyle(data.server.server_type) : '');
 const serverTypeLabel = $derived(data.server ? getProviderLabel(data.server.server_type) : '');
 const librariesStatus = $derived<SyncChannelStatus | null>(
-	data.server?.sync_status?.libraries ?? null,
+	data.server?.sync_status?.libraries ?? null
 );
-const usersStatus = $derived<SyncChannelStatus | null>(
-	data.server?.sync_status?.users ?? null,
-);
+const usersStatus = $derived<SyncChannelStatus | null>(data.server?.sync_status?.users ?? null);
 const actionBusy = $derived(syncingUsers || syncingLibraries || deleting || resettingCircuit);
 const anyCircuitOpen = $derived(
-	librariesStatus?.circuit_state === 'open' || usersStatus?.circuit_state === 'open',
+	librariesStatus?.circuit_state === 'open' || usersStatus?.circuit_state === 'open'
 );
 const urlLocked = $derived(data.credentialLocks?.url_locked ?? false);
 const apiKeyLocked = $derived(data.credentialLocks?.api_key_locked ?? false);
@@ -104,19 +101,19 @@ onMount(() => {
  * Format date for display.
  */
 function formatDate(dateInput: string | Date | null | undefined): string {
-	if (!dateInput) return "—";
+	if (!dateInput) return '—';
 	try {
 		const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
-		if (Number.isNaN(date.getTime())) return "—";
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
+		if (Number.isNaN(date.getTime())) return '—';
+		return date.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
 		});
 	} catch {
-		return "—";
+		return '—';
 	}
 }
 
@@ -132,16 +129,13 @@ function parseDate(dateString: string | null | undefined): Date | null {
 /**
  * Format time-until countdown label.
  */
-function formatCountdown(
-	nextScheduledAt: string | null | undefined,
-	inProgress: boolean,
-): string {
-	if (inProgress) return "Syncing now...";
+function formatCountdown(nextScheduledAt: string | null | undefined, inProgress: boolean): string {
+	if (inProgress) return 'Syncing now...';
 	const target = parseDate(nextScheduledAt);
-	if (!target) return "Not scheduled";
+	if (!target) return 'Not scheduled';
 
 	const diffMs = target.getTime() - nowMs;
-	if (diffMs <= 0) return "Due now";
+	if (diffMs <= 0) return 'Due now';
 
 	const totalSeconds = Math.floor(diffMs / 1000);
 	const days = Math.floor(totalSeconds / 86400);
@@ -164,21 +158,20 @@ async function handleUserSync() {
 
 	syncingUsers = true;
 	try {
-		const result = await withErrorHandling(
-			() => syncServer(serverId, false),
-			{ showErrorToast: false },
-		);
+		const result = await withErrorHandling(() => syncServer(serverId, false), {
+			showErrorToast: false
+		});
 
 		if (result.error) {
 			const errorBody = asErrorResponse(result.error);
-			showError("Sync failed", errorBody?.detail ?? "An error occurred");
+			showError('Sync failed', errorBody?.detail ?? 'An error occurred');
 			return;
 		}
 
 		if (result.data) {
 			userSyncResult = result.data;
 			showUserSyncDialog = true;
-			showSuccess("User sync completed successfully");
+			showSuccess('User sync completed successfully');
 			await invalidateAll();
 		}
 	} finally {
@@ -195,21 +188,20 @@ async function handleLibrarySync() {
 
 	syncingLibraries = true;
 	try {
-		const result = await withErrorHandling(
-			() => syncServerLibraries(serverId),
-			{ showErrorToast: false },
-		);
+		const result = await withErrorHandling(() => syncServerLibraries(serverId), {
+			showErrorToast: false
+		});
 
 		if (result.error) {
 			const errorBody = asErrorResponse(result.error);
-			showError("Library sync failed", errorBody?.detail ?? "An error occurred");
+			showError('Library sync failed', errorBody?.detail ?? 'An error occurred');
 			return;
 		}
 
 		if (result.data) {
 			librarySyncResult = result.data as LibrarySyncResult;
 			showLibrarySyncDialog = true;
-			showSuccess("Library sync completed successfully");
+			showSuccess('Library sync completed successfully');
 			await invalidateAll();
 		}
 	} finally {
@@ -226,17 +218,16 @@ async function handleResetCircuit() {
 
 	resettingCircuit = true;
 	try {
-		const result = await withErrorHandling(
-			() => resetCircuitBreaker(serverId),
-			{ showErrorToast: false },
-		);
+		const result = await withErrorHandling(() => resetCircuitBreaker(serverId), {
+			showErrorToast: false
+		});
 
 		if (result.error) {
-			showError("Failed to reset circuit breaker");
+			showError('Failed to reset circuit breaker');
 			return;
 		}
 
-		showSuccess("Circuit breaker reset successfully");
+		showSuccess('Circuit breaker reset successfully');
 		await invalidateAll();
 	} finally {
 		resettingCircuit = false;
@@ -273,22 +264,16 @@ async function handleDelete() {
 
 	deleting = true;
 	try {
-		const result = await withErrorHandling(
-			() => deleteServer(serverId),
-			{ showErrorToast: false },
-		);
+		const result = await withErrorHandling(() => deleteServer(serverId), { showErrorToast: false });
 
 		if (result.error) {
 			const errorBody = asErrorResponse(result.error);
-			showError(
-				"Failed to delete server",
-				errorBody?.detail ?? "An error occurred",
-			);
+			showError('Failed to delete server', errorBody?.detail ?? 'An error occurred');
 			return;
 		}
 
-		showSuccess("Server deleted successfully");
-		goto("/servers");
+		showSuccess('Server deleted successfully');
+		goto('/servers');
 	} finally {
 		deleting = false;
 		showDeleteDialog = false;
@@ -364,7 +349,9 @@ async function handleDelete() {
 					<!-- URL -->
 					<div class="space-y-1" data-field="url">
 						<div class="flex items-center gap-2">
-							<Label class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1">
+							<Label
+								class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1"
+							>
 								<ExternalLink class="size-3" />
 								URL
 							</Label>
@@ -375,7 +362,9 @@ async function handleDelete() {
 								</Badge>
 							{/if}
 						</div>
-						<div class="font-mono text-sm text-cr-text bg-cr-bg px-3 py-2 rounded border border-cr-border break-all">
+						<div
+							class="font-mono text-sm text-cr-text bg-cr-bg px-3 py-2 rounded border border-cr-border break-all"
+						>
 							{data.server.url}
 						</div>
 					</div>
@@ -383,7 +372,9 @@ async function handleDelete() {
 					<!-- API Key -->
 					<div class="space-y-1" data-field="api_key">
 						<div class="flex items-center gap-2">
-							<Label class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1">
+							<Label
+								class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1"
+							>
 								<KeyRound class="size-3" />
 								API Key
 							</Label>
@@ -394,7 +385,9 @@ async function handleDelete() {
 								</Badge>
 							{/if}
 						</div>
-						<div class="font-mono text-sm text-cr-text bg-cr-bg px-3 py-2 rounded border border-cr-border break-all">
+						<div
+							class="font-mono text-sm text-cr-text bg-cr-bg px-3 py-2 rounded border border-cr-border break-all"
+						>
 							{#if apiKeyLocked}
 								<span class="text-cr-text-muted">Set via environment variable</span>
 							{:else}
@@ -416,7 +409,9 @@ async function handleDelete() {
 
 					<!-- Created At -->
 					<div class="space-y-1">
-						<Label class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1">
+						<Label
+							class="text-cr-text-muted text-xs uppercase tracking-wide flex items-center gap-1"
+						>
 							<Calendar class="size-3" />
 							Created
 						</Label>
@@ -492,7 +487,9 @@ async function handleDelete() {
 				<Card.Content>
 					<div class="grid gap-3 md:grid-cols-2">
 						<div
-							class="rounded-lg border p-4 space-y-2 {librariesStatus?.circuit_state === 'open' ? 'border-rose-500/50 bg-rose-500/5' : 'border-cr-border bg-cr-bg'}"
+							class="rounded-lg border p-4 space-y-2 {librariesStatus?.circuit_state === 'open'
+	? 'border-rose-500/50 bg-rose-500/5'
+	: 'border-cr-border bg-cr-bg'}"
 							data-sync-channel="libraries"
 						>
 							<div class="flex items-center justify-between gap-3">
@@ -500,12 +497,16 @@ async function handleDelete() {
 									<div class="font-medium text-cr-text flex items-center gap-2">
 										Libraries
 										{#if librariesStatus?.circuit_state === 'open'}
-											<span class="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-medium text-rose-400">
+											<span
+												class="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-medium text-rose-400"
+											>
 												<ShieldAlert class="size-3" />
 												Circuit Open
 											</span>
 										{:else if librariesStatus?.circuit_state === 'half_open'}
-											<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">
+											<span
+												class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400"
+											>
 												Recovering
 											</span>
 										{/if}
@@ -515,7 +516,9 @@ async function handleDelete() {
 								<div class="text-right">
 									{#if syncingLibraries || librariesStatus?.in_progress}
 										<div class="inline-flex items-center gap-2 text-amber-300 text-sm">
-											<span class="size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+											<span
+												class="size-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+											></span>
 											Syncing now...
 										</div>
 									{:else}
@@ -523,10 +526,7 @@ async function handleDelete() {
 											Next: {formatDate(librariesStatus?.next_scheduled_at)}
 										</div>
 										<div class="text-xs text-cr-text-muted">
-											{formatCountdown(
-												librariesStatus?.next_scheduled_at,
-												false,
-											)}
+											{formatCountdown(librariesStatus?.next_scheduled_at, false)}
 										</div>
 									{/if}
 								</div>
@@ -536,17 +536,21 @@ async function handleDelete() {
 							</div>
 							{#if librariesStatus?.circuit_state === 'open' && librariesStatus.consecutive_failures}
 								<div class="text-xs text-rose-400">
-									{librariesStatus.consecutive_failures} consecutive failure{librariesStatus.consecutive_failures === 1 ? '' : 's'}
+									{librariesStatus.consecutive_failures}
+									consecutive failure{librariesStatus.consecutive_failures === 1 ? '' : 's'}
 								</div>
 							{:else if (librariesStatus?.consecutive_failures ?? 0) > 0 && librariesStatus?.circuit_state !== 'open'}
 								<div class="text-xs text-cr-text-muted">
-									{librariesStatus?.consecutive_failures} recent failure{librariesStatus?.consecutive_failures === 1 ? '' : 's'}
+									{librariesStatus?.consecutive_failures}
+									recent failure{librariesStatus?.consecutive_failures === 1 ? '' : 's'}
 								</div>
 							{/if}
 						</div>
 
 						<div
-							class="rounded-lg border p-4 space-y-2 {usersStatus?.circuit_state === 'open' ? 'border-rose-500/50 bg-rose-500/5' : 'border-cr-border bg-cr-bg'}"
+							class="rounded-lg border p-4 space-y-2 {usersStatus?.circuit_state === 'open'
+	? 'border-rose-500/50 bg-rose-500/5'
+	: 'border-cr-border bg-cr-bg'}"
 							data-sync-channel="users"
 						>
 							<div class="flex items-center justify-between gap-3">
@@ -554,12 +558,16 @@ async function handleDelete() {
 									<div class="font-medium text-cr-text flex items-center gap-2">
 										Users
 										{#if usersStatus?.circuit_state === 'open'}
-											<span class="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-medium text-rose-400">
+											<span
+												class="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-medium text-rose-400"
+											>
 												<ShieldAlert class="size-3" />
 												Circuit Open
 											</span>
 										{:else if usersStatus?.circuit_state === 'half_open'}
-											<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400">
+											<span
+												class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-400"
+											>
 												Recovering
 											</span>
 										{/if}
@@ -569,7 +577,9 @@ async function handleDelete() {
 								<div class="text-right">
 									{#if syncingUsers || usersStatus?.in_progress}
 										<div class="inline-flex items-center gap-2 text-amber-300 text-sm">
-											<span class="size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+											<span
+												class="size-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+											></span>
 											Syncing now...
 										</div>
 									{:else}
@@ -587,11 +597,13 @@ async function handleDelete() {
 							</div>
 							{#if usersStatus?.circuit_state === 'open' && usersStatus.consecutive_failures}
 								<div class="text-xs text-rose-400">
-									{usersStatus.consecutive_failures} consecutive failure{usersStatus.consecutive_failures === 1 ? '' : 's'}
+									{usersStatus.consecutive_failures}
+									consecutive failure{usersStatus.consecutive_failures === 1 ? '' : 's'}
 								</div>
 							{:else if (usersStatus?.consecutive_failures ?? 0) > 0 && usersStatus?.circuit_state !== 'open'}
 								<div class="text-xs text-cr-text-muted">
-									{usersStatus?.consecutive_failures} recent failure{usersStatus?.consecutive_failures === 1 ? '' : 's'}
+									{usersStatus?.consecutive_failures}
+									recent failure{usersStatus?.consecutive_failures === 1 ? '' : 's'}
 								</div>
 							{/if}
 						</div>
@@ -618,7 +630,9 @@ async function handleDelete() {
 							data-action-sync-users
 						>
 							{#if syncingUsers}
-								<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+								<span
+									class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+								></span>
 								Syncing Users...
 							{:else}
 								<RefreshCw class="size-4" />
@@ -635,7 +649,9 @@ async function handleDelete() {
 							data-action-sync-libraries
 						>
 							{#if syncingLibraries}
-								<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+								<span
+									class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+								></span>
 								Syncing Libraries...
 							{:else}
 								<Database class="size-4" />
@@ -653,7 +669,9 @@ async function handleDelete() {
 								data-action-reset-circuit
 							>
 								{#if resettingCircuit}
-									<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+									<span
+										class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+									></span>
 									Resetting...
 								{:else}
 									<ShieldAlert class="size-4" />

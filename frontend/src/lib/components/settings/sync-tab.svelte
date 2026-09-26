@@ -1,10 +1,6 @@
 <script lang="ts">
 import { Clock, Lock, RefreshCw } from '@lucide/svelte';
-import {
-	type SettingValue,
-	updateExpirationInterval,
-	updateSyncInterval
-} from '$lib/api/client';
+import { type SettingValue, updateExpirationInterval, updateSyncInterval } from '$lib/api/client';
 import { Badge } from '$lib/components/ui/badge';
 import { Button } from '$lib/components/ui/button';
 import * as Card from '$lib/components/ui/card';
@@ -129,9 +125,7 @@ async function handleExpSave() {
 						onblur={handleSyncBlur}
 						disabled={syncInterval.is_locked}
 					/>
-					<p class="text-sm text-muted-foreground">
-						Every {syncPreview}
-					</p>
+					<p class="text-sm text-muted-foreground">Every {syncPreview}</p>
 				</div>
 				<Button onclick={handleSyncSave} disabled={syncInterval.is_locked || savingSync}>
 					{savingSync ? 'Saving...' : 'Save'}
@@ -171,9 +165,7 @@ async function handleExpSave() {
 						onblur={handleExpBlur}
 						disabled={expirationInterval.is_locked}
 					/>
-					<p class="text-sm text-muted-foreground">
-						Every {expPreview}
-					</p>
+					<p class="text-sm text-muted-foreground">Every {expPreview}</p>
 				</div>
 				<Button onclick={handleExpSave} disabled={expirationInterval.is_locked || savingExp}>
 					{savingExp ? 'Saving...' : 'Save'}

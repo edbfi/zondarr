@@ -1,11 +1,11 @@
 <script lang="ts">
-import { Shield } from "@lucide/svelte";
-import { getErrorDetail, verifyBackupCode, verifyTotp } from "$lib/api/auth";
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import { backupCodeSchema } from "$lib/schemas/auth";
-import TotpCodeInput from "./totp-code-input.svelte";
+import { Shield } from '@lucide/svelte';
+import { getErrorDetail, verifyBackupCode, verifyTotp } from '$lib/api/auth';
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import { backupCodeSchema } from '$lib/schemas/auth';
+import TotpCodeInput from './totp-code-input.svelte';
 
 interface Props {
 	challengeToken: string;
@@ -16,29 +16,29 @@ interface Props {
 const { challengeToken, onsuccess, oncancel }: Props = $props();
 
 let loading = $state(false);
-let error = $state("");
+let error = $state('');
 let useBackupCode = $state(false);
-let backupCode = $state("");
-let backupError = $state("");
+let backupCode = $state('');
+let backupError = $state('');
 let totpInputRef: TotpCodeInput | undefined = $state();
 
 async function handleTotpSubmit(code: string) {
-	error = "";
+	error = '';
 	loading = true;
 	try {
 		const result = await verifyTotp({
 			challenge_token: challengeToken,
-			code,
+			code
 		});
 		if (result.error) {
-			error = getErrorDetail(result.error, "Invalid verification code");
+			error = getErrorDetail(result.error, 'Invalid verification code');
 			loading = false;
 			totpInputRef?.reset();
 			return;
 		}
 		onsuccess();
 	} catch {
-		error = "Failed to verify code. Please try again.";
+		error = 'Failed to verify code. Please try again.';
 		loading = false;
 		totpInputRef?.reset();
 	}
@@ -46,11 +46,11 @@ async function handleTotpSubmit(code: string) {
 
 async function handleBackupSubmit(e: SubmitEvent) {
 	e.preventDefault();
-	backupError = "";
+	backupError = '';
 
 	const result = backupCodeSchema.safeParse({ code: backupCode });
 	if (!result.success) {
-		backupError = result.error.issues[0]?.message ?? "Invalid backup code";
+		backupError = result.error.issues[0]?.message ?? 'Invalid backup code';
 		return;
 	}
 
@@ -58,31 +58,31 @@ async function handleBackupSubmit(e: SubmitEvent) {
 	try {
 		const apiResult = await verifyBackupCode({
 			challenge_token: challengeToken,
-			code: backupCode,
+			code: backupCode
 		});
 		if (apiResult.error) {
-			backupError = getErrorDetail(apiResult.error, "Invalid backup code");
+			backupError = getErrorDetail(apiResult.error, 'Invalid backup code');
 			loading = false;
 			return;
 		}
 		onsuccess();
 	} catch {
-		backupError = "Failed to verify backup code. Please try again.";
+		backupError = 'Failed to verify backup code. Please try again.';
 		loading = false;
 	}
 }
 
 function switchToBackup() {
 	useBackupCode = true;
-	error = "";
-	backupError = "";
+	error = '';
+	backupError = '';
 }
 
 function switchToTotp() {
 	useBackupCode = false;
-	error = "";
-	backupError = "";
-	backupCode = "";
+	error = '';
+	backupError = '';
+	backupCode = '';
 }
 </script>
 
@@ -101,14 +101,18 @@ function switchToTotp() {
 	</div>
 
 	{#if error}
-		<div class="w-full rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+		<div
+			class="w-full rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400"
+		>
 			{error}
 		</div>
 	{/if}
 
 	{#if useBackupCode}
 		{#if backupError}
-			<div class="w-full rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+			<div
+				class="w-full rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400"
+			>
 				{backupError}
 			</div>
 		{/if}
@@ -152,7 +156,9 @@ function switchToTotp() {
 
 		{#if loading}
 			<div class="flex items-center gap-2 text-sm text-cr-text-muted">
-				<div class="h-4 w-4 animate-spin rounded-full border-2 border-cr-text-muted border-t-cr-accent"></div>
+				<div
+					class="h-4 w-4 animate-spin rounded-full border-2 border-cr-text-muted border-t-cr-accent"
+				></div>
 				Verifying...
 			</div>
 		{/if}

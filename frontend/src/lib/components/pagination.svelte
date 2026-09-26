@@ -1,12 +1,7 @@
 <script lang="ts">
-import {
-	ChevronLeft,
-	ChevronRight,
-	ChevronsLeft,
-	ChevronsRight,
-} from "@lucide/svelte";
-import { Button } from "$lib/components/ui/button";
-import { cn } from "$lib/utils.js";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from '@lucide/svelte';
+import { Button } from '$lib/components/ui/button';
+import { cn } from '$lib/utils.js';
 
 interface Props {
 	page: number;
@@ -17,14 +12,7 @@ interface Props {
 	class?: string;
 }
 
-const {
-	page,
-	pageSize,
-	total,
-	hasNext,
-	onPageChange,
-	class: className,
-}: Props = $props();
+const { page, pageSize, total, hasNext, onPageChange, class: className }: Props = $props();
 
 // Calculate total pages
 const totalPages = $derived(Math.max(1, Math.ceil(total / pageSize)));

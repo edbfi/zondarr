@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { RefreshCw, Shield, ShieldCheck, ShieldOff } from '@lucide/svelte';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
-	import TotpDisableDialog from './totp-disable-dialog.svelte';
-	import TotpRegenerateDialog from './totp-regenerate-dialog.svelte';
-	import TotpSetupDialog from './totp-setup-dialog.svelte';
+import { RefreshCw, Shield, ShieldCheck, ShieldOff } from '@lucide/svelte';
+import { Badge } from '$lib/components/ui/badge';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
+import TotpDisableDialog from './totp-disable-dialog.svelte';
+import TotpRegenerateDialog from './totp-regenerate-dialog.svelte';
+import TotpSetupDialog from './totp-setup-dialog.svelte';
 
-	interface Props {
-		totpEnabled: boolean;
-	}
+interface Props {
+	totpEnabled: boolean;
+}
 
-	let { totpEnabled = $bindable(false) }: Props = $props();
+let { totpEnabled = $bindable(false) }: Props = $props();
 
-	let showSetupDialog = $state(false);
-	let showDisableDialog = $state(false);
-	let showRegenerateDialog = $state(false);
+let showSetupDialog = $state(false);
+let showDisableDialog = $state(false);
+let showRegenerateDialog = $state(false);
 </script>
 
 <Card.Root>

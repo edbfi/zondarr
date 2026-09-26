@@ -13,9 +13,9 @@
  * @module $lib/components/invitations/invitation-table
  */
 
-import type { InvitationResponse } from "$lib/api/client";
-import * as Table from "$lib/components/ui/table";
-import InvitationRow from "./invitation-row.svelte";
+import type { InvitationResponse } from '$lib/api/client';
+import * as Table from '$lib/components/ui/table';
+import InvitationRow from './invitation-row.svelte';
 
 interface Props {
 	invitations: InvitationResponse[];

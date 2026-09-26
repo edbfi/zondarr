@@ -4,10 +4,10 @@
  *
  * Provides admin UI for configuring Terms of Service interaction settings.
  */
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import { tosConfigSchema } from "$lib/schemas/wizard";
-import type { ConfigEditorProps } from "../registry";
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import { tosConfigSchema } from '$lib/schemas/wizard';
+import type { ConfigEditorProps } from '../registry';
 
 const { config: rawConfig, onConfigChange, errors }: ConfigEditorProps = $props();
 

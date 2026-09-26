@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { Snippet } from "svelte";
-import ThemeToggle from "$lib/components/theme-toggle.svelte";
+import type { Snippet } from 'svelte';
+import ThemeToggle from '$lib/components/theme-toggle.svelte';
 
 interface Props {
 	children: Snippet;
@@ -17,7 +17,7 @@ const { children }: Props = $props();
 
 	<!-- Logo -->
 	<div class="mb-8 flex flex-col items-center gap-3">
-		<img src="/zondarr-logo.svg" alt="Zondarr" class="h-16 w-16" />
+		<img src="/zondarr-logo.svg" alt="Zondarr" class="h-16 w-16">
 		<span class="font-display text-xl font-bold tracking-tight text-cr-accent">Zondarr</span>
 	</div>
 

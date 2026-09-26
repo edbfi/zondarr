@@ -46,3 +46,11 @@ Wrappers take the client as their last parameter, defaulting to the browser clie
 | `@sveltejs/adapter-node` | `svelte-adapter-bun` (`svelte.config.js`); production runs `bun run start` |
 | `vite dev` runs on Node | Scripts force Bun: `bun --bun vite dev` / `build` / `preview` |
 | `vitest-browser-svelte` in Browser Mode | `@testing-library/svelte` + jsdom (`vite.config.ts`) |
+
+## Biome configuration
+
+Biome is pinned to 2.5.14. The configuration uses Git ignores, the recommended lint and assist presets, and experimental full Svelte support. Keep type checking separate from Biome. Project quote, comma and indentation conventions remain explicit in the configuration.
+
+The exact-file formatter overrides protect components containing `{@const ...}`: Biome 2.5.14 inserts parentheses that Svelte rejects with `expected_pattern`. These files still receive lint and import checks. Recheck them with the Svelte compiler when upgrading Biome before removing the exceptions. Do not run a formatter with these overrides bypassed.
+
+The frontend extends the root configuration with `"extends": "//"`. The root limits Biome to the frontend, its own configuration and existing TypeScript maintenance scripts; those scripts retain their original 80-column format. The three generic form components remain excluded because of parser limitations. Generated API types remain formatted under the existing generation contract.

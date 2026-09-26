@@ -24,66 +24,66 @@ import {
 	Timer,
 	Trash2,
 	Users,
-	Wand2,
-} from "@lucide/svelte";
-import { onDestroy } from "svelte";
-import { goto, invalidateAll } from "$app/navigation";
+	Wand2
+} from '@lucide/svelte';
+import { onDestroy } from 'svelte';
+import { goto, invalidateAll } from '$app/navigation';
 import {
 	deleteInvitation,
 	type InvitationDetailResponse,
 	type MediaServerWithLibrariesResponse,
 	updateInvitation,
 	type WizardResponse,
-	withErrorHandling,
-} from "$lib/api/client";
-import { ApiError, asErrorResponse, getErrorMessage } from "$lib/api/errors";
-import ConfirmDialog from "$lib/components/confirm-dialog.svelte";
-import ErrorState from "$lib/components/error-state.svelte";
-import StatusBadge, {
-	type StatusBadgeStatus,
-} from "$lib/components/status-badge.svelte";
-import { Button } from "$lib/components/ui/button";
-import * as Card from "$lib/components/ui/card";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
+	withErrorHandling
+} from '$lib/api/client';
+import { ApiError, asErrorResponse, getErrorMessage } from '$lib/api/errors';
+import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+import ErrorState from '$lib/components/error-state.svelte';
+import StatusBadge, { type StatusBadgeStatus } from '$lib/components/status-badge.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
 import {
 	transformUpdateFormData,
 	type UpdateInvitationInput,
-	updateInvitationSchema,
-} from "$lib/schemas/invitation";
-import { showError, showSuccess } from "$lib/utils/toast";
-import type { PageData } from "./$types";
+	updateInvitationSchema
+} from '$lib/schemas/invitation';
+import { showError, showSuccess } from '$lib/utils/toast';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
 // Derive initial form values from data (reactive to data changes)
 const initialFormData = $derived<UpdateInvitationInput>({
-	expires_at: data.invitation?.expires_at ?? "",
+	expires_at: data.invitation?.expires_at ?? '',
 	max_uses: data.invitation?.max_uses ?? undefined,
 	duration_days: data.invitation?.duration_days ?? undefined,
 	enabled: data.invitation?.enabled ?? true,
 	server_ids: data.invitation?.target_servers.map((s) => s.id) ?? [],
 	library_ids: data.invitation?.allowed_libraries.map((l) => l.id) ?? [],
-	pre_wizard_id: data.invitation?.pre_wizard?.id ?? "",
-	post_wizard_id: data.invitation?.post_wizard?.id ?? "",
+	pre_wizard_id: data.invitation?.pre_wizard?.id ?? '',
+	post_wizard_id: data.invitation?.post_wizard?.id ?? ''
 });
 
 // Form state for mutable fields (user-editable copy)
 const formData = $state<UpdateInvitationInput>({
-	expires_at: "",
+	expires_at: '',
 	max_uses: undefined,
 	duration_days: undefined,
 	enabled: true,
 	server_ids: [],
 	library_ids: [],
-	pre_wizard_id: "",
-	post_wizard_id: "",
+	pre_wizard_id: '',
+	post_wizard_id: ''
 });
 
 // Cannot use $derived — formData must be independently mutable for user edits.
 // This $effect resets the form when server data changes (e.g., after save + invalidateAll).
 $effect(() => {
-	formData.expires_at = initialFormData.expires_at ? toISOString(initialFormData.expires_at) : initialFormData.expires_at;
+	formData.expires_at = initialFormData.expires_at
+		? toISOString(initialFormData.expires_at)
+		: initialFormData.expires_at;
 	formData.max_uses = initialFormData.max_uses;
 	formData.duration_days = initialFormData.duration_days;
 	formData.enabled = initialFormData.enabled;
@@ -120,11 +120,13 @@ async function copyInviteLink() {
 	try {
 		await navigator.clipboard.writeText(url);
 		copied = true;
-		showSuccess("Invite link copied");
+		showSuccess('Invite link copied');
 		if (copiedTimeoutId) clearTimeout(copiedTimeoutId);
-		copiedTimeoutId = setTimeout(() => { copied = false; }, 2000);
+		copiedTimeoutId = setTimeout(() => {
+			copied = false;
+		}, 2000);
 	} catch {
-		showError("Failed to copy invite link");
+		showError('Failed to copy invite link');
 	}
 }
 
@@ -141,12 +143,10 @@ function toLocalDateTimeString(date: Date): string {
 const minDateTime = $derived(toLocalDateTimeString(new Date()));
 
 // Derive local datetime value from initial data
-const initialExpiresAtLocal = $derived(
-	formatDateTimeLocal(data.invitation?.expires_at),
-);
+const initialExpiresAtLocal = $derived(formatDateTimeLocal(data.invitation?.expires_at));
 
 // Local state for datetime-local input
-let expiresAtLocal = $state("");
+let expiresAtLocal = $state('');
 
 // Cannot use $derived — expiresAtLocal is user-editable via the datetime-local input.
 // This $effect resets it when server data changes (e.g., after save + invalidateAll).
@@ -160,7 +160,7 @@ const isUsedUp = $derived(
 	data.invitation != null &&
 		data.invitation.max_uses != null &&
 		data.invitation.remaining_uses != null &&
-		data.invitation.remaining_uses <= 0,
+		data.invitation.remaining_uses <= 0
 );
 
 // Derive status for badge.
@@ -168,35 +168,27 @@ const isUsedUp = $derived(
 // client-clock-skew false positives.
 const status = $derived.by((): StatusBadgeStatus => {
 	const inv = data.invitation;
-	if (!inv) return "disabled";
-	if (!inv.enabled) return "disabled";
-	if (isUsedUp) return "expired";
-	if (!inv.is_active) return "expired";
-	if (
-		inv.remaining_uses !== null &&
-		inv.remaining_uses !== undefined &&
-		inv.remaining_uses <= 3
-	) {
-		return "limited";
+	if (!inv) return 'disabled';
+	if (!inv.enabled) return 'disabled';
+	if (isUsedUp) return 'expired';
+	if (!inv.is_active) return 'expired';
+	if (inv.remaining_uses !== null && inv.remaining_uses !== undefined && inv.remaining_uses <= 3) {
+		return 'limited';
 	}
-	return "active";
+	return 'active';
 });
 
 // Derive status label
 const statusLabel = $derived.by(() => {
 	const inv = data.invitation;
-	if (!inv) return "Unknown";
-	if (!inv.enabled) return "Disabled";
-	if (isUsedUp) return "Used up";
-	if (!inv.is_active) return "Expired";
-	if (
-		inv.remaining_uses !== null &&
-		inv.remaining_uses !== undefined &&
-		inv.remaining_uses <= 3
-	) {
-		return "Limited";
+	if (!inv) return 'Unknown';
+	if (!inv.enabled) return 'Disabled';
+	if (isUsedUp) return 'Used up';
+	if (!inv.is_active) return 'Expired';
+	if (inv.remaining_uses !== null && inv.remaining_uses !== undefined && inv.remaining_uses <= 3) {
+		return 'Limited';
 	}
-	return "Active";
+	return 'Active';
 });
 
 // Derive available libraries based on selected servers
@@ -217,12 +209,12 @@ const availableLibraries = $derived.by(() => {
  * Format datetime-local input value from ISO string.
  */
 function formatDateTimeLocal(isoString: string | undefined | null): string {
-	if (!isoString) return "";
+	if (!isoString) return '';
 	try {
 		const date = new Date(isoString);
 		return toLocalDateTimeString(date);
 	} catch {
-		return "";
+		return '';
 	}
 }
 
@@ -230,11 +222,11 @@ function formatDateTimeLocal(isoString: string | undefined | null): string {
  * Convert datetime-local value to ISO string.
  */
 function toISOString(dateTimeLocal: string): string {
-	if (!dateTimeLocal) return "";
+	if (!dateTimeLocal) return '';
 	try {
 		return new Date(dateTimeLocal).toISOString();
 	} catch {
-		return "";
+		return '';
 	}
 }
 
@@ -242,18 +234,18 @@ function toISOString(dateTimeLocal: string): string {
  * Format date for display.
  */
 function formatDate(dateString: string | null | undefined): string {
-	if (!dateString) return "—";
+	if (!dateString) return '—';
 	try {
 		const date = new Date(dateString);
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
+		return date.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
 		});
 	} catch {
-		return "—";
+		return '—';
 	}
 }
 
@@ -266,10 +258,9 @@ function toggleServer(serverId: string) {
 		formData.server_ids = current.filter((id: string) => id !== serverId);
 		// Also remove libraries from this server
 		const serverLibraryIds =
-			data.servers.find((s) => s.id === serverId)?.libraries.map((l) => l.id) ??
-			[];
+			data.servers.find((s) => s.id === serverId)?.libraries.map((l) => l.id) ?? [];
 		formData.library_ids = (formData.library_ids ?? []).filter(
-			(id: string) => !serverLibraryIds.includes(id),
+			(id: string) => !serverLibraryIds.includes(id)
 		);
 	} else {
 		formData.server_ids = [...current, serverId];
@@ -310,7 +301,7 @@ function validateForm(): boolean {
 	if (!result.success) {
 		const fieldErrors: Record<string, string[]> = {};
 		for (const issue of result.error.issues) {
-			const path = issue.path.join(".");
+			const path = issue.path.join('.');
 			if (!fieldErrors[path]) {
 				fieldErrors[path] = [];
 			}
@@ -333,17 +324,13 @@ async function handleSave() {
 	saving = true;
 	try {
 		const updateData = transformUpdateFormData(formData);
-		const result = await withErrorHandling(
-			() => updateInvitation(invitationId, updateData),
-			{ showErrorToast: false },
-		);
+		const result = await withErrorHandling(() => updateInvitation(invitationId, updateData), {
+			showErrorToast: false
+		});
 
 		if (result.error) {
 			const errorBody = asErrorResponse(result.error);
-			showError(
-				"Failed to update invitation",
-				errorBody?.detail ?? "An error occurred",
-			);
+			showError('Failed to update invitation', errorBody?.detail ?? 'An error occurred');
 			return;
 		}
 
@@ -353,7 +340,7 @@ async function handleSave() {
 			data.invitation = result.data as InvitationDetailResponse;
 		}
 
-		showSuccess("Invitation updated successfully");
+		showSuccess('Invitation updated successfully');
 		await invalidateAll();
 	} finally {
 		saving = false;
@@ -369,22 +356,18 @@ async function handleDelete() {
 
 	deleting = true;
 	try {
-		const result = await withErrorHandling(
-			() => deleteInvitation(invitationId),
-			{ showErrorToast: false },
-		);
+		const result = await withErrorHandling(() => deleteInvitation(invitationId), {
+			showErrorToast: false
+		});
 
 		if (result.error) {
 			const errorBody = asErrorResponse(result.error);
-			showError(
-				"Failed to delete invitation",
-				errorBody?.detail ?? "An error occurred",
-			);
+			showError('Failed to delete invitation', errorBody?.detail ?? 'An error occurred');
 			return;
 		}
 
-		showSuccess("Invitation deleted successfully");
-		goto("/invitations");
+		showSuccess('Invitation deleted successfully');
+		goto('/invitations');
 	} finally {
 		deleting = false;
 		showDeleteDialog = false;
@@ -479,7 +462,10 @@ function getFieldErrors(field: string): string[] {
 								<span class="text-cr-text-muted">/ {data.invitation.max_uses}</span>
 							{/if}
 							{#if data.invitation.remaining_uses !== null && data.invitation.remaining_uses !== undefined}
-								<span class="text-cr-text-muted text-sm ml-2">({data.invitation.remaining_uses} remaining)</span>
+								<span class="text-cr-text-muted text-sm ml-2"
+									>({data.invitation.remaining_uses}
+									remaining)</span
+								>
 							{/if}
 						</div>
 					</div>
@@ -546,7 +532,9 @@ function getFieldErrors(field: string): string[] {
 					<Card.Content>
 						<div class="flex flex-wrap gap-2">
 							{#each data.invitation.allowed_libraries as library (library.id)}
-								<span class="rounded-full border border-cr-border bg-cr-bg px-3 py-1 text-sm text-cr-text">
+								<span
+									class="rounded-full border border-cr-border bg-cr-bg px-3 py-1 text-sm text-cr-text"
+								>
 									{library.name}
 								</span>
 							{/each}
@@ -570,12 +558,18 @@ function getFieldErrors(field: string): string[] {
 					<Card.Content class="space-y-4">
 						{#if data.invitation.pre_wizard}
 							<div class="space-y-1">
-								<Label class="text-cr-text-muted text-xs uppercase tracking-wide">Pre-Registration</Label>
-								<div class="flex items-center justify-between rounded-lg border border-cr-border bg-cr-bg p-3">
+								<Label class="text-cr-text-muted text-xs uppercase tracking-wide"
+									>Pre-Registration</Label
+								>
+								<div
+									class="flex items-center justify-between rounded-lg border border-cr-border bg-cr-bg p-3"
+								>
 									<div>
 										<div class="font-medium text-cr-text">{data.invitation.pre_wizard.name}</div>
 										{#if data.invitation.pre_wizard.description}
-											<div class="text-xs text-cr-text-muted">{data.invitation.pre_wizard.description}</div>
+											<div class="text-xs text-cr-text-muted">
+												{data.invitation.pre_wizard.description}
+											</div>
 										{/if}
 									</div>
 									<Button
@@ -591,12 +585,18 @@ function getFieldErrors(field: string): string[] {
 						{/if}
 						{#if data.invitation.post_wizard}
 							<div class="space-y-1">
-								<Label class="text-cr-text-muted text-xs uppercase tracking-wide">Post-Registration</Label>
-								<div class="flex items-center justify-between rounded-lg border border-cr-border bg-cr-bg p-3">
+								<Label class="text-cr-text-muted text-xs uppercase tracking-wide"
+									>Post-Registration</Label
+								>
+								<div
+									class="flex items-center justify-between rounded-lg border border-cr-border bg-cr-bg p-3"
+								>
 									<div>
 										<div class="font-medium text-cr-text">{data.invitation.post_wizard.name}</div>
 										{#if data.invitation.post_wizard.description}
-											<div class="text-xs text-cr-text-muted">{data.invitation.post_wizard.description}</div>
+											<div class="text-xs text-cr-text-muted">
+												{data.invitation.post_wizard.description}
+											</div>
 										{/if}
 									</div>
 									<Button
@@ -623,7 +623,13 @@ function getFieldErrors(field: string): string[] {
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					<form onsubmit={(e) => { e.preventDefault(); handleSave(); }} class="space-y-6">
+					<form
+						onsubmit={(e) => {
+	e.preventDefault();
+	handleSave();
+}}
+						class="space-y-6"
+					>
 						<!-- Enabled Toggle -->
 						<div class="space-y-2">
 							<div class="flex items-center gap-3">
@@ -633,21 +639,17 @@ function getFieldErrors(field: string): string[] {
 									aria-checked={formData.enabled ?? true}
 									aria-label="Toggle invitation enabled status"
 									onclick={() => {
-										formData.enabled = !(formData.enabled ?? true);
-									}}
-									class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {formData.enabled ?? true
-										? 'bg-cr-accent'
-										: 'bg-cr-border'}"
+	formData.enabled = !(formData.enabled ?? true);
+}}
+									class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {(formData.enabled ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
 									data-field-enabled
 								>
 									<span
-										class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {formData.enabled ?? true
-											? 'translate-x-5'
-											: 'translate-x-0'}"
+										class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(formData.enabled ?? true) ? 'translate-x-5' : 'translate-x-0'}"
 									></span>
 								</button>
 								<Label class="text-cr-text cursor-pointer">
-									{formData.enabled ?? true ? 'Enabled' : 'Disabled'}
+									{(formData.enabled ?? true) ? 'Enabled' : 'Disabled'}
 								</Label>
 							</div>
 							<p class="text-cr-text-muted text-xs">Disabled invitations cannot be redeemed</p>
@@ -664,11 +666,9 @@ function getFieldErrors(field: string): string[] {
 									type="datetime-local"
 									bind:value={expiresAtLocal}
 									oninput={(e) => {
-										const value = e.currentTarget.value;
-										formData.expires_at = value
-											? toISOString(value)
-											: "";
-									}}
+	const value = e.currentTarget.value;
+	formData.expires_at = value ? toISOString(value) : '';
+}}
 									min={minDateTime}
 									class="border-cr-border bg-cr-bg text-cr-text"
 									data-field-expires-at
@@ -692,8 +692,8 @@ function getFieldErrors(field: string): string[] {
 									type="number"
 									bind:value={formData.max_uses}
 									oninput={(e) => {
-										if (e.currentTarget.value === '') formData.max_uses = '';
-									}}
+	if (e.currentTarget.value === '') formData.max_uses = '';
+}}
 									placeholder="Unlimited"
 									class="border-cr-border bg-cr-bg text-cr-text placeholder:text-cr-text-muted"
 									min={1}
@@ -718,14 +718,16 @@ function getFieldErrors(field: string): string[] {
 									type="number"
 									bind:value={formData.duration_days}
 									oninput={(e) => {
-										if (e.currentTarget.value === '') formData.duration_days = '';
-									}}
+	if (e.currentTarget.value === '') formData.duration_days = '';
+}}
 									placeholder="Permanent"
 									class="border-cr-border bg-cr-bg text-cr-text placeholder:text-cr-text-muted"
 									min={1}
 									data-field-duration-days
 								/>
-								<p class="text-cr-text-muted text-xs">How long users will have access after redeeming</p>
+								<p class="text-cr-text-muted text-xs">
+									How long users will have access after redeeming
+								</p>
 								{#if getFieldErrors('duration_days').length > 0}
 									<div class="text-rose-400 text-sm">
 										{#each getFieldErrors('duration_days') as error}
@@ -753,18 +755,27 @@ function getFieldErrors(field: string): string[] {
 										type="button"
 										onclick={() => toggleServer(server.id)}
 										class="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors {isServerSelected(server.id)
-											? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-											: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
+	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+	: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
 										aria-pressed={isServerSelected(server.id)}
 									>
 										<div
-											class="flex size-5 items-center justify-center rounded border {isServerSelected(server.id)
-												? 'border-cr-accent bg-cr-accent'
-												: 'border-cr-border'}"
+											class="flex size-5 items-center justify-center rounded border {isServerSelected(server.id) ? 'border-cr-accent bg-cr-accent' : 'border-cr-border'}"
 										>
 											{#if isServerSelected(server.id)}
-												<svg class="size-3 text-cr-bg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+												<svg
+													class="size-3 text-cr-bg"
+													fill="none"
+													viewBox="0 0 24 24"
+													stroke="currentColor"
+													aria-hidden="true"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="3"
+														d="M5 13l4 4L19 7"
+													/>
 												</svg>
 											{/if}
 										</div>
@@ -789,7 +800,9 @@ function getFieldErrors(field: string): string[] {
 							<div class="space-y-2">
 								<Label class="text-cr-text">
 									Allowed Libraries
-									<span class="text-cr-text-muted text-xs ml-2">(optional - all if none selected)</span>
+									<span class="text-cr-text-muted text-xs ml-2"
+										>(optional - all if none selected)</span
+									>
 								</Label>
 								<div class="flex flex-wrap gap-2">
 									{#each availableLibraries as library (library.id)}
@@ -797,8 +810,8 @@ function getFieldErrors(field: string): string[] {
 											type="button"
 											onclick={() => toggleLibrary(library.id)}
 											class="rounded-full border px-3 py-1 text-sm transition-colors {isLibrarySelected(library.id)
-												? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-												: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
+	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+	: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
 											aria-pressed={isLibrarySelected(library.id)}
 										>
 											{library.name}
@@ -820,9 +833,7 @@ function getFieldErrors(field: string): string[] {
 								<div class="grid gap-4 sm:grid-cols-2">
 									<!-- Pre-Registration Wizard -->
 									<div class="space-y-2">
-										<Label class="text-cr-text text-sm">
-											Pre-Registration Wizard
-										</Label>
+										<Label class="text-cr-text text-sm"> Pre-Registration Wizard </Label>
 										<select
 											bind:value={formData.pre_wizard_id}
 											class="w-full rounded-md border border-cr-border bg-cr-bg px-3 py-2 text-cr-text text-sm focus:outline-none focus:ring-2 focus:ring-cr-accent focus:ring-offset-2 focus:ring-offset-cr-bg"
@@ -845,9 +856,7 @@ function getFieldErrors(field: string): string[] {
 
 									<!-- Post-Registration Wizard -->
 									<div class="space-y-2">
-										<Label class="text-cr-text text-sm">
-											Post-Registration Wizard
-										</Label>
+										<Label class="text-cr-text text-sm"> Post-Registration Wizard </Label>
 										<select
 											bind:value={formData.post_wizard_id}
 											class="w-full rounded-md border border-cr-border bg-cr-bg px-3 py-2 text-cr-text text-sm focus:outline-none focus:ring-2 focus:ring-cr-accent focus:ring-offset-2 focus:ring-offset-cr-bg"
@@ -876,7 +885,7 @@ function getFieldErrors(field: string): string[] {
 							<Button
 								type="button"
 								variant="outline"
-								onclick={() => showDeleteDialog = true}
+								onclick={() => (showDeleteDialog = true)}
 								disabled={saving || deleting}
 								class="border-rose-500/50 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500"
 							>
@@ -889,7 +898,9 @@ function getFieldErrors(field: string): string[] {
 								class="bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
 							>
 								{#if saving}
-									<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+									<span
+										class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+									></span>
 								{:else}
 									<Save class="size-4" />
 								{/if}
@@ -912,5 +923,5 @@ function getFieldErrors(field: string): string[] {
 	variant="destructive"
 	loading={deleting}
 	onConfirm={handleDelete}
-	onCancel={() => showDeleteDialog = false}
+	onCancel={() => (showDeleteDialog = false)}
 />

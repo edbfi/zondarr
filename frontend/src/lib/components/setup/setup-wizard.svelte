@@ -1,10 +1,6 @@
 <script lang="ts">
 import { goto } from '$app/navigation';
-import {
-	advanceOnboarding,
-	getErrorDetail,
-	type OnboardingStep
-} from '$lib/api/auth';
+import { advanceOnboarding, getErrorDetail, type OnboardingStep } from '$lib/api/auth';
 import StepAdmin from './step-admin.svelte';
 import StepCsrf from './step-csrf.svelte';
 import StepIndicator from './step-indicator.svelte';
@@ -92,20 +88,20 @@ async function handleCsrfSkip() {
 </script>
 
 <style>
-	@keyframes step-enter {
-		from {
-			opacity: 0;
-			transform: translateY(16px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+@keyframes step-enter {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
 	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
 
-	.step-content {
-		animation: step-enter 0.4s ease-out;
-	}
+.step-content {
+	animation: step-enter 0.4s ease-out;
+}
 </style>
 
 <div class="flex flex-col gap-4">

@@ -2,12 +2,7 @@
 import { Lock, Plug, ShieldCheck } from '@lucide/svelte';
 import { browser } from '$app/environment';
 import type { CsrfOriginTestResponse } from '$lib/api/client';
-import {
-	getCsrfOrigin,
-	setCsrfOrigin,
-	testCsrfOrigin,
-	withErrorHandling
-} from '$lib/api/client';
+import { getCsrfOrigin, setCsrfOrigin, testCsrfOrigin, withErrorHandling } from '$lib/api/client';
 import { asErrorResponse } from '$lib/api/errors';
 import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
 import { Badge } from '$lib/components/ui/badge';
@@ -204,8 +199,8 @@ async function handleSubmit() {
 			<div class="flex items-start gap-2">
 				<ShieldCheck class="mt-0.5 size-4 shrink-0 text-cr-accent" />
 				<p class="text-sm text-cr-text-muted">
-					CSRF protection prevents unauthorized requests from other websites. Set this to
-					the URL where you access Zondarr to ensure only your browser can make changes.
+					CSRF protection prevents unauthorized requests from other websites. Set this to the URL
+					where you access Zondarr to ensure only your browser can make changes.
 				</p>
 			</div>
 		</div>
@@ -313,9 +308,7 @@ async function handleSubmit() {
 			</div>
 		</div>
 
-		<p class="mt-3 text-center text-xs text-cr-text-dim">
-			You can change this later in Settings.
-		</p>
+		<p class="mt-3 text-center text-xs text-cr-text-dim">You can change this later in Settings.</p>
 	</Card.Content>
 </Card.Root>
 
@@ -326,12 +319,12 @@ async function handleSubmit() {
 	confirmLabel="Save Anyway"
 	variant="warning"
 	onConfirm={() => {
-		showSaveConfirm = false;
-		handleSubmit();
-	}}
+	showSaveConfirm = false;
+	handleSubmit();
+}}
 	onCancel={() => {
-		showSaveConfirm = false;
-	}}
+	showSaveConfirm = false;
+}}
 />
 
 <ConfirmDialog
@@ -341,10 +334,10 @@ async function handleSubmit() {
 	confirmLabel="Skip Anyway"
 	variant="warning"
 	onConfirm={() => {
-		showSkipConfirm = false;
-		onSkip();
-	}}
+	showSkipConfirm = false;
+	onSkip();
+}}
 	onCancel={() => {
-		showSkipConfirm = false;
-	}}
+	showSkipConfirm = false;
+}}
 />

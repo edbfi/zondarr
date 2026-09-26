@@ -1,8 +1,8 @@
 <script lang="ts">
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import { loginSchema } from "$lib/schemas/auth";
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import { loginSchema } from '$lib/schemas/auth';
 
 interface Props {
 	onsubmit: (username: string, password: string) => Promise<void>;
@@ -10,8 +10,8 @@ interface Props {
 
 const { onsubmit }: Props = $props();
 
-let username = $state("");
-let password = $state("");
+let username = $state('');
+let password = $state('');
 let errors = $state<Record<string, string>>({});
 let loading = $state(false);
 
@@ -23,7 +23,7 @@ async function handleSubmit(e: SubmitEvent) {
 	if (!result.success) {
 		for (const issue of result.error.issues) {
 			const field = issue.path[0];
-			if (field && typeof field === "string") {
+			if (field && typeof field === 'string') {
 				errors[field] = issue.message;
 			}
 		}
@@ -70,7 +70,11 @@ async function handleSubmit(e: SubmitEvent) {
 		{/if}
 	</div>
 
-	<Button type="submit" disabled={loading} class="w-full bg-cr-accent text-cr-bg hover:bg-cr-accent-hover">
+	<Button
+		type="submit"
+		disabled={loading}
+		class="w-full bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
+	>
 		{#if loading}
 			Signing in...
 		{:else}

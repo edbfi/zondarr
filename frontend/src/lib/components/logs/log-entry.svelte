@@ -8,14 +8,8 @@
  * All content rendered as text nodes — no innerHTML.
  */
 
-import {
-	AlertTriangle,
-	Bug,
-	Info,
-	ShieldAlert,
-	XCircle,
-} from "@lucide/svelte";
-import type { LogEntry, LogLevel } from "$lib/stores/log-stream.svelte";
+import { AlertTriangle, Bug, Info, ShieldAlert, XCircle } from '@lucide/svelte';
+import type { LogEntry, LogLevel } from '$lib/stores/log-stream.svelte';
 
 interface Props {
 	entry: LogEntry;
@@ -38,44 +32,37 @@ const LEVEL_CONFIG: Record<
 > = {
 	DEBUG: {
 		icon: Bug,
-		badge: "bg-muted text-muted-foreground",
-		row: "",
-		border: "border-l-transparent",
+		badge: 'bg-muted text-muted-foreground',
+		row: '',
+		border: 'border-l-transparent'
 	},
 	INFO: {
 		icon: Info,
-		badge: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
-		row: "",
-		border: "border-l-blue-500/50",
+		badge: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
+		row: '',
+		border: 'border-l-blue-500/50'
 	},
 	WARNING: {
 		icon: AlertTriangle,
-		badge: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-		row: "",
-		border: "border-l-amber-500",
+		badge: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+		row: '',
+		border: 'border-l-amber-500'
 	},
 	ERROR: {
 		icon: XCircle,
-		badge: "bg-red-500/15 text-red-700 dark:text-red-400",
-		row: "bg-red-500/5 dark:bg-red-500/8",
-		border: "border-l-red-500",
+		badge: 'bg-red-500/15 text-red-700 dark:text-red-400',
+		row: 'bg-red-500/5 dark:bg-red-500/8',
+		border: 'border-l-red-500'
 	},
 	CRITICAL: {
 		icon: ShieldAlert,
-		badge: "bg-red-600/20 text-red-700 dark:text-red-400",
-		row: "bg-red-500/10 dark:bg-red-500/15",
-		border: "border-l-red-600",
-	},
+		badge: 'bg-red-600/20 text-red-700 dark:text-red-400',
+		row: 'bg-red-500/10 dark:bg-red-500/15',
+		border: 'border-l-red-600'
+	}
 };
 
-const HIDDEN_FIELDS = new Set([
-	"event",
-	"level",
-	"timestamp",
-	"logger_name",
-	"logger",
-	"message",
-]);
+const HIDDEN_FIELDS = new Set(['event', 'level', 'timestamp', 'logger_name', 'logger', 'message']);
 
 const MAX_CHIPS = 3;
 
@@ -84,19 +71,19 @@ const config = $derived(LEVEL_CONFIG[entry.level]);
 const LevelIcon = $derived(config.icon);
 
 const iconColor = $derived.by(() => {
-	const textClasses = config.badge.split(" ").filter((c) => c.startsWith("text-"));
-	return textClasses.join(" ") || "text-muted-foreground";
+	const textClasses = config.badge.split(' ').filter((c) => c.startsWith('text-'));
+	return textClasses.join(' ') || 'text-muted-foreground';
 });
 
 // --- Relative timestamp ---
 
 const absoluteTime = $derived.by(() => {
-	if (!entry.timestamp) return "";
+	if (!entry.timestamp) return '';
 	try {
 		const d = new Date(entry.timestamp);
-		return d.toLocaleTimeString("en-GB", {
+		return d.toLocaleTimeString('en-GB', {
 			hour12: false,
-			fractionalSecondDigits: 3,
+			fractionalSecondDigits: 3
 		});
 	} catch {
 		return entry.timestamp;
@@ -104,7 +91,7 @@ const absoluteTime = $derived.by(() => {
 });
 
 const relativeTime = $derived.by(() => {
-	if (!entry.timestamp) return "";
+	if (!entry.timestamp) return '';
 	try {
 		const d = new Date(entry.timestamp);
 		const diff = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
@@ -113,16 +100,16 @@ const relativeTime = $derived.by(() => {
 		if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
 		return `${Math.floor(diff / 86400)}d ago`;
 	} catch {
-		return "";
+		return '';
 	}
 });
 
 // --- Truncated logger name ---
 
 const shortLogger = $derived.by(() => {
-	const parts = entry.logger_name.split(".");
+	const parts = entry.logger_name.split('.');
 	if (parts.length <= 2) return entry.logger_name;
-	return parts.slice(-2).join(".");
+	return parts.slice(-2).join('.');
 });
 
 // --- Inline field chips (up to 3, skip already-displayed fields) ---
@@ -155,10 +142,7 @@ function handleClick() {
 	<LevelIcon class="size-3.5 shrink-0 {iconColor}" />
 
 	<!-- Relative timestamp -->
-	<span
-		class="w-12 shrink-0 text-right text-muted-foreground tabular-nums"
-		title={absoluteTime}
-	>
+	<span class="w-12 shrink-0 text-right text-muted-foreground tabular-nums" title={absoluteTime}>
 		{relativeTime}
 	</span>
 
@@ -170,10 +154,7 @@ function handleClick() {
 	</span>
 
 	<!-- Logger source (truncated) -->
-	<span
-		class="w-24 shrink-0 truncate text-muted-foreground"
-		title={entry.logger_name}
-	>
+	<span class="w-24 shrink-0 truncate text-muted-foreground" title={entry.logger_name}>
 		{shortLogger}
 	</span>
 

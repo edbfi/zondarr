@@ -107,12 +107,7 @@ async function handlePasswordChange() {
 				</div>
 				<div class="space-y-2">
 					<Label for="admin-email">Email</Label>
-					<Input
-						id="admin-email"
-						type="email"
-						placeholder="admin@example.com"
-						bind:value={email}
-					/>
+					<Input id="admin-email" type="email" placeholder="admin@example.com" bind:value={email} />
 				</div>
 				<Button onclick={handleEmailSave} disabled={savingEmail}>
 					{savingEmail ? 'Saving...' : 'Save Email'}

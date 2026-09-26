@@ -13,11 +13,11 @@
  * @module $lib/components/join/registration-form
  */
 
-import { Eye, EyeOff, Lock, Mail, User } from "@lucide/svelte";
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import type { RegistrationInput } from "$lib/schemas/join";
+import { Eye, EyeOff, Lock, Mail, User } from '@lucide/svelte';
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import type { RegistrationInput } from '$lib/schemas/join';
 
 interface Props {
 	formData: RegistrationInput;
@@ -26,12 +26,7 @@ interface Props {
 	onSubmit: () => void;
 }
 
-let {
-	formData = $bindable(),
-	errors,
-	submitting = false,
-	onSubmit,
-}: Props = $props();
+let { formData = $bindable(), errors, submitting = false, onSubmit }: Props = $props();
 
 // Password visibility toggle
 let showPassword = $state(false);
@@ -120,9 +115,7 @@ function togglePasswordVisibility() {
 				{/if}
 			</button>
 		</div>
-		<p class="text-cr-text-muted text-xs">
-			Minimum 8 characters
-		</p>
+		<p class="text-cr-text-muted text-xs">Minimum 8 characters</p>
 		{#if getFieldErrors('password').length > 0}
 			<div class="text-rose-400 text-sm" data-field-error="password">
 				{#each getFieldErrors('password') as error}
@@ -148,9 +141,7 @@ function togglePasswordVisibility() {
 			autocomplete="email"
 			data-field-email
 		/>
-		<p class="text-cr-text-muted text-xs">
-			Used for password recovery and notifications
-		</p>
+		<p class="text-cr-text-muted text-xs">Used for password recovery and notifications</p>
 		{#if getFieldErrors('email').length > 0}
 			<div class="text-rose-400 text-sm" data-field-error="email">
 				{#each getFieldErrors('email') as error}
@@ -167,7 +158,9 @@ function togglePasswordVisibility() {
 		class="w-full bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
 	>
 		{#if submitting}
-			<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></span>
+			<span
+				class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"
+			></span>
 			Creating Account...
 		{:else}
 			Create Account

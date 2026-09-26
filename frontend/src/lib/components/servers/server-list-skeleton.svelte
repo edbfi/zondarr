@@ -7,8 +7,8 @@
  * @module $lib/components/servers/server-list-skeleton
  */
 
-import * as Card from "$lib/components/ui/card";
-import { Skeleton } from "$lib/components/ui/skeleton";
+import * as Card from '$lib/components/ui/card';
+import { Skeleton } from '$lib/components/ui/skeleton';
 </script>
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,16 +1,16 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
-	import * as Card from '$lib/components/ui/card';
+import type { Snippet } from 'svelte';
+import * as Card from '$lib/components/ui/card';
 
-	interface Props {
-		title: string;
-		value: number | string;
-		subtitle?: string;
-		icon: Snippet;
-		accentClass?: string;
-	}
+interface Props {
+	title: string;
+	value: number | string;
+	subtitle?: string;
+	icon: Snippet;
+	accentClass?: string;
+}
 
-	const { title, value, subtitle, icon, accentClass = 'text-cr-accent' }: Props = $props();
+const { title, value, subtitle, icon, accentClass = 'text-cr-accent' }: Props = $props();
 </script>
 
 <Card.Root class="border-cr-border bg-cr-surface transition-colors hover:border-cr-accent/20">

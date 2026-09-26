@@ -6,10 +6,10 @@
  * Connects on mount, disconnects on cleanup.
  */
 
-import { ArrowDown, ScrollText } from "@lucide/svelte";
-import EmptyState from "$lib/components/empty-state.svelte";
-import { Button } from "$lib/components/ui/button";
-import { Skeleton } from "$lib/components/ui/skeleton";
+import { ArrowDown, ScrollText } from '@lucide/svelte';
+import EmptyState from '$lib/components/empty-state.svelte';
+import { Button } from '$lib/components/ui/button';
+import { Skeleton } from '$lib/components/ui/skeleton';
 import {
 	clearEntries,
 	connect,
@@ -20,11 +20,11 @@ import {
 	getLoading,
 	LEVEL_ORDER,
 	type LogEntry,
-	type LogLevel,
-} from "$lib/stores/log-stream.svelte";
-import LogDetailPanel from "./log-detail-panel.svelte";
-import LogEntryRow from "./log-entry.svelte";
-import LogToolbar from "./log-toolbar.svelte";
+	type LogLevel
+} from '$lib/stores/log-stream.svelte';
+import LogDetailPanel from './log-detail-panel.svelte';
+import LogEntryRow from './log-entry.svelte';
+import LogToolbar from './log-toolbar.svelte';
 
 interface Props {
 	selectedId?: number | null;
@@ -34,9 +34,9 @@ interface Props {
 let { selectedId = $bindable(null), onSelectionChange }: Props = $props();
 
 // Filter state
-let levelFilter = $state("ALL");
-let sourceFilter = $state("");
-let searchQuery = $state("");
+let levelFilter = $state('ALL');
+let sourceFilter = $state('');
+let searchQuery = $state('');
 
 // Pause state
 let paused = $state(false);
@@ -66,7 +66,7 @@ const displayEntries = $derived(paused ? pausedEntries : entries);
 const filteredEntries = $derived.by(() => {
 	let result = displayEntries;
 
-	if (levelFilter !== "ALL") {
+	if (levelFilter !== 'ALL') {
 		const minLevel = LEVEL_ORDER[levelFilter as LogLevel] ?? 0;
 		result = result.filter((e) => (LEVEL_ORDER[e.level] ?? 0) >= minLevel);
 	}
@@ -82,7 +82,7 @@ const filteredEntries = $derived.by(() => {
 			(e) =>
 				e.message.toLowerCase().includes(q) ||
 				e.logger_name.toLowerCase().includes(q) ||
-				Object.values(e.fields).some((v) => v.toLowerCase().includes(q)),
+				Object.values(e.fields).some((v) => v.toLowerCase().includes(q))
 		);
 	}
 
@@ -101,12 +101,8 @@ const topSpacerHeight = $derived(startIndex * ROW_HEIGHT);
 const bottomSpacerHeight = $derived(Math.max(0, (filteredEntries.length - endIndex) * ROW_HEIGHT));
 
 // Counts for toolbar quick-filter badges
-const errorCount = $derived(
-	displayEntries.filter((e) => e.level === "ERROR").length
-);
-const warningCount = $derived(
-	displayEntries.filter((e) => e.level === "WARNING").length
-);
+const errorCount = $derived(displayEntries.filter((e) => e.level === 'ERROR').length);
+const warningCount = $derived(displayEntries.filter((e) => e.level === 'WARNING').length);
 
 // Unique source logger names for the source dropdown
 const sources = $derived.by(() => {
@@ -118,9 +114,9 @@ const sources = $derived.by(() => {
 });
 
 function clearFilters() {
-	levelFilter = "ALL";
-	sourceFilter = "";
-	searchQuery = "";
+	levelFilter = 'ALL';
+	sourceFilter = '';
+	searchQuery = '';
 }
 
 // Selected entry for detail panel
@@ -214,13 +210,13 @@ function scrollIndexIntoView(index: number) {
 
 function handleKeydown(e: KeyboardEvent) {
 	if (selectedId == null) return;
-	if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+	if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
 
 	const target = e.target as HTMLElement;
 	if (
-		target.tagName === "INPUT" ||
-		target.tagName === "TEXTAREA" ||
-		target.tagName === "SELECT" ||
+		target.tagName === 'INPUT' ||
+		target.tagName === 'TEXTAREA' ||
+		target.tagName === 'SELECT' ||
 		target.isContentEditable
 	) {
 		return;
@@ -229,7 +225,7 @@ function handleKeydown(e: KeyboardEvent) {
 	const currentIndex = filteredEntries.findIndex((entry) => entry.seq === selectedId);
 	if (currentIndex === -1) return;
 
-	const nextIndex = e.key === "ArrowDown" ? currentIndex + 1 : currentIndex - 1;
+	const nextIndex = e.key === 'ArrowDown' ? currentIndex + 1 : currentIndex - 1;
 	const nextEntry = filteredEntries[nextIndex];
 	if (!nextEntry) return;
 
@@ -310,10 +306,10 @@ function handleKeydown(e: KeyboardEvent) {
 							{entry}
 							selected={selectedId === entry.seq}
 							onSelect={(seq) => {
-								const isDeselect = selectedId === seq;
-								selectedId = isDeselect ? null : seq;
-								onSelectionChange?.(isDeselect ? null : entry);
-							}}
+	const isDeselect = selectedId === seq;
+	selectedId = isDeselect ? null : seq;
+	onSelectionChange?.(isDeselect ? null : entry);
+}}
 						/>
 					{/each}
 					<div style="height:{bottomSpacerHeight}px" aria-hidden="true"></div>
@@ -323,12 +319,7 @@ function handleKeydown(e: KeyboardEvent) {
 			<!-- Jump to latest button -->
 			{#if !autoScroll && !paused}
 				<div class="absolute bottom-3 left-1/2 -translate-x-1/2">
-					<Button
-						variant="secondary"
-						size="sm"
-						onclick={jumpToLatest}
-						class="gap-1.5 shadow-md"
-					>
+					<Button variant="secondary" size="sm" onclick={jumpToLatest} class="gap-1.5 shadow-md">
 						<ArrowDown class="size-3.5" />
 						Jump to latest
 					</Button>
@@ -338,13 +329,15 @@ function handleKeydown(e: KeyboardEvent) {
 
 		<!-- Detail panel -->
 		{#if panelOpen}
-			<div class="h-full w-[38%] shrink-0 overflow-hidden rounded-r-md border border-l-0 border-cr-border">
+			<div
+				class="h-full w-[38%] shrink-0 overflow-hidden rounded-r-md border border-l-0 border-cr-border"
+			>
 				<LogDetailPanel
 					entry={selectedEntry}
 					onclose={() => {
-						selectedId = null;
-						onSelectionChange?.(null);
-					}}
+	selectedId = null;
+	onSelectionChange?.(null);
+}}
 				/>
 			</div>
 		{/if}

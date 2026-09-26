@@ -1,70 +1,70 @@
 <script lang="ts">
-	import { Loader2 } from '@lucide/svelte';
-	import { getErrorDetail, totpRegenerateBackupCodes } from '$lib/api/auth';
-	import TotpCodeInput from '$lib/components/auth/totp-code-input.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { showApiError, showSuccess } from '$lib/utils/toast';
-	import BackupCodesDisplay from './backup-codes-display.svelte';
+import { Loader2 } from '@lucide/svelte';
+import { getErrorDetail, totpRegenerateBackupCodes } from '$lib/api/auth';
+import TotpCodeInput from '$lib/components/auth/totp-code-input.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Dialog from '$lib/components/ui/dialog';
+import { showApiError, showSuccess } from '$lib/utils/toast';
+import BackupCodesDisplay from './backup-codes-display.svelte';
 
-	interface Props {
-		open: boolean;
-	}
+interface Props {
+	open: boolean;
+}
 
-	let { open = $bindable(false) }: Props = $props();
+let { open = $bindable(false) }: Props = $props();
 
-	type Step = 'verify' | 'codes';
+type Step = 'verify' | 'codes';
 
-	let step = $state<Step>('verify');
-	let backupCodes = $state<string[]>([]);
-	let loading = $state(false);
-	let error = $state('');
-	let totpInputRef: TotpCodeInput | undefined = $state();
+let step = $state<Step>('verify');
+let backupCodes = $state<string[]>([]);
+let loading = $state(false);
+let error = $state('');
+let totpInputRef: TotpCodeInput | undefined = $state();
 
-	function resetState() {
-		step = 'verify';
-		backupCodes = [];
-		loading = false;
-		error = '';
-	}
+function resetState() {
+	step = 'verify';
+	backupCodes = [];
+	loading = false;
+	error = '';
+}
 
-	async function handleVerify(code: string) {
-		error = '';
-		loading = true;
-		try {
-			const result = await totpRegenerateBackupCodes({ code });
-			if (result.error) {
-				error = getErrorDetail(result.error, 'Invalid verification code');
-				loading = false;
-				totpInputRef?.reset();
-				return;
-			}
-			backupCodes = result.data!.backup_codes;
-			step = 'codes';
-			showSuccess('Backup codes regenerated');
-		} catch {
-			error = 'Failed to regenerate codes. Please try again.';
-			totpInputRef?.reset();
-		} finally {
+async function handleVerify(code: string) {
+	error = '';
+	loading = true;
+	try {
+		const result = await totpRegenerateBackupCodes({ code });
+		if (result.error) {
+			error = getErrorDetail(result.error, 'Invalid verification code');
 			loading = false;
+			totpInputRef?.reset();
+			return;
 		}
+		backupCodes = result.data!.backup_codes;
+		step = 'codes';
+		showSuccess('Backup codes regenerated');
+	} catch {
+		error = 'Failed to regenerate codes. Please try again.';
+		totpInputRef?.reset();
+	} finally {
+		loading = false;
 	}
+}
 
-	function handleOpenChange(isOpen: boolean) {
-		if (!isOpen && !loading) {
-			resetState();
-		}
+function handleOpenChange(isOpen: boolean) {
+	if (!isOpen && !loading) {
+		resetState();
 	}
+}
 
-	function closeDialog() {
-		open = false;
+function closeDialog() {
+	open = false;
+}
+
+$effect(() => {
+	if (open) {
+		resetState();
 	}
-
-	$effect(() => {
-		if (open) {
-			resetState();
-		}
-	});
+});
 </script>
 
 <Dialog.Root bind:open onOpenChange={handleOpenChange}>

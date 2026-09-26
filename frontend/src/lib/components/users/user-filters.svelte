@@ -15,16 +15,16 @@
  * @module $lib/components/users/user-filters
  */
 
-import { ArrowDownAZ, ArrowUpAZ, Filter, Search, X } from "@lucide/svelte";
+import { ArrowDownAZ, ArrowUpAZ, Filter, Search, X } from '@lucide/svelte';
 import type {
 	InvitationResponse,
 	ListUsersParams,
-	MediaServerWithLibrariesResponse,
-} from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import * as Select from "$lib/components/ui/select";
-import { getProviderBadgeStyle } from "$lib/stores/providers.svelte";
+	MediaServerWithLibrariesResponse
+} from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import * as Select from '$lib/components/ui/select';
+import { getProviderBadgeStyle } from '$lib/stores/providers.svelte';
 
 interface Props {
 	serverId?: string;
@@ -32,8 +32,8 @@ interface Props {
 	enabled?: boolean;
 	expired?: boolean;
 	search?: string;
-	sortBy: "created_at" | "username" | "expires_at";
-	sortOrder: "asc" | "desc";
+	sortBy: 'created_at' | 'username' | 'expires_at';
+	sortOrder: 'asc' | 'desc';
 	servers: MediaServerWithLibrariesResponse[];
 	invitations: InvitationResponse[];
 	onFilterChange: (params: Partial<ListUsersParams>) => void;
@@ -49,14 +49,14 @@ const {
 	sortOrder,
 	servers,
 	invitations,
-	onFilterChange,
+	onFilterChange
 }: Props = $props();
 
-let searchValue = $state("");
+let searchValue = $state('');
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 $effect(() => {
-	searchValue = search ?? "";
+	searchValue = search ?? '';
 });
 
 $effect(() => {
@@ -69,34 +69,34 @@ $effect(() => {
 
 // Convert boolean to select value
 const enabledValue = $derived.by(() => {
-	if (enabled === undefined) return "all";
-	return enabled ? "enabled" : "disabled";
+	if (enabled === undefined) return 'all';
+	return enabled ? 'enabled' : 'disabled';
 });
 
 const expiredValue = $derived.by(() => {
-	if (expired === undefined) return "all";
-	return expired ? "expired" : "active";
+	if (expired === undefined) return 'all';
+	return expired ? 'expired' : 'active';
 });
 
 // Get selected server name for display
 const selectedServerName = $derived.by(() => {
-	if (!serverId) return "All Servers";
+	if (!serverId) return 'All Servers';
 	const server = servers.find((s) => s.id === serverId);
-	return server?.name ?? "All Servers";
+	return server?.name ?? 'All Servers';
 });
 
 // Get selected invitation code for display
 const selectedInvitationCode = $derived.by(() => {
-	if (!invitationId) return "All Invitations";
+	if (!invitationId) return 'All Invitations';
 	const invitation = invitations.find((i) => i.id === invitationId);
-	return invitation?.code ?? "All Invitations";
+	return invitation?.code ?? 'All Invitations';
 });
 
 /**
  * Handle server filter change.
  */
 function handleServerChange(value: string | undefined) {
-	if (value === "all" || value === undefined) {
+	if (value === 'all' || value === undefined) {
 		onFilterChange({ server_id: undefined });
 	} else {
 		onFilterChange({ server_id: value });
@@ -107,7 +107,7 @@ function handleServerChange(value: string | undefined) {
  * Handle invitation filter change.
  */
 function handleInvitationChange(value: string | undefined) {
-	if (value === "all" || value === undefined) {
+	if (value === 'all' || value === undefined) {
 		onFilterChange({ invitation_id: undefined });
 	} else {
 		onFilterChange({ invitation_id: value });
@@ -118,10 +118,10 @@ function handleInvitationChange(value: string | undefined) {
  * Handle enabled filter change.
  */
 function handleEnabledChange(value: string | undefined) {
-	if (value === "all" || value === undefined) {
+	if (value === 'all' || value === undefined) {
 		onFilterChange({ enabled: undefined });
 	} else {
-		onFilterChange({ enabled: value === "enabled" });
+		onFilterChange({ enabled: value === 'enabled' });
 	}
 }
 
@@ -129,10 +129,10 @@ function handleEnabledChange(value: string | undefined) {
  * Handle expired filter change.
  */
 function handleExpiredChange(value: string | undefined) {
-	if (value === "all" || value === undefined) {
+	if (value === 'all' || value === undefined) {
 		onFilterChange({ expired: undefined });
 	} else {
-		onFilterChange({ expired: value === "expired" });
+		onFilterChange({ expired: value === 'expired' });
 	}
 }
 
@@ -148,7 +148,7 @@ function handleSearchInput(event: Event) {
 }
 
 function clearSearch() {
-	searchValue = "";
+	searchValue = '';
 	if (searchTimer !== null) {
 		clearTimeout(searchTimer);
 		searchTimer = null;
@@ -161,7 +161,7 @@ function clearSearch() {
  */
 function handleSortByChange(value: string | undefined) {
 	if (value) {
-		onFilterChange({ sort_by: value as ListUsersParams["sort_by"] });
+		onFilterChange({ sort_by: value as ListUsersParams['sort_by'] });
 	}
 }
 
@@ -169,14 +169,14 @@ function handleSortByChange(value: string | undefined) {
  * Toggle sort order.
  */
 function toggleSortOrder() {
-	onFilterChange({ sort_order: sortOrder === "asc" ? "desc" : "asc" });
+	onFilterChange({ sort_order: sortOrder === 'asc' ? 'desc' : 'asc' });
 }
 
 // Sort by options
 const sortByOptions = [
-	{ value: "created_at", label: "Created Date" },
-	{ value: "username", label: "Username" },
-	{ value: "expires_at", label: "Expiration Date" },
+	{ value: 'created_at', label: 'Created Date' },
+	{ value: 'username', label: 'Username' },
+	{ value: 'expires_at', label: 'Expiration Date' }
 ] as const;
 </script>
 
@@ -248,7 +248,9 @@ const sortByOptions = [
 				<span class="truncate font-mono text-xs">{selectedInvitationCode}</span>
 			</Select.Trigger>
 			<Select.Content class="border-cr-border bg-cr-surface max-h-60">
-				<Select.Item value="all" class="text-cr-text hover:bg-cr-border">All Invitations</Select.Item>
+				<Select.Item value="all" class="text-cr-text hover:bg-cr-border"
+					>All Invitations</Select.Item
+				>
 				{#each invitations as invitation (invitation.id)}
 					<Select.Item value={invitation.id} class="text-cr-text hover:bg-cr-border">
 						<code class="font-mono text-xs">{invitation.code}</code>

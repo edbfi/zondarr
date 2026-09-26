@@ -1,17 +1,17 @@
 <script lang="ts">
-import { goto, invalidateAll } from "$app/navigation";
-import { getErrorDetail, loginLocal } from "$lib/api/auth";
-import CredentialLoginForm from "$lib/components/auth/credential-login-form.svelte";
-import LocalLoginForm from "$lib/components/auth/local-login-form.svelte";
-import OAuthLoginButton from "$lib/components/auth/oauth-login-button.svelte";
-import TotpVerifyStep from "$lib/components/auth/totp-verify-step.svelte";
-import * as Card from "$lib/components/ui/card";
-import { Separator } from "$lib/components/ui/separator";
-import type { PageData } from "./$types";
+import { goto, invalidateAll } from '$app/navigation';
+import { getErrorDetail, loginLocal } from '$lib/api/auth';
+import CredentialLoginForm from '$lib/components/auth/credential-login-form.svelte';
+import LocalLoginForm from '$lib/components/auth/local-login-form.svelte';
+import OAuthLoginButton from '$lib/components/auth/oauth-login-button.svelte';
+import TotpVerifyStep from '$lib/components/auth/totp-verify-step.svelte';
+import * as Card from '$lib/components/ui/card';
+import { Separator } from '$lib/components/ui/separator';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
-let error = $state("");
+let error = $state('');
 let retryTimer: ReturnType<typeof setInterval> | null = null;
 let totpChallengeToken = $state<string | null>(null);
 
@@ -38,10 +38,10 @@ $effect(() => {
 });
 
 async function handleLocalLogin(username: string, password: string) {
-	error = "";
+	error = '';
 	const result = await loginLocal({ username, password });
 	if (result.error) {
-		error = getErrorDetail(result.error, "Invalid credentials");
+		error = getErrorDetail(result.error, 'Invalid credentials');
 		return;
 	}
 	if (result.data?.totp_required && result.data.challenge_token) {
@@ -49,23 +49,23 @@ async function handleLocalLogin(username: string, password: string) {
 		return;
 	}
 	await invalidateAll();
-	await goto("/dashboard");
+	await goto('/dashboard');
 }
 
 async function handleTotpSuccess() {
 	totpChallengeToken = null;
 	await invalidateAll();
-	await goto("/dashboard");
+	await goto('/dashboard');
 }
 
 function handleTotpCancel() {
 	totpChallengeToken = null;
-	error = "";
+	error = '';
 }
 
 async function handleExternalSuccess() {
 	await invalidateAll();
-	await goto("/dashboard");
+	await goto('/dashboard');
 }
 
 function handleExternalTotp(challengeToken: string) {
@@ -86,7 +86,9 @@ function handleExternalError(message: string) {
 			</Card.Description>
 		</Card.Header>
 		<Card.Content class="flex justify-center py-4">
-			<div class="h-6 w-6 animate-spin rounded-full border-2 border-cr-text-muted border-t-cr-accent"></div>
+			<div
+				class="h-6 w-6 animate-spin rounded-full border-2 border-cr-text-muted border-t-cr-accent"
+			></div>
 		</Card.Content>
 	</Card.Root>
 {:else if showTotpStep}
@@ -109,7 +111,9 @@ function handleExternalError(message: string) {
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-4">
 			{#if error}
-				<div class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+				<div
+					class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400"
+				>
 					{error}
 				</div>
 			{/if}
@@ -128,7 +132,7 @@ function handleExternalError(message: string) {
 
 				<div class="flex flex-col gap-2">
 					{#each externalMethods as method (method.method_name)}
-						{#if method.flow_type === "oauth"}
+						{#if method.flow_type === 'oauth'}
 							<OAuthLoginButton
 								method={method.method_name}
 								displayName={method.display_name}
