@@ -8,8 +8,8 @@
  * @module routes/(public)/+layout
  */
 
-import type { Snippet } from "svelte";
-import ThemeToggle from "$lib/components/theme-toggle.svelte";
+import type { Snippet } from 'svelte';
+import ThemeToggle from '$lib/components/theme-toggle.svelte';
 
 interface Props {
 	children: Snippet;
@@ -20,9 +20,11 @@ const { children }: Props = $props();
 
 <div class="flex min-h-screen flex-col bg-cr-bg">
 	<!-- Minimal header with branding and theme toggle -->
-	<header class="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-cr-border bg-cr-bg px-4 md:px-6">
+	<header
+		class="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-cr-border bg-cr-bg px-4 md:px-6"
+	>
 		<a href="/" class="flex items-center gap-2.5 font-display text-lg font-bold text-cr-accent">
-			<img src="/zondarr-logo.svg" alt="" class="size-7" aria-hidden="true" />
+			<img src="/zondarr-logo.svg" alt="" class="size-7" aria-hidden="true">
 			Zondarr
 		</a>
 		<ThemeToggle />

@@ -14,9 +14,9 @@
  * @module $lib/components/users/user-table
  */
 
-import type { UserDetailResponse } from "$lib/api/client";
-import * as Table from "$lib/components/ui/table";
-import UserRow from "./user-row.svelte";
+import type { UserDetailResponse } from '$lib/api/client';
+import * as Table from '$lib/components/ui/table';
+import UserRow from './user-row.svelte';
 
 interface Props {
 	users: UserDetailResponse[];

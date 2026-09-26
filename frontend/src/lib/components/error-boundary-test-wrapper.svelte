@@ -1,5 +1,5 @@
 <script lang="ts">
-import ErrorBoundary from "./error-boundary.svelte";
+import ErrorBoundary from './error-boundary.svelte';
 
 let errorBoundaryRef: ReturnType<typeof ErrorBoundary> | undefined = $state();
 

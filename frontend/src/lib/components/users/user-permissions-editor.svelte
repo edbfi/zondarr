@@ -13,13 +13,10 @@
  * @module $lib/components/users/user-permissions-editor
  */
 
-import { toast } from "svelte-sonner";
-import {
-	type UpdateUserPermissions,
-	updateUserPermissions,
-} from "$lib/api/client";
-import { ApiError, asErrorResponse, getErrorMessage } from "$lib/api/errors";
-import { Label } from "$lib/components/ui/label";
+import { toast } from 'svelte-sonner';
+import { type UpdateUserPermissions, updateUserPermissions } from '$lib/api/client';
+import { ApiError, asErrorResponse, getErrorMessage } from '$lib/api/errors';
+import { Label } from '$lib/components/ui/label';
 
 interface Props {
 	userId: string;
@@ -54,7 +51,7 @@ async function handlePermissionChange(
 	newValue: boolean,
 	setLoading: (v: boolean) => void,
 	setValue: (v: boolean | undefined) => void,
-	currentValue: boolean | undefined,
+	currentValue: boolean | undefined
 ) {
 	if (disabled) return;
 
@@ -70,19 +67,19 @@ async function handlePermissionChange(
 			const errorBody = asErrorResponse(result.error);
 			throw new ApiError(
 				status,
-				errorBody?.error_code ?? "UNKNOWN_ERROR",
-				errorBody?.detail ?? "Failed to update permission",
+				errorBody?.error_code ?? 'UNKNOWN_ERROR',
+				errorBody?.detail ?? 'Failed to update permission'
 			);
 		}
 
 		toast.success(`Permission updated`, {
-			description: `${formatPermissionName(key)} is now ${newValue ? "enabled" : "disabled"}`,
+			description: `${formatPermissionName(key)} is now ${newValue ? 'enabled' : 'disabled'}`
 		});
 	} catch (error) {
 		// Rollback on error
 		setValue(currentValue);
-		toast.error("Failed to update permission", {
-			description: getErrorMessage(error),
+		toast.error('Failed to update permission', {
+			description: getErrorMessage(error)
 		});
 	} finally {
 		setLoading(false);
@@ -94,14 +91,14 @@ async function handlePermissionChange(
  */
 function formatPermissionName(key: string): string {
 	switch (key) {
-		case "can_stream":
-			return "Streaming";
-		case "can_download":
-			return "Downloads";
-		case "can_sync":
-			return "Sync";
-		case "can_transcode":
-			return "Transcoding";
+		case 'can_stream':
+			return 'Streaming';
+		case 'can_download':
+			return 'Downloads';
+		case 'can_sync':
+			return 'Sync';
+		case 'can_transcode':
+			return 'Transcoding';
 		default:
 			return key;
 	}
@@ -111,7 +108,7 @@ function formatPermissionName(key: string): string {
 function toggleStream() {
 	const newValue = !(canStream ?? true);
 	handlePermissionChange(
-		"can_stream",
+		'can_stream',
 		newValue,
 		(v) => {
 			loadingStream = v;
@@ -119,14 +116,14 @@ function toggleStream() {
 		(v) => {
 			canStream = v;
 		},
-		canStream,
+		canStream
 	);
 }
 
 function toggleDownload() {
 	const newValue = !(canDownload ?? true);
 	handlePermissionChange(
-		"can_download",
+		'can_download',
 		newValue,
 		(v) => {
 			loadingDownload = v;
@@ -134,14 +131,14 @@ function toggleDownload() {
 		(v) => {
 			canDownload = v;
 		},
-		canDownload,
+		canDownload
 	);
 }
 
 function toggleSync() {
 	const newValue = !(canSync ?? true);
 	handlePermissionChange(
-		"can_sync",
+		'can_sync',
 		newValue,
 		(v) => {
 			loadingSync = v;
@@ -149,14 +146,14 @@ function toggleSync() {
 		(v) => {
 			canSync = v;
 		},
-		canSync,
+		canSync
 	);
 }
 
 function toggleTranscode() {
 	const newValue = !(canTranscode ?? true);
 	handlePermissionChange(
-		"can_transcode",
+		'can_transcode',
 		newValue,
 		(v) => {
 			loadingTranscode = v;
@@ -164,7 +161,7 @@ function toggleTranscode() {
 		(v) => {
 			canTranscode = v;
 		},
-		canTranscode,
+		canTranscode
 	);
 }
 
@@ -172,154 +169,154 @@ function toggleTranscode() {
  * Check if any permission is loading.
  */
 const anyLoading = $derived(
-	(isPermissionSupported("can_stream") && loadingStream) ||
-		(isPermissionSupported("can_download") && loadingDownload) ||
-		(isPermissionSupported("can_sync") && loadingSync) ||
-		(isPermissionSupported("can_transcode") && loadingTranscode),
+	(isPermissionSupported('can_stream') && loadingStream) ||
+		(isPermissionSupported('can_download') && loadingDownload) ||
+		(isPermissionSupported('can_sync') && loadingSync) ||
+		(isPermissionSupported('can_transcode') && loadingTranscode)
 );
 </script>
 
 <div class="space-y-4">
 	<p class="text-cr-text-muted text-xs">
-		Toggle permissions to control what this user can do on the media server.
-		Changes are saved immediately.
+		Toggle permissions to control what this user can do on the media server. Changes are saved
+		immediately.
 	</p>
 
 	<div class="grid gap-4 sm:grid-cols-2">
 		<!-- Streaming Permission -->
-		{#if isPermissionSupported("can_stream")}
-		<div class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3">
-			<div class="space-y-0.5">
-				<Label class="text-cr-text text-sm font-medium">Streaming</Label>
-				<p class="text-cr-text-muted text-xs">Can stream and play content</p>
-			</div>
-			<button
-				type="button"
-				role="switch"
-				aria-checked={canStream ?? true}
-				aria-label="Toggle streaming permission"
-				disabled={disabled || anyLoading}
-				onclick={toggleStream}
-				class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {canStream ?? true
-					? 'bg-cr-accent'
-					: 'bg-cr-border'}"
-				data-permission="can_stream"
+		{#if isPermissionSupported('can_stream')}
+			<div
+				class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3"
 			>
-				{#if loadingStream}
-					<span class="absolute inset-0 flex items-center justify-center">
-						<span class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-					</span>
-				{:else}
-					<span
-						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {canStream ?? true
-							? 'translate-x-5'
-							: 'translate-x-0'}"
-					></span>
-				{/if}
-			</button>
-		</div>
+				<div class="space-y-0.5">
+					<Label class="text-cr-text text-sm font-medium">Streaming</Label>
+					<p class="text-cr-text-muted text-xs">Can stream and play content</p>
+				</div>
+				<button
+					type="button"
+					role="switch"
+					aria-checked={canStream ?? true}
+					aria-label="Toggle streaming permission"
+					disabled={disabled || anyLoading}
+					onclick={toggleStream}
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canStream ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					data-permission="can_stream"
+				>
+					{#if loadingStream}
+						<span class="absolute inset-0 flex items-center justify-center">
+							<span
+								class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"
+							></span>
+						</span>
+					{:else}
+						<span
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canStream ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+						></span>
+					{/if}
+				</button>
+			</div>
 		{/if}
 
 		<!-- Download Permission -->
-		{#if isPermissionSupported("can_download")}
-		<div class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3">
-			<div class="space-y-0.5">
-				<Label class="text-cr-text text-sm font-medium">Downloads</Label>
-				<p class="text-cr-text-muted text-xs">Can download content locally</p>
-			</div>
-			<button
-				type="button"
-				role="switch"
-				aria-checked={canDownload ?? true}
-				aria-label="Toggle download permission"
-				disabled={disabled || anyLoading}
-				onclick={toggleDownload}
-				class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {canDownload ?? true
-					? 'bg-cr-accent'
-					: 'bg-cr-border'}"
-				data-permission="can_download"
+		{#if isPermissionSupported('can_download')}
+			<div
+				class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3"
 			>
-				{#if loadingDownload}
-					<span class="absolute inset-0 flex items-center justify-center">
-						<span class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-					</span>
-				{:else}
-					<span
-						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {canDownload ?? true
-							? 'translate-x-5'
-							: 'translate-x-0'}"
-					></span>
-				{/if}
-			</button>
-		</div>
+				<div class="space-y-0.5">
+					<Label class="text-cr-text text-sm font-medium">Downloads</Label>
+					<p class="text-cr-text-muted text-xs">Can download content locally</p>
+				</div>
+				<button
+					type="button"
+					role="switch"
+					aria-checked={canDownload ?? true}
+					aria-label="Toggle download permission"
+					disabled={disabled || anyLoading}
+					onclick={toggleDownload}
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canDownload ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					data-permission="can_download"
+				>
+					{#if loadingDownload}
+						<span class="absolute inset-0 flex items-center justify-center">
+							<span
+								class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"
+							></span>
+						</span>
+					{:else}
+						<span
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canDownload ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+						></span>
+					{/if}
+				</button>
+			</div>
 		{/if}
 
 		<!-- Sync Permission -->
-		{#if isPermissionSupported("can_sync")}
-		<div class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3">
-			<div class="space-y-0.5">
-				<Label class="text-cr-text text-sm font-medium">Sync</Label>
-				<p class="text-cr-text-muted text-xs">Can sync content for offline use</p>
-			</div>
-			<button
-				type="button"
-				role="switch"
-				aria-checked={canSync ?? true}
-				aria-label="Toggle sync permission"
-				disabled={disabled || anyLoading}
-				onclick={toggleSync}
-				class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {canSync ?? true
-					? 'bg-cr-accent'
-					: 'bg-cr-border'}"
-				data-permission="can_sync"
+		{#if isPermissionSupported('can_sync')}
+			<div
+				class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3"
 			>
-				{#if loadingSync}
-					<span class="absolute inset-0 flex items-center justify-center">
-						<span class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-					</span>
-				{:else}
-					<span
-						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {canSync ?? true
-							? 'translate-x-5'
-							: 'translate-x-0'}"
-					></span>
-				{/if}
-			</button>
-		</div>
+				<div class="space-y-0.5">
+					<Label class="text-cr-text text-sm font-medium">Sync</Label>
+					<p class="text-cr-text-muted text-xs">Can sync content for offline use</p>
+				</div>
+				<button
+					type="button"
+					role="switch"
+					aria-checked={canSync ?? true}
+					aria-label="Toggle sync permission"
+					disabled={disabled || anyLoading}
+					onclick={toggleSync}
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canSync ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					data-permission="can_sync"
+				>
+					{#if loadingSync}
+						<span class="absolute inset-0 flex items-center justify-center">
+							<span
+								class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"
+							></span>
+						</span>
+					{:else}
+						<span
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canSync ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+						></span>
+					{/if}
+				</button>
+			</div>
 		{/if}
 
 		<!-- Transcode Permission -->
-		{#if isPermissionSupported("can_transcode")}
-		<div class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3">
-			<div class="space-y-0.5">
-				<Label class="text-cr-text text-sm font-medium">Transcoding</Label>
-				<p class="text-cr-text-muted text-xs">Can request content transcoding</p>
-			</div>
-			<button
-				type="button"
-				role="switch"
-				aria-checked={canTranscode ?? true}
-				aria-label="Toggle transcoding permission"
-				disabled={disabled || anyLoading}
-				onclick={toggleTranscode}
-				class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {canTranscode ?? true
-					? 'bg-cr-accent'
-					: 'bg-cr-border'}"
-				data-permission="can_transcode"
+		{#if isPermissionSupported('can_transcode')}
+			<div
+				class="flex items-center justify-between gap-3 rounded-lg border border-cr-border bg-cr-bg p-3"
 			>
-				{#if loadingTranscode}
-					<span class="absolute inset-0 flex items-center justify-center">
-						<span class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-					</span>
-				{:else}
-					<span
-						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {canTranscode ?? true
-							? 'translate-x-5'
-							: 'translate-x-0'}"
-					></span>
-				{/if}
-			</button>
-		</div>
+				<div class="space-y-0.5">
+					<Label class="text-cr-text text-sm font-medium">Transcoding</Label>
+					<p class="text-cr-text-muted text-xs">Can request content transcoding</p>
+				</div>
+				<button
+					type="button"
+					role="switch"
+					aria-checked={canTranscode ?? true}
+					aria-label="Toggle transcoding permission"
+					disabled={disabled || anyLoading}
+					onclick={toggleTranscode}
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canTranscode ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					data-permission="can_transcode"
+				>
+					{#if loadingTranscode}
+						<span class="absolute inset-0 flex items-center justify-center">
+							<span
+								class="size-3 animate-spin rounded-full border-2 border-white border-t-transparent"
+							></span>
+						</span>
+					{:else}
+						<span
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canTranscode ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+						></span>
+					{/if}
+				</button>
+			</div>
 		{/if}
 	</div>
 </div>

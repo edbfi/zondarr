@@ -11,19 +11,26 @@
  * @module routes/(admin)/users/+page
  */
 
-import { goto, invalidateAll } from "$app/navigation";
-import { page } from "$app/state";
-import { deleteUser, disableUser, enableUser, type ListUsersParams, removeSharedAccess, withErrorHandling } from "$lib/api/client";
-import { getErrorMessage, isNetworkError } from "$lib/api/errors";
-import EmptyState from "$lib/components/empty-state.svelte";
-import ErrorState from "$lib/components/error-state.svelte";
-import Pagination from "$lib/components/pagination.svelte";
-import SteppedDeleteDialog from "$lib/components/stepped-delete-dialog.svelte";
-import UserFilters from "$lib/components/users/user-filters.svelte";
-import UserListSkeleton from "$lib/components/users/user-list-skeleton.svelte";
-import UserTable from "$lib/components/users/user-table.svelte";
-import { showSuccess } from "$lib/utils/toast";
-import type { PageData } from "./$types";
+import { goto, invalidateAll } from '$app/navigation';
+import { page } from '$app/state';
+import {
+	deleteUser,
+	disableUser,
+	enableUser,
+	type ListUsersParams,
+	removeSharedAccess,
+	withErrorHandling
+} from '$lib/api/client';
+import { getErrorMessage, isNetworkError } from '$lib/api/errors';
+import EmptyState from '$lib/components/empty-state.svelte';
+import ErrorState from '$lib/components/error-state.svelte';
+import Pagination from '$lib/components/pagination.svelte';
+import SteppedDeleteDialog from '$lib/components/stepped-delete-dialog.svelte';
+import UserFilters from '$lib/components/users/user-filters.svelte';
+import UserListSkeleton from '$lib/components/users/user-list-skeleton.svelte';
+import UserTable from '$lib/components/users/user-table.svelte';
+import { showSuccess } from '$lib/utils/toast';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
@@ -44,7 +51,7 @@ const currentParams = $derived(data.params);
 const deleteTargetType = $derived.by(() => {
 	if (!deleteTarget || !data.users) return null;
 	const targetUser = data.users.items.find((u) => u.id === deleteTarget);
-	return (targetUser?.external_user_type as "friend" | "shared" | "home" | null) ?? null;
+	return (targetUser?.external_user_type as 'friend' | 'shared' | 'home' | null) ?? null;
 });
 
 /**
@@ -67,7 +74,7 @@ function handleFilterChange(newParams: Partial<ListUsersParams>) {
 
 	// Update or remove each param
 	for (const [key, value] of Object.entries(newParams)) {
-		if (value === undefined || value === null || value === "") {
+		if (value === undefined || value === null || value === '') {
 			url.searchParams.delete(key);
 		} else {
 			url.searchParams.set(key, String(value));
@@ -75,8 +82,8 @@ function handleFilterChange(newParams: Partial<ListUsersParams>) {
 	}
 
 	// Reset to page 1 when filters change (except for page changes)
-	if (!("page" in newParams)) {
-		url.searchParams.set("page", "1");
+	if (!('page' in newParams)) {
+		url.searchParams.set('page', '1');
 	}
 
 	goto(url.toString(), { keepFocus: true, noScroll: true });
@@ -95,7 +102,7 @@ function handlePageChange(newPage: number) {
 async function handleEnableUser(id: string) {
 	const result = await withErrorHandling(() => enableUser(id));
 	if (!result.error) {
-		showSuccess("User enabled");
+		showSuccess('User enabled');
 		await invalidateAll();
 	}
 }
@@ -106,7 +113,7 @@ async function handleEnableUser(id: string) {
 async function handleDisableUser(id: string) {
 	const result = await withErrorHandling(() => disableUser(id));
 	if (!result.error) {
-		showSuccess("User disabled");
+		showSuccess('User disabled');
 		await invalidateAll();
 	}
 }
@@ -125,12 +132,12 @@ function handleDeleteRequest(id: string) {
 async function handleRemoveShares() {
 	if (!deleteTarget) return;
 	const result = await withErrorHandling(() => removeSharedAccess(deleteTarget!), {
-		showErrorToast: false,
+		showErrorToast: false
 	});
 	if (result.error) {
-		throw new Error("Failed to remove shared access");
+		throw new Error('Failed to remove shared access');
 	}
-	showSuccess("Shared access removed");
+	showSuccess('Shared access removed');
 	await invalidateAll();
 }
 
@@ -141,12 +148,12 @@ async function handleDeleteConfirm() {
 	if (!deleteTarget) return;
 	const target = deleteTarget;
 	const result = await withErrorHandling(() => deleteUser(target), {
-		showErrorToast: false,
+		showErrorToast: false
 	});
 	if (result.error) {
-		throw new Error("Failed to delete user");
+		throw new Error('Failed to delete user');
 	}
-	showSuccess("User deleted");
+	showSuccess('User deleted');
 	showDeleteDialog = false;
 	deleteTarget = null;
 	await invalidateAll();
@@ -212,5 +219,8 @@ async function handleDeleteConfirm() {
 	userType={deleteTargetType}
 	onRemoveShares={handleRemoveShares}
 	onDelete={handleDeleteConfirm}
-	onCancel={() => { showDeleteDialog = false; deleteTarget = null; }}
+	onCancel={() => {
+	showDeleteDialog = false;
+	deleteTarget = null;
+}}
 />

@@ -1,72 +1,67 @@
 <script lang="ts">
-	import { Loader2, ShieldCheck } from '@lucide/svelte';
-	import {
-		getErrorDetail,
-		type TotpSetupResponse,
-		totpSetup,
-		totpVerifySetup
-	} from '$lib/api/auth';
-	import TotpCodeInput from '$lib/components/auth/totp-code-input.svelte';
-	import BackupCodesDisplay from '$lib/components/settings/backup-codes-display.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Card from '$lib/components/ui/card';
+import { Loader2, ShieldCheck } from '@lucide/svelte';
+import { getErrorDetail, type TotpSetupResponse, totpSetup, totpVerifySetup } from '$lib/api/auth';
+import TotpCodeInput from '$lib/components/auth/totp-code-input.svelte';
+import BackupCodesDisplay from '$lib/components/settings/backup-codes-display.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
 
-	interface Props {
-		onComplete: () => void;
-		onSkip: () => void;
+interface Props {
+	onComplete: () => void;
+	onSkip: () => void;
+}
+
+const { onComplete, onSkip }: Props = $props();
+
+type Step = 'intro' | 'loading' | 'scan' | 'verify' | 'backup';
+
+let step = $state<Step>('intro');
+let setupData = $state<TotpSetupResponse | null>(null);
+let backupCodes = $state<string[]>([]);
+let verifying = $state(false);
+let verifyError = $state('');
+let showSecret = $state(false);
+let setupError = $state('');
+let totpInputRef: TotpCodeInput | undefined = $state();
+
+async function startSetup() {
+	step = 'loading';
+	setupData = null;
+	backupCodes = [];
+	verifyError = '';
+	setupError = '';
+	showSecret = false;
+
+	const result = await totpSetup();
+	if (result.error) {
+		setupError = getErrorDetail(result.error, 'Failed to initialize TOTP setup');
+		step = 'intro';
+		return;
 	}
+	setupData = result.data!;
+	step = 'scan';
+}
 
-	const { onComplete, onSkip }: Props = $props();
-
-	type Step = 'intro' | 'loading' | 'scan' | 'verify' | 'backup';
-
-	let step = $state<Step>('intro');
-	let setupData = $state<TotpSetupResponse | null>(null);
-	let backupCodes = $state<string[]>([]);
-	let verifying = $state(false);
-	let verifyError = $state('');
-	let showSecret = $state(false);
-	let setupError = $state('');
-	let totpInputRef: TotpCodeInput | undefined = $state();
-
-	async function startSetup() {
-		step = 'loading';
-		setupData = null;
-		backupCodes = [];
-		verifyError = '';
-		setupError = '';
-		showSecret = false;
-
-		const result = await totpSetup();
+async function handleVerify(code: string) {
+	verifyError = '';
+	verifying = true;
+	try {
+		const result = await totpVerifySetup({ code });
 		if (result.error) {
-			setupError = getErrorDetail(result.error, 'Failed to initialize TOTP setup');
-			step = 'intro';
+			verifyError = getErrorDetail(result.error, 'Invalid verification code');
+			verifying = false;
+			totpInputRef?.reset();
 			return;
 		}
-		setupData = result.data!;
-		step = 'scan';
+		backupCodes = result.data!.backup_codes;
+		step = 'backup';
+	} catch {
+		verifyError = 'Failed to verify code. Please try again.';
+		totpInputRef?.reset();
+	} finally {
+		verifying = false;
 	}
-
-	async function handleVerify(code: string) {
-		verifyError = '';
-		verifying = true;
-		try {
-			const result = await totpVerifySetup({ code });
-			if (result.error) {
-				verifyError = getErrorDetail(result.error, 'Invalid verification code');
-				verifying = false;
-				totpInputRef?.reset();
-				return;
-			}
-			backupCodes = result.data!.backup_codes;
-			step = 'backup';
-		} catch {
-			verifyError = 'Failed to verify code. Please try again.';
-			totpInputRef?.reset();
-		} finally {
-			verifying = false;
-		}
-	}
+}
 </script>
 
 <Card.Root class="border-cr-border bg-cr-surface">
@@ -97,9 +92,9 @@
 				<div class="flex items-start gap-2">
 					<ShieldCheck class="mt-0.5 size-4 shrink-0 text-cr-accent" />
 					<p class="text-sm text-cr-text-muted">
-						Two-factor authentication requires a code from your authenticator app (like
-						Google Authenticator or Authy) each time you sign in, protecting your account
-						even if your password is compromised.
+						Two-factor authentication requires a code from your authenticator app (like Google
+						Authenticator or Authy) each time you sign in, protecting your account even if your
+						password is compromised.
 					</p>
 				</div>
 			</div>
@@ -129,8 +124,8 @@
 		{:else if step === 'scan'}
 			<div class="flex flex-col items-center gap-4">
 				<p class="text-sm text-cr-text-muted">
-					Scan the QR code with your authenticator app, then continue to enter the
-					verification code.
+					Scan the QR code with your authenticator app, then continue to enter the verification
+					code.
 				</p>
 
 				{#if setupData}
@@ -144,7 +139,8 @@
 							onclick={() => (showSecret = !showSecret)}
 							class="text-sm text-cr-accent hover:text-cr-accent-hover"
 						>
-							{showSecret ? 'Hide' : 'Show'} manual entry key
+							{showSecret ? 'Hide' : 'Show'}
+							manual entry key
 						</button>
 						{#if showSecret}
 							<div
@@ -181,11 +177,7 @@
 				{/if}
 
 				<div class="py-2">
-					<TotpCodeInput
-						bind:this={totpInputRef}
-						onsubmit={handleVerify}
-						disabled={verifying}
-					/>
+					<TotpCodeInput bind:this={totpInputRef} onsubmit={handleVerify} disabled={verifying} />
 				</div>
 
 				{#if verifying}
@@ -209,8 +201,8 @@
 		{:else if step === 'backup'}
 			<div class="flex flex-col gap-4">
 				<p class="text-sm text-cr-text-muted">
-					Store these backup codes in a safe place. Each code can only be used once to sign
-					in if you lose access to your authenticator app.
+					Store these backup codes in a safe place. Each code can only be used once to sign in if
+					you lose access to your authenticator app.
 				</p>
 
 				<BackupCodesDisplay codes={backupCodes} />

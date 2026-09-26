@@ -7,22 +7,10 @@
  * @module routes/(public)/join/[code]/join-page-test-wrapper
  */
 
-import {
-	AlertTriangle,
-	Calendar,
-	CheckCircle,
-	Library,
-	Server,
-} from "@lucide/svelte";
-import type { InvitationValidationResponse } from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "$lib/components/ui/card";
+import { AlertTriangle, Calendar, CheckCircle, Library, Server } from '@lucide/svelte';
+import type { InvitationValidationResponse } from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 
 interface Props {
 	code: string;
@@ -37,16 +25,16 @@ const { code, validation, error }: Props = $props();
  */
 function getFailureMessage(reason: string | null | undefined): string {
 	switch (reason) {
-		case "not_found":
-			return "This invitation code does not exist. Please check the code and try again.";
-		case "disabled":
-			return "This invitation has been disabled by the administrator.";
-		case "expired":
-			return "This invitation has expired and is no longer valid.";
-		case "max_uses_reached":
-			return "This invitation has reached its maximum number of uses.";
+		case 'not_found':
+			return 'This invitation code does not exist. Please check the code and try again.';
+		case 'disabled':
+			return 'This invitation has been disabled by the administrator.';
+		case 'expired':
+			return 'This invitation has expired and is no longer valid.';
+		case 'max_uses_reached':
+			return 'This invitation has reached its maximum number of uses.';
 		default:
-			return "This invitation code is not valid.";
+			return 'This invitation code is not valid.';
 	}
 }
 </script>
@@ -55,16 +43,12 @@ function getFailureMessage(reason: string | null | undefined): string {
 	<!-- Page header -->
 	<div class="text-center">
 		<h1 class="text-2xl font-bold text-cr-text md:text-3xl">Join Media Server</h1>
-		<p class="mt-2 text-cr-text-muted">
-			Validate your invitation code to get started
-		</p>
+		<p class="mt-2 text-cr-text-muted">Validate your invitation code to get started</p>
 	</div>
 
 	<!-- Error state -->
 	{#if error}
-		<div data-error-state class="text-rose-400">
-			Error: {error.message}
-		</div>
+		<div data-error-state class="text-rose-400">Error: {error.message}</div>
 	<!-- Invalid code state -->
 	{:else if validation && !validation.valid}
 		<Card data-invalid-code class="border-rose-500/30 bg-rose-500/5">
@@ -106,14 +90,21 @@ function getFailureMessage(reason: string | null | undefined): string {
 			<CardContent class="space-y-6">
 				<!-- Duration info -->
 				{#if validation.duration_days}
-					<div data-duration-display class="flex items-center gap-3 rounded-lg border border-cr-border bg-cr-bg p-4">
+					<div
+						data-duration-display
+						class="flex items-center gap-3 rounded-lg border border-cr-border bg-cr-bg p-4"
+					>
 						<div class="rounded-full bg-cr-accent/15 p-2 text-cr-accent">
 							<Calendar class="size-5" />
 						</div>
 						<div>
 							<p class="font-medium text-cr-text">Access Duration</p>
 							<p class="text-sm text-cr-text-muted">
-								Your access will be valid for <span class="font-semibold text-cr-accent" data-duration-value>{validation.duration_days}</span> days after registration.
+								Your access will be valid for
+								<span class="font-semibold text-cr-accent" data-duration-value
+									>{validation.duration_days}</span
+								>
+								days after registration.
 							</p>
 						</div>
 					</div>
@@ -128,9 +119,14 @@ function getFailureMessage(reason: string | null | undefined): string {
 						</div>
 						<div class="space-y-2">
 							{#each validation.target_servers as server}
-								<div data-server-item={server.name} class="rounded-lg border border-cr-border bg-cr-bg p-3">
+								<div
+									data-server-item={server.name}
+									class="rounded-lg border border-cr-border bg-cr-bg p-3"
+								>
 									<p class="font-medium text-cr-text" data-server-name>{server.name}</p>
-									<p class="text-sm text-cr-text-muted capitalize" data-server-type>{server.server_type}</p>
+									<p class="text-sm text-cr-text-muted capitalize" data-server-type>
+										{server.server_type}
+									</p>
 								</div>
 							{/each}
 						</div>
@@ -146,7 +142,10 @@ function getFailureMessage(reason: string | null | undefined): string {
 						</div>
 						<div class="flex flex-wrap gap-2">
 							{#each validation.allowed_libraries as library}
-								<span data-library-item={library.id} class="rounded-full border border-cr-border bg-cr-bg px-3 py-1 text-sm text-cr-text">
+								<span
+									data-library-item={library.id}
+									class="rounded-full border border-cr-border bg-cr-bg px-3 py-1 text-sm text-cr-text"
+								>
 									{library.name}
 								</span>
 							{/each}
@@ -160,9 +159,7 @@ function getFailureMessage(reason: string | null | undefined): string {
 				{/if}
 
 				<!-- Continue button -->
-				<Button
-					class="w-full bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
-				>
+				<Button class="w-full bg-cr-accent text-cr-bg hover:bg-cr-accent-hover">
 					Continue to Registration
 				</Button>
 			</CardContent>

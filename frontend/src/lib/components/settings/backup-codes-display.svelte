@@ -1,38 +1,38 @@
 <script lang="ts">
-	import { Check, Copy, Download } from '@lucide/svelte';
-	import { Button } from '$lib/components/ui/button';
+import { Check, Copy, Download } from '@lucide/svelte';
+import { Button } from '$lib/components/ui/button';
 
-	interface Props {
-		codes: string[];
-	}
+interface Props {
+	codes: string[];
+}
 
-	let { codes }: Props = $props();
+let { codes }: Props = $props();
 
-	let copied = $state(false);
+let copied = $state(false);
 
-	async function copyAll() {
-		await navigator.clipboard.writeText(codes.join('\n'));
-		copied = true;
-		setTimeout(() => (copied = false), 2000);
-	}
+async function copyAll() {
+	await navigator.clipboard.writeText(codes.join('\n'));
+	copied = true;
+	setTimeout(() => (copied = false), 2000);
+}
 
-	function downloadCodes() {
-		const content = [
-			'Zondarr — TOTP Backup Codes',
-			'Keep these codes in a safe place.',
-			'Each code can only be used once.',
-			'',
-			...codes
-		].join('\n');
+function downloadCodes() {
+	const content = [
+		'Zondarr — TOTP Backup Codes',
+		'Keep these codes in a safe place.',
+		'Each code can only be used once.',
+		'',
+		...codes
+	].join('\n');
 
-		const blob = new Blob([content], { type: 'text/plain' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'zondarr-backup-codes.txt';
-		a.click();
-		URL.revokeObjectURL(url);
-	}
+	const blob = new Blob([content], { type: 'text/plain' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'zondarr-backup-codes.txt';
+	a.click();
+	URL.revokeObjectURL(url);
+}
 </script>
 
 <div class="space-y-4">

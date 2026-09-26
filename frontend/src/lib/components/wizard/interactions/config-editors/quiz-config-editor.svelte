@@ -4,11 +4,11 @@
  *
  * Provides admin UI for configuring quiz interaction settings.
  */
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import * as RadioGroup from "$lib/components/ui/radio-group";
-import type { ConfigEditorProps } from "../registry";
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import * as RadioGroup from '$lib/components/ui/radio-group';
+import type { ConfigEditorProps } from '../registry';
 
 const { config: rawConfig, onConfigChange, errors }: ConfigEditorProps = $props();
 

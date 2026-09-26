@@ -14,19 +14,16 @@
  * @module $lib/components/invitations/invitation-form-simple
  */
 
-import { Calendar, Hash, Server, Timer, Users, Wand2 } from "@lucide/svelte";
+import { Calendar, Hash, Server, Timer, Users, Wand2 } from '@lucide/svelte';
 import type {
 	LibraryResponse,
 	MediaServerWithLibrariesResponse,
-	WizardResponse,
-} from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import type {
-	CreateInvitationInput,
-	UpdateInvitationInput,
-} from "$lib/schemas/invitation";
+	WizardResponse
+} from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import type { CreateInvitationInput, UpdateInvitationInput } from '$lib/schemas/invitation';
 
 type FormData = CreateInvitationInput | UpdateInvitationInput;
 
@@ -36,7 +33,7 @@ interface Props {
 	servers: MediaServerWithLibrariesResponse[];
 	wizards?: WizardResponse[];
 	loadingWizards?: boolean;
-	mode: "create" | "edit";
+	mode: 'create' | 'edit';
 	submitting?: boolean;
 	onSubmit: () => void;
 	onCancel?: () => void;
@@ -51,7 +48,7 @@ let {
 	mode,
 	submitting = false,
 	onSubmit,
-	onCancel,
+	onCancel
 }: Props = $props();
 
 // Derive available libraries based on selected servers
@@ -79,7 +76,7 @@ function toggleServer(serverId: string) {
 		const serverLibraryIds =
 			servers.find((s) => s.id === serverId)?.libraries.map((l) => l.id) ?? [];
 		formData.library_ids = (formData.library_ids ?? []).filter(
-			(id: string) => !serverLibraryIds.includes(id),
+			(id: string) => !serverLibraryIds.includes(id)
 		);
 	} else {
 		formData.server_ids = [...current, serverId];
@@ -116,12 +113,12 @@ function isLibrarySelected(libraryId: string): boolean {
  * Format datetime-local input value from ISO string.
  */
 function formatDateTimeLocal(isoString: string | undefined | null): string {
-	if (!isoString) return "";
+	if (!isoString) return '';
 	try {
 		const date = new Date(isoString);
 		return toLocalDateTimeString(date);
 	} catch {
-		return "";
+		return '';
 	}
 }
 
@@ -129,11 +126,11 @@ function formatDateTimeLocal(isoString: string | undefined | null): string {
  * Convert datetime-local value to ISO string.
  */
 function toISOString(dateTimeLocal: string): string {
-	if (!dateTimeLocal) return "";
+	if (!dateTimeLocal) return '';
 	try {
 		return new Date(dateTimeLocal).toISOString();
 	} catch {
-		return "";
+		return '';
 	}
 }
 
@@ -148,16 +145,14 @@ function toLocalDateTimeString(date: Date): string {
 
 function normalizeExpiration(value = expiresAtLocal) {
 	expiresAtLocal = value;
-	formData.expires_at = value ? toISOString(value) : "";
+	formData.expires_at = value ? toISOString(value) : '';
 }
 
 // Compute minimum datetime for expiration input (current time, local timezone)
 const minDateTime = $derived(toLocalDateTimeString(new Date()));
 
 // Local state for datetime-local input
-let expiresAtLocal = $state(
-	formatDateTimeLocal(formData.expires_at as string | undefined),
-);
+let expiresAtLocal = $state(formatDateTimeLocal(formData.expires_at as string | undefined));
 
 /**
  * Handle form submission.
@@ -195,26 +190,36 @@ function getFieldErrors(field: string): string[] {
 					type="button"
 					onclick={() => toggleServer(server.id)}
 					class="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors {isServerSelected(server.id)
-						? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-						: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
+	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+	: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
 					aria-pressed={isServerSelected(server.id)}
 					data-server-option={server.id}
 				>
 					<div
-						class="flex size-5 items-center justify-center rounded border {isServerSelected(server.id)
-							? 'border-cr-accent bg-cr-accent'
-							: 'border-cr-border'}"
+						class="flex size-5 items-center justify-center rounded border {isServerSelected(server.id) ? 'border-cr-accent bg-cr-accent' : 'border-cr-border'}"
 					>
 						{#if isServerSelected(server.id)}
-							<svg class="size-3 text-cr-bg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+							<svg
+								class="size-3 text-cr-bg"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								aria-hidden="true"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="3"
+									d="M5 13l4 4L19 7"
+								/>
 							</svg>
 						{/if}
 					</div>
 					<div class="flex-1">
 						<div class="font-medium">{server.name}</div>
 						<div class="text-xs text-cr-text-muted">
-							{server.server_type} · {server.libraries.length} libraries
+							{server.server_type}
+							· {server.libraries.length} libraries
 						</div>
 					</div>
 				</button>
@@ -236,25 +241,32 @@ function getFieldErrors(field: string): string[] {
 	{#if availableLibraries.length > 0}
 		<div class="space-y-2">
 			<Label class="text-cr-text flex items-center gap-2">
-				<svg class="size-4 text-cr-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+				<svg
+					class="size-4 text-cr-accent"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+					/>
 				</svg>
 				Allowed Libraries
 				<span class="text-cr-text-muted text-xs">(optional - all if none selected)</span>
 			</Label>
 			<!-- biome-ignore lint/a11y/useSemanticElements: This ARIA group labels existing controls without introducing native fieldset layout. -->
-			<div
-				class="mt-2 flex flex-wrap gap-2"
-				role="group"
-				aria-label="Select allowed libraries"
-			>
+			<div class="mt-2 flex flex-wrap gap-2" role="group" aria-label="Select allowed libraries">
 				{#each availableLibraries as library (library.id)}
 					<button
 						type="button"
 						onclick={() => toggleLibrary(library.id)}
 						class="rounded-full border px-3 py-1 text-sm transition-colors {isLibrarySelected(library.id)
-							? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-							: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
+	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+	: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
 						aria-pressed={isLibrarySelected(library.id)}
 						data-library-option={library.id}
 					>
@@ -303,11 +315,11 @@ function getFieldErrors(field: string): string[] {
 			type="datetime-local"
 			bind:value={expiresAtLocal}
 			oninput={(e) => {
-				normalizeExpiration(e.currentTarget.value);
-			}}
+	normalizeExpiration(e.currentTarget.value);
+}}
 			onchange={(e) => {
-				normalizeExpiration(e.currentTarget.value);
-			}}
+	normalizeExpiration(e.currentTarget.value);
+}}
 			min={minDateTime}
 			class="border-cr-border bg-cr-surface text-cr-text"
 			data-field-expires-at
@@ -381,7 +393,9 @@ function getFieldErrors(field: string): string[] {
 
 			{#if loadingWizards}
 				<div class="flex items-center gap-2 text-cr-text-muted text-sm">
-					<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+					<span
+						class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+					></span>
 					Loading wizards...
 				</div>
 			{:else}
@@ -448,22 +462,18 @@ function getFieldErrors(field: string): string[] {
 					aria-checked={(formData as UpdateInvitationInput).enabled ?? true}
 					aria-label="Toggle invitation enabled status"
 					onclick={() => {
-						const current = (formData as UpdateInvitationInput).enabled ?? true;
-						(formData as UpdateInvitationInput).enabled = !current;
-					}}
-					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {(formData as UpdateInvitationInput).enabled ?? true
-						? 'bg-cr-accent'
-						: 'bg-cr-border'}"
+	const current = (formData as UpdateInvitationInput).enabled ?? true;
+	(formData as UpdateInvitationInput).enabled = !current;
+}}
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {((formData as UpdateInvitationInput).enabled ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
 					data-field-enabled
 				>
 					<span
-						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(formData as UpdateInvitationInput).enabled ?? true
-							? 'translate-x-5'
-							: 'translate-x-0'}"
+						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {((formData as UpdateInvitationInput).enabled ?? true) ? 'translate-x-5' : 'translate-x-0'}"
 					></span>
 				</button>
 				<Label class="text-cr-text cursor-pointer">
-					{(formData as UpdateInvitationInput).enabled ?? true ? 'Enabled' : 'Disabled'}
+					{((formData as UpdateInvitationInput).enabled ?? true) ? 'Enabled' : 'Disabled'}
 				</Label>
 			</div>
 			<p class="text-cr-text-muted text-xs">Disabled invitations cannot be redeemed</p>
@@ -489,7 +499,9 @@ function getFieldErrors(field: string): string[] {
 			class="bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
 		>
 			{#if submitting}
-				<span class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+				<span
+					class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+				></span>
 			{/if}
 			{mode === 'create' ? 'Create Invitation' : 'Save Changes'}
 		</Button>

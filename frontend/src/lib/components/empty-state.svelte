@@ -1,8 +1,8 @@
 <script lang="ts">
-import { Inbox } from "@lucide/svelte";
-import type { Snippet } from "svelte";
-import { Button } from "$lib/components/ui/button";
-import { cn } from "$lib/utils.js";
+import { Inbox } from '@lucide/svelte';
+import type { Snippet } from 'svelte';
+import { Button } from '$lib/components/ui/button';
+import { cn } from '$lib/utils.js';
 
 interface Action {
 	label: string;
@@ -23,9 +23,9 @@ const { title, description, action, icon, class: className }: Props = $props();
 <div
 	data-empty-state
 	class={cn(
-		'flex flex-col items-center justify-center rounded-lg border border-dashed border-cr-border bg-cr-surface/50 px-6 py-12 text-center',
-		className
-	)}
+	'flex flex-col items-center justify-center rounded-lg border border-dashed border-cr-border bg-cr-surface/50 px-6 py-12 text-center',
+	className
+)}
 	role="status"
 	aria-label={title}
 >
@@ -48,10 +48,7 @@ const { title, description, action, icon, class: className }: Props = $props();
 
 	<!-- Action button -->
 	{#if action}
-		<Button
-			onclick={action.onClick}
-			class="mt-4 bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
-		>
+		<Button onclick={action.onClick} class="mt-4 bg-cr-accent text-cr-bg hover:bg-cr-accent-hover">
 			{action.label}
 		</Button>
 	{/if}

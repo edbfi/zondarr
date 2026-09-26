@@ -10,16 +10,10 @@
  * @module $lib/components/join/success-page
  */
 
-import { CheckCircle, ExternalLink, Server, User } from "@lucide/svelte";
-import type { RedemptionResponse } from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "$lib/components/ui/card";
+import { CheckCircle, ExternalLink, Server, User } from '@lucide/svelte';
+import type { RedemptionResponse } from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 
 interface Props {
 	response: RedemptionResponse;
@@ -95,7 +89,9 @@ const { response, hasPlexServer = false }: Props = $props();
 		</CardHeader>
 		<CardContent class="space-y-4">
 			<div class="flex items-start gap-3">
-				<div class="flex size-6 shrink-0 items-center justify-center rounded-full bg-cr-accent/15 text-cr-accent text-sm font-medium">
+				<div
+					class="flex size-6 shrink-0 items-center justify-center rounded-full bg-cr-accent/15 text-cr-accent text-sm font-medium"
+				>
 					1
 				</div>
 				<div>
@@ -106,18 +102,20 @@ const { response, hasPlexServer = false }: Props = $props();
 				</div>
 			</div>
 			<div class="flex items-start gap-3">
-				<div class="flex size-6 shrink-0 items-center justify-center rounded-full bg-cr-accent/15 text-cr-accent text-sm font-medium">
+				<div
+					class="flex size-6 shrink-0 items-center justify-center rounded-full bg-cr-accent/15 text-cr-accent text-sm font-medium"
+				>
 					2
 				</div>
 				<div>
 					<p class="font-medium text-cr-text">Connect to the Server</p>
-					<p class="text-sm text-cr-text-muted">
-						Enter the server URL when prompted in the app.
-					</p>
+					<p class="text-sm text-cr-text-muted">Enter the server URL when prompted in the app.</p>
 				</div>
 			</div>
 			<div class="flex items-start gap-3">
-				<div class="flex size-6 shrink-0 items-center justify-center rounded-full bg-cr-accent/15 text-cr-accent text-sm font-medium">
+				<div
+					class="flex size-6 shrink-0 items-center justify-center rounded-full bg-cr-accent/15 text-cr-accent text-sm font-medium"
+				>
 					3
 				</div>
 				<div>

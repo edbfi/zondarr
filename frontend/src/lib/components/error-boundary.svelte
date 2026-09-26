@@ -1,8 +1,8 @@
 <script lang="ts">
-import { AlertTriangle, RefreshCw } from "@lucide/svelte";
-import type { Snippet } from "svelte";
-import { Button } from "$lib/components/ui/button";
-import { cn } from "$lib/utils.js";
+import { AlertTriangle, RefreshCw } from '@lucide/svelte';
+import type { Snippet } from 'svelte';
+import { Button } from '$lib/components/ui/button';
+import { cn } from '$lib/utils.js';
 
 interface Props {
 	children: Snippet;
@@ -20,7 +20,7 @@ let error = $state<Error | null>(null);
  */
 export function handleError(e: Error) {
 	error = e;
-	console.error("Error boundary caught:", e);
+	console.error('Error boundary caught:', e);
 }
 
 /**
@@ -37,9 +37,9 @@ function reset() {
 	{:else}
 		<div
 			class={cn(
-				'flex flex-col items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/5 px-6 py-12 text-center',
-				className
-			)}
+	'flex flex-col items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/5 px-6 py-12 text-center',
+	className
+)}
 			role="alert"
 			aria-live="polite"
 		>

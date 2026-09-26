@@ -5,4 +5,8 @@ import type { PageData } from './$types';
 const { data }: { data: PageData } = $props();
 </script>
 
-<SetupWizard initialStep={data.onboardingStep} tokenAvailable={data.tokenAvailable} tokenError={data.tokenError} />
+<SetupWizard
+	initialStep={data.onboardingStep}
+	tokenAvailable={data.tokenAvailable}
+	tokenError={data.tokenError}
+/>

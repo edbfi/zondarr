@@ -1,91 +1,86 @@
 <script lang="ts">
-	import { Loader2 } from '@lucide/svelte';
-	import {
-		getErrorDetail,
-		type TotpSetupResponse,
-		totpSetup,
-		totpVerifySetup
-	} from '$lib/api/auth';
-	import TotpCodeInput from '$lib/components/auth/totp-code-input.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { showApiError, showSuccess } from '$lib/utils/toast';
-	import BackupCodesDisplay from './backup-codes-display.svelte';
+import { Loader2 } from '@lucide/svelte';
+import { getErrorDetail, type TotpSetupResponse, totpSetup, totpVerifySetup } from '$lib/api/auth';
+import TotpCodeInput from '$lib/components/auth/totp-code-input.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Dialog from '$lib/components/ui/dialog';
+import { showApiError, showSuccess } from '$lib/utils/toast';
+import BackupCodesDisplay from './backup-codes-display.svelte';
 
-	interface Props {
-		open: boolean;
-		oncomplete: () => void;
+interface Props {
+	open: boolean;
+	oncomplete: () => void;
+}
+
+let { open = $bindable(false), oncomplete }: Props = $props();
+
+type Step = 'loading' | 'scan' | 'verify' | 'backup';
+
+let step = $state<Step>('loading');
+let setupData = $state<TotpSetupResponse | null>(null);
+let backupCodes = $state<string[]>([]);
+let verifying = $state(false);
+let verifyError = $state('');
+let showSecret = $state(false);
+let totpInputRef: TotpCodeInput | undefined = $state();
+
+async function startSetup() {
+	step = 'loading';
+	setupData = null;
+	backupCodes = [];
+	verifyError = '';
+	showSecret = false;
+
+	const result = await totpSetup();
+	if (result.error) {
+		showApiError(result.error);
+		open = false;
+		return;
 	}
+	setupData = result.data!;
+	step = 'scan';
+}
 
-	let { open = $bindable(false), oncomplete }: Props = $props();
-
-	type Step = 'loading' | 'scan' | 'verify' | 'backup';
-
-	let step = $state<Step>('loading');
-	let setupData = $state<TotpSetupResponse | null>(null);
-	let backupCodes = $state<string[]>([]);
-	let verifying = $state(false);
-	let verifyError = $state('');
-	let showSecret = $state(false);
-	let totpInputRef: TotpCodeInput | undefined = $state();
-
-	async function startSetup() {
-		step = 'loading';
-		setupData = null;
-		backupCodes = [];
-		verifyError = '';
-		showSecret = false;
-
-		const result = await totpSetup();
+async function handleVerify(code: string) {
+	verifyError = '';
+	verifying = true;
+	try {
+		const result = await totpVerifySetup({ code });
 		if (result.error) {
-			showApiError(result.error);
-			open = false;
+			verifyError = getErrorDetail(result.error, 'Invalid verification code');
+			verifying = false;
+			totpInputRef?.reset();
 			return;
 		}
-		setupData = result.data!;
-		step = 'scan';
+		backupCodes = result.data!.backup_codes;
+		step = 'backup';
+		showSuccess('Two-factor authentication enabled');
+	} catch {
+		verifyError = 'Failed to verify code. Please try again.';
+		totpInputRef?.reset();
+	} finally {
+		verifying = false;
 	}
+}
 
-	async function handleVerify(code: string) {
-		verifyError = '';
-		verifying = true;
-		try {
-			const result = await totpVerifySetup({ code });
-			if (result.error) {
-				verifyError = getErrorDetail(result.error, 'Invalid verification code');
-				verifying = false;
-				totpInputRef?.reset();
-				return;
-			}
-			backupCodes = result.data!.backup_codes;
-			step = 'backup';
-			showSuccess('Two-factor authentication enabled');
-		} catch {
-			verifyError = 'Failed to verify code. Please try again.';
-			totpInputRef?.reset();
-		} finally {
-			verifying = false;
-		}
+function handleClose() {
+	if (step === 'backup') {
+		oncomplete();
 	}
+	open = false;
+}
 
-	function handleClose() {
-		if (step === 'backup') {
-			oncomplete();
-		}
-		open = false;
+function handleOpenChange(isOpen: boolean) {
+	if (!isOpen) {
+		handleClose();
 	}
+}
 
-	function handleOpenChange(isOpen: boolean) {
-		if (!isOpen) {
-			handleClose();
-		}
+$effect(() => {
+	if (open) {
+		startSetup();
 	}
-
-	$effect(() => {
-		if (open) {
-			startSetup();
-		}
-	});
+});
 </script>
 
 <Dialog.Root bind:open onOpenChange={handleOpenChange}>
@@ -120,7 +115,8 @@
 							onclick={() => (showSecret = !showSecret)}
 							class="text-sm text-cr-accent hover:text-cr-accent-hover"
 						>
-							{showSecret ? 'Hide' : 'Show'} manual entry key
+							{showSecret ? 'Hide' : 'Show'}
+							manual entry key
 						</button>
 						{#if showSecret}
 							<div

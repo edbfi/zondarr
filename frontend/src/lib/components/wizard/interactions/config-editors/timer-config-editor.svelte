@@ -4,10 +4,10 @@
  *
  * Provides admin UI for configuring timer interaction settings.
  */
-import { untrack } from "svelte";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import type { ConfigEditorProps } from "../registry";
+import { untrack } from 'svelte';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import type { ConfigEditorProps } from '../registry';
 
 const { config: rawConfig, onConfigChange, errors }: ConfigEditorProps = $props();
 

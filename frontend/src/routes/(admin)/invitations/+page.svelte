@@ -11,20 +11,20 @@
  * @module routes/(admin)/invitations/+page
  */
 
-import { goto, invalidateAll } from "$app/navigation";
-import { page } from "$app/state";
-import { deleteInvitation, type ListInvitationsParams, withErrorHandling } from "$lib/api/client";
-import { getErrorMessage, isNetworkError } from "$lib/api/errors";
-import ConfirmDialog from "$lib/components/confirm-dialog.svelte";
-import EmptyState from "$lib/components/empty-state.svelte";
-import ErrorState from "$lib/components/error-state.svelte";
-import CreateInvitationDialog from "$lib/components/invitations/create-invitation-dialog.svelte";
-import InvitationFilters from "$lib/components/invitations/invitation-filters.svelte";
-import InvitationListSkeleton from "$lib/components/invitations/invitation-list-skeleton.svelte";
-import InvitationTable from "$lib/components/invitations/invitation-table.svelte";
-import Pagination from "$lib/components/pagination.svelte";
-import { showSuccess } from "$lib/utils/toast";
-import type { PageData } from "./$types";
+import { goto, invalidateAll } from '$app/navigation';
+import { page } from '$app/state';
+import { deleteInvitation, type ListInvitationsParams, withErrorHandling } from '$lib/api/client';
+import { getErrorMessage, isNetworkError } from '$lib/api/errors';
+import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+import EmptyState from '$lib/components/empty-state.svelte';
+import ErrorState from '$lib/components/error-state.svelte';
+import CreateInvitationDialog from '$lib/components/invitations/create-invitation-dialog.svelte';
+import InvitationFilters from '$lib/components/invitations/invitation-filters.svelte';
+import InvitationListSkeleton from '$lib/components/invitations/invitation-list-skeleton.svelte';
+import InvitationTable from '$lib/components/invitations/invitation-table.svelte';
+import Pagination from '$lib/components/pagination.svelte';
+import { showSuccess } from '$lib/utils/toast';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
@@ -67,8 +67,8 @@ function handleFilterChange(newParams: Partial<ListInvitationsParams>) {
 	}
 
 	// Reset to page 1 when filters change (except for page changes)
-	if (!("page" in newParams)) {
-		url.searchParams.set("page", "1");
+	if (!('page' in newParams)) {
+		url.searchParams.set('page', '1');
 	}
 
 	goto(url.toString(), { keepFocus: true, noScroll: true });
@@ -99,7 +99,7 @@ async function handleDeleteConfirm() {
 	try {
 		const result = await withErrorHandling(() => deleteInvitation(target));
 		if (!result.error) {
-			showSuccess("Invitation deleted");
+			showSuccess('Invitation deleted');
 			await invalidateAll();
 		}
 	} finally {
@@ -163,5 +163,8 @@ async function handleDeleteConfirm() {
 	variant="destructive"
 	loading={deleting}
 	onConfirm={handleDeleteConfirm}
-	onCancel={() => { showDeleteDialog = false; deleteTarget = null; }}
+	onCancel={() => {
+	showDeleteDialog = false;
+	deleteTarget = null;
+}}
 />

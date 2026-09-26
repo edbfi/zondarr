@@ -34,9 +34,7 @@ const passwordStrength = $derived.by(() => {
 });
 const strengthLabel = $derived(['', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength]);
 const strengthColor = $derived(
-	['bg-cr-border', 'bg-red-500', 'bg-amber-500', 'bg-cyan-500', 'bg-emerald-500'][
-		passwordStrength
-	]
+	['bg-cr-border', 'bg-red-500', 'bg-amber-500', 'bg-cyan-500', 'bg-emerald-500'][passwordStrength]
 );
 
 async function handleSubmit(e: SubmitEvent) {
@@ -128,9 +126,7 @@ async function handleSubmit(e: SubmitEvent) {
 						<div class="flex flex-1 gap-1">
 							{#each [1, 2, 3, 4] as level}
 								<div
-									class="h-1 flex-1 rounded-full transition-colors {passwordStrength >= level
-										? strengthColor
-										: 'bg-cr-border'}"
+									class="h-1 flex-1 rounded-full transition-colors {passwordStrength >= level ? strengthColor : 'bg-cr-border'}"
 								></div>
 							{/each}
 						</div>
@@ -191,18 +187,16 @@ async function handleSubmit(e: SubmitEvent) {
 								>docker logs zondarr 2&gt;&amp;1 | grep -A 2 "BOOTSTRAP TOKEN"</code
 							>
 							<p class="mt-1 text-xs text-cr-text-dim">
-								Replace <code
-									class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs"
-									>zondarr</code
-								> with your container name if different.
+								Replace
+								<code class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs">zondarr</code>
+								with your container name if different.
 							</p>
 						</div>
 						<div>
 							<p class="mb-1 font-medium text-cr-text">Bare metal / dev</p>
 							<p>
-								Check the console output where Zondarr is running, or grep your
-								log file for <code
-									class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
+								Check the console output where Zondarr is running, or grep your log file for
+								<code class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
 									>BOOTSTRAP TOKEN</code
 								>.
 							</p>
@@ -210,20 +204,19 @@ async function handleSubmit(e: SubmitEvent) {
 						<div>
 							<p class="mb-1 font-medium text-cr-text">What to look for</p>
 							<p>
-								A boxed section surrounded by <code
-									class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
+								A boxed section surrounded by
+								<code class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
 									>============</code
 								>
-								containing <code
-									class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
+								containing
+								<code class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
 									>BOOTSTRAP TOKEN</code
 								>
-								and <code
-									class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
+								and
+								<code class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
 									>SETUP URL</code
 								>. If you use JSON logging, look for a line with
-								<code
-									class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
+								<code class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
 									>"event":"setup_url_available"</code
 								>.
 							</p>
@@ -231,10 +224,11 @@ async function handleSubmit(e: SubmitEvent) {
 						<div>
 							<p class="mb-1 font-medium text-cr-text">URL format</p>
 							<p>
-								The setup URL looks like <code
-									class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
+								The setup URL looks like
+								<code class="rounded bg-cr-surface px-1 py-0.5 font-mono text-xs text-cr-text"
 									>/setup?token=xxxxx</code
-								> — paste the full URL into your browser address bar.
+								>
+								— paste the full URL into your browser address bar.
 							</p>
 						</div>
 					</div>

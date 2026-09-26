@@ -14,15 +14,13 @@
  * @module $lib/components/users/user-row
  */
 
-import { Eye, MoreHorizontal, Power, PowerOff, Trash2 } from "@lucide/svelte";
-import { goto } from "$app/navigation";
-import type { UserDetailResponse } from "$lib/api/client";
-import StatusBadge, {
-	type StatusBadgeStatus,
-} from "$lib/components/status-badge.svelte";
-import { Button } from "$lib/components/ui/button";
-import * as Table from "$lib/components/ui/table";
-import { getProviderBadgeStyle, hasProviderCapability } from "$lib/stores/providers.svelte";
+import { Eye, MoreHorizontal, Power, PowerOff, Trash2 } from '@lucide/svelte';
+import { goto } from '$app/navigation';
+import type { UserDetailResponse } from '$lib/api/client';
+import StatusBadge, { type StatusBadgeStatus } from '$lib/components/status-badge.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Table from '$lib/components/ui/table';
+import { getProviderBadgeStyle, hasProviderCapability } from '$lib/stores/providers.svelte';
 
 interface Props {
 	user: UserDetailResponse;
@@ -56,36 +54,36 @@ const isExpiringSoon = $derived.by(() => {
  * Derive the status for the badge based on user state.
  */
 const status = $derived.by((): StatusBadgeStatus => {
-	if (!user.enabled) return "disabled";
-	if (isExpired) return "expired";
-	if (isExpiringSoon) return "pending";
-	return "active";
+	if (!user.enabled) return 'disabled';
+	if (isExpired) return 'expired';
+	if (isExpiringSoon) return 'pending';
+	return 'active';
 });
 
 /**
  * Derive the status label.
  */
 const statusLabel = $derived.by(() => {
-	if (!user.enabled) return "Disabled";
-	if (isExpired) return "Expired";
-	if (isExpiringSoon) return "Expiring Soon";
-	return "Active";
+	if (!user.enabled) return 'Disabled';
+	if (isExpired) return 'Expired';
+	if (isExpiringSoon) return 'Expiring Soon';
+	return 'Active';
 });
 
 /**
  * Format date for display.
  */
 function formatDate(dateString: string | null | undefined): string {
-	if (!dateString) return "—";
+	if (!dateString) return '—';
 	try {
 		const date = new Date(dateString);
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
+		return date.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
 		});
 	} catch {
-		return "—";
+		return '—';
 	}
 }
 
@@ -93,7 +91,7 @@ function formatDate(dateString: string | null | undefined): string {
  * Format expiration date with relative indicator.
  */
 const expiresDisplay = $derived.by(() => {
-	if (!user.expires_at) return "Never";
+	if (!user.expires_at) return 'Never';
 	const formatted = formatDate(user.expires_at);
 	if (isExpired) return `${formatted} (expired)`;
 	if (isExpiringSoon) return `${formatted} (soon)`;
@@ -103,7 +101,7 @@ const expiresDisplay = $derived.by(() => {
 const badgeStyle = $derived(getProviderBadgeStyle(user.media_server.server_type));
 const userEmail = $derived(user.email ?? user.identity.email);
 const supportsEnableDisable = $derived(
-	hasProviderCapability(user.media_server.server_type, "enable_disable_user"),
+	hasProviderCapability(user.media_server.server_type, 'enable_disable_user')
 );
 
 /**
@@ -170,16 +168,22 @@ function handleDelete() {
 			>
 				{user.media_server.server_type}
 			</span>
-			{#if user.external_user_type === "friend"}
-				<span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+			{#if user.external_user_type === 'friend'}
+				<span
+					class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30"
+				>
 					Friend
 				</span>
-			{:else if user.external_user_type === "shared"}
-				<span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30">
+			{:else if user.external_user_type === 'shared'}
+				<span
+					class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30"
+				>
 					Shared
 				</span>
-			{:else if user.external_user_type === "home"}
-				<span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-teal-500/15 text-teal-400 border border-teal-500/30">
+			{:else if user.external_user_type === 'home'}
+				<span
+					class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-teal-500/15 text-teal-400 border border-teal-500/30"
+				>
 					Home
 				</span>
 			{/if}
@@ -224,15 +228,14 @@ function handleDelete() {
 
 	<!-- Actions -->
 	<Table.Cell class="text-right">
-		<div
-			class="flex items-center justify-end gap-1"
-			role="toolbar"
-			aria-label="User actions"
-		>
+		<div class="flex items-center justify-end gap-1" role="toolbar" aria-label="User actions">
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				onclick={(e: MouseEvent) => { e.stopPropagation(); viewUser(); }}
+				onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	viewUser();
+}}
 				aria-label="View user"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -242,7 +245,10 @@ function handleDelete() {
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					onclick={(e: MouseEvent) => { e.stopPropagation(); handleDisable(); }}
+					onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	handleDisable();
+}}
 					aria-label="Disable user"
 					class="text-cr-text-muted hover:text-amber-400 hover:bg-amber-400/10"
 				>
@@ -252,7 +258,10 @@ function handleDelete() {
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					onclick={(e: MouseEvent) => { e.stopPropagation(); handleEnable(); }}
+					onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	handleEnable();
+}}
 					aria-label="Enable user"
 					class="text-cr-text-muted hover:text-emerald-400 hover:bg-emerald-400/10"
 				>
@@ -262,7 +271,10 @@ function handleDelete() {
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				onclick={(e: MouseEvent) => { e.stopPropagation(); handleDelete(); }}
+				onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	handleDelete();
+}}
 				aria-label="Delete user"
 				class="text-cr-text-muted hover:text-rose-400 hover:bg-rose-400/10"
 			>

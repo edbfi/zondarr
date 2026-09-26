@@ -1,10 +1,10 @@
 <script lang="ts">
-import { ChevronDown, ChevronUp } from "@lucide/svelte";
-import { type AuthFieldInfo, getErrorDetail, loginExternal } from "$lib/api/auth";
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import { getProviderColor, getProviderIconSvg } from "$lib/stores/providers.svelte";
+import { ChevronDown, ChevronUp } from '@lucide/svelte';
+import { type AuthFieldInfo, getErrorDetail, loginExternal } from '$lib/api/auth';
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import { getProviderColor, getProviderIconSvg } from '$lib/stores/providers.svelte';
 
 interface Props {
 	method: string;
@@ -93,7 +93,8 @@ function getInputType(fieldType: string): string {
 			<svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 				<path d={iconSvg} />
 			</svg>
-			{displayName} login
+			{displayName}
+			login
 			<ChevronUp class="ml-auto size-4 text-cr-text-muted" />
 		</button>
 
@@ -106,7 +107,11 @@ function getInputType(fieldType: string): string {
 						type={getInputType(field.field_type)}
 						bind:value={fieldValues[field.name]}
 						placeholder={field.placeholder}
-						autocomplete={field.field_type === 'password' ? 'current-password' : field.name === 'username' ? 'username' : undefined}
+						autocomplete={field.field_type === 'password'
+	? 'current-password'
+	: field.name === 'username'
+		? 'username'
+		: undefined}
 						class="h-8 border-cr-border bg-cr-surface text-cr-text text-sm placeholder:text-cr-text-dim"
 					/>
 					{#if errors[field.name]}
@@ -133,13 +138,13 @@ function getInputType(fieldType: string): string {
 {/if}
 
 <style>
-	:global(button[style*="--provider-color"]:hover) {
-		background: color-mix(in srgb, var(--provider-color) 10%, transparent);
-		color: var(--provider-color);
-		border-color: color-mix(in srgb, var(--provider-color) 30%, transparent);
-	}
+:global(button[style*="--provider-color"]:hover) {
+	background: color-mix(in srgb, var(--provider-color) 10%, transparent);
+	color: var(--provider-color);
+	border-color: color-mix(in srgb, var(--provider-color) 30%, transparent);
+}
 
-	:global(.provider-submit-btn:hover) {
-		filter: brightness(0.9);
-	}
+:global(.provider-submit-btn:hover) {
+	filter: brightness(0.9);
+}
 </style>

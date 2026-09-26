@@ -10,16 +10,10 @@
  * @module $lib/components/servers/sync-results-dialog
  */
 
-import {
-	AlertTriangle,
-	CheckCircle,
-	UserMinus,
-	UserPlus,
-	Users,
-} from "@lucide/svelte";
-import type { SyncResult } from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import * as Dialog from "$lib/components/ui/dialog";
+import { AlertTriangle, CheckCircle, UserMinus, UserPlus, Users } from '@lucide/svelte';
+import type { SyncResult } from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import * as Dialog from '$lib/components/ui/dialog';
 
 interface Props {
 	open: boolean;
@@ -41,15 +35,15 @@ const hasDiscrepancies = $derived.by(() => {
  * Format the sync timestamp.
  */
 const syncedAtFormatted = $derived.by(() => {
-	if (!result?.synced_at) return "";
+	if (!result?.synced_at) return '';
 	try {
 		const date = new Date(result.synced_at);
-		return date.toLocaleString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
+		return date.toLocaleString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
 		});
 	} catch {
 		return result.synced_at;
@@ -137,9 +131,7 @@ const syncedAtFormatted = $derived.by(() => {
 					</div>
 					<div class="flex-1">
 						<div class="font-medium text-cr-text">Stale Users</div>
-						<div class="text-sm text-cr-text-muted">
-							Users in local database but not on server
-						</div>
+						<div class="text-sm text-cr-text-muted">Users in local database but not on server</div>
 						{#if result.stale_users.length > 0}
 							<div class="mt-2 space-y-1" data-field="stale_users">
 								{#each result.stale_users as username, index (index)}
@@ -160,10 +152,7 @@ const syncedAtFormatted = $derived.by(() => {
 		{/if}
 
 		<Dialog.Footer>
-			<Button
-				onclick={onClose}
-				class="bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
-			>
+			<Button onclick={onClose} class="bg-cr-accent text-cr-bg hover:bg-cr-accent-hover">
 				Close
 			</Button>
 		</Dialog.Footer>

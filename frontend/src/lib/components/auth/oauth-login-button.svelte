@@ -1,9 +1,9 @@
 <script lang="ts">
-import { onDestroy } from "svelte";
-import { getErrorDetail, loginExternal } from "$lib/api/auth";
-import { checkOAuthPin, createOAuthPin } from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import { getProviderColor, getProviderIconSvg } from "$lib/stores/providers.svelte";
+import { onDestroy } from 'svelte';
+import { getErrorDetail, loginExternal } from '$lib/api/auth';
+import { checkOAuthPin, createOAuthPin } from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import { getProviderColor, getProviderIconSvg } from '$lib/stores/providers.svelte';
 
 interface Props {
 	method: string;
@@ -49,11 +49,7 @@ async function handleOAuthLogin() {
 			return;
 		}
 
-		const popup = window.open(
-			pinData.auth_url,
-			`${method}-auth`,
-			"width=800,height=600",
-		);
+		const popup = window.open(pinData.auth_url, `${method}-auth`, 'width=800,height=600');
 
 		pollIntervalId = setInterval(async () => {
 			try {
@@ -66,7 +62,7 @@ async function handleOAuthLogin() {
 					popup?.close();
 
 					const result = await loginExternal(method, {
-						redemption_token: checkData.redemption_token,
+						redemption_token: checkData.redemption_token
 					});
 					if (result.error) {
 						loading = false;
@@ -115,9 +111,9 @@ async function handleOAuthLogin() {
 </Button>
 
 <style>
-	:global(button[style*="--provider-color"]:hover) {
-		background: color-mix(in srgb, var(--provider-color) 10%, transparent);
-		color: var(--provider-color);
-		border-color: color-mix(in srgb, var(--provider-color) 30%, transparent);
-	}
+:global(button[style*="--provider-color"]:hover) {
+	background: color-mix(in srgb, var(--provider-color) 10%, transparent);
+	color: var(--provider-color);
+	border-color: color-mix(in srgb, var(--provider-color) 30%, transparent);
+}
 </style>

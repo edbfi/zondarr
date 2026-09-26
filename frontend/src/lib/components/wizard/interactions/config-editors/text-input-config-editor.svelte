@@ -4,10 +4,10 @@
  *
  * Provides admin UI for configuring text input interaction settings.
  */
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import { Switch } from "$lib/components/ui/switch";
-import type { ConfigEditorProps } from "../registry";
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import { Switch } from '$lib/components/ui/switch';
+import type { ConfigEditorProps } from '../registry';
 
 const { config: rawConfig, onConfigChange, errors }: ConfigEditorProps = $props();
 
@@ -50,8 +50,7 @@ function updateField(field: string, value: string | number | boolean | null) {
 				type="number"
 				min="0"
 				value={rawConfig.min_length ?? ''}
-				oninput={(e) =>
-					updateField('min_length', e.currentTarget.value ? parseInt(e.currentTarget.value) : null)}
+				oninput={(e) => updateField('min_length', e.currentTarget.value ? parseInt(e.currentTarget.value) : null)}
 				placeholder="0"
 				class="border-cr-border bg-cr-bg text-cr-text"
 			/>
@@ -67,8 +66,7 @@ function updateField(field: string, value: string | number | boolean | null) {
 				type="number"
 				min="1"
 				value={rawConfig.max_length ?? ''}
-				oninput={(e) =>
-					updateField('max_length', e.currentTarget.value ? parseInt(e.currentTarget.value) : null)}
+				oninput={(e) => updateField('max_length', e.currentTarget.value ? parseInt(e.currentTarget.value) : null)}
 				placeholder="No limit"
 				class="border-cr-border bg-cr-bg text-cr-text"
 			/>

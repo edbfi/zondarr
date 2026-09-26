@@ -13,30 +13,18 @@
  * @module $lib/components/join/oauth-join-flow
  */
 
+import { AlertTriangle, CheckCircle, ExternalLink, Loader2, RefreshCw } from '@lucide/svelte';
+import { onDestroy } from 'svelte';
+import { toast } from 'svelte-sonner';
+import { checkOAuthPin, createOAuthPin, type OAuthPinResponse } from '$lib/api/client';
+import { getErrorMessage } from '$lib/api/errors';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 import {
-	AlertTriangle,
-	CheckCircle,
-	ExternalLink,
-	Loader2,
-	RefreshCw,
-} from "@lucide/svelte";
-import { onDestroy } from "svelte";
-import { toast } from "svelte-sonner";
-import {
-	checkOAuthPin,
-	createOAuthPin,
-	type OAuthPinResponse,
-} from "$lib/api/client";
-import { getErrorMessage } from "$lib/api/errors";
-import { Button } from "$lib/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "$lib/components/ui/card";
-import { getProviderColor, getProviderIconSvg, getProviderLabel } from "$lib/stores/providers.svelte";
+	getProviderColor,
+	getProviderIconSvg,
+	getProviderLabel
+} from '$lib/stores/providers.svelte';
 
 interface Props {
 	/** The server type for branding (e.g., "plex") */
@@ -54,14 +42,8 @@ const providerColor = $derived(getProviderColor(serverType));
 const providerIconSvg = $derived(getProviderIconSvg(serverType));
 
 // Flow state
-type FlowStep =
-	| "idle"
-	| "creating_pin"
-	| "waiting"
-	| "authenticated"
-	| "expired"
-	| "error";
-let currentStep = $state<FlowStep>("idle");
+type FlowStep = 'idle' | 'creating_pin' | 'waiting' | 'authenticated' | 'expired' | 'error';
+let currentStep = $state<FlowStep>('idle');
 
 // PIN data
 let pinData = $state<OAuthPinResponse | null>(null);
@@ -120,7 +102,7 @@ function isPinExpired(expiresAt: string): boolean {
  * Adding a frontend retry loop would multiply total requests and latency.
  */
 async function startOAuthFlow() {
-	currentStep = "creating_pin";
+	currentStep = 'creating_pin';
 	errorMessage = null;
 
 	try {
@@ -131,25 +113,25 @@ async function startOAuthFlow() {
 		}
 
 		if (!data) {
-			throw new Error("Failed to start authentication");
+			throw new Error('Failed to start authentication');
 		}
 
 		pinData = data;
-		currentStep = "waiting";
+		currentStep = 'waiting';
 
 		// Open auth URL in popup window (named window allows control + auto-close).
 		// Note: We intentionally omit noopener/noreferrer to retain a popup reference for
 		// auto-close. Referrer leakage is mitigated by the join page's <meta name="referrer"
 		// content="no-referrer"> tag. Reverse-tabnabbing risk is minimal since auth_url is
 		// generated server-side pointing to trusted OAuth providers (e.g. Plex.tv).
-		popupWindow = window.open(pinData.auth_url, `${serverType}-auth`, "width=800,height=600");
+		popupWindow = window.open(pinData.auth_url, `${serverType}-auth`, 'width=800,height=600');
 
 		// Start polling for PIN status
 		startPolling();
 	} catch (err) {
 		closePopup();
 		errorMessage = getErrorMessage(err);
-		currentStep = "error";
+		currentStep = 'error';
 		toast.error(`Failed to start ${providerLabel} authentication`);
 	}
 }
@@ -176,7 +158,7 @@ function startPolling() {
 		if (isPinExpired(pinData.expires_at)) {
 			stopPolling();
 			closePopup();
-			currentStep = "expired";
+			currentStep = 'expired';
 			return;
 		}
 
@@ -188,7 +170,7 @@ function startPolling() {
 
 			if (error) {
 				consecutivePollingErrors++;
-				console.error("PIN check error:", error);
+				console.error('PIN check error:', error);
 			} else {
 				// Successful response — reset error counter
 				consecutivePollingErrors = 0;
@@ -198,20 +180,20 @@ function startPolling() {
 						stopPolling();
 						closePopup();
 						authenticatedEmail = data.email;
-						currentStep = "authenticated";
+						currentStep = 'authenticated';
 						onAuthenticated(data.email, data.redemption_token);
 						return;
 					} else if (data.authenticated && data.email) {
 						stopPolling();
 						closePopup();
-						errorMessage = "OAuth succeeded but no redemption token was returned.";
-						currentStep = "error";
+						errorMessage = 'OAuth succeeded but no redemption token was returned.';
+						currentStep = 'error';
 						return;
 					} else if (data.error) {
 						stopPolling();
 						closePopup();
 						errorMessage = data.error;
-						currentStep = "error";
+						currentStep = 'error';
 						return;
 					}
 				}
@@ -250,7 +232,7 @@ function handleCancel() {
 	stopPolling();
 	closePopup();
 	pinData = null;
-	currentStep = "idle";
+	currentStep = 'idle';
 	onCancel?.();
 }
 
@@ -260,7 +242,7 @@ function handleCancel() {
 function openAuthUrl() {
 	if (pinData?.auth_url) {
 		// See startOAuthFlow() for security rationale on omitting noopener/noreferrer
-		popupWindow = window.open(pinData.auth_url, `${serverType}-auth`, "width=800,height=600");
+		popupWindow = window.open(pinData.auth_url, `${serverType}-auth`, 'width=800,height=600');
 	}
 }
 </script>
@@ -280,24 +262,20 @@ function openAuthUrl() {
 			>
 				{#if providerIconSvg}
 					<svg class="size-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-						<path d={providerIconSvg}/>
+						<path d={providerIconSvg} />
 					</svg>
 				{/if}
 				Sign in with {providerLabel}
 			</Button>
 		</div>
-
 	<!-- Creating PIN state -->
 	{:else if currentStep === 'creating_pin'}
 		<div class="text-center space-y-4">
 			<div class="flex justify-center">
 				<Loader2 class="size-8 animate-spin text-cr-accent" />
 			</div>
-			<p class="text-cr-text-muted">
-				Preparing {providerLabel} authentication...
-			</p>
+			<p class="text-cr-text-muted">Preparing {providerLabel} authentication...</p>
 		</div>
-
 	<!-- Waiting for authentication -->
 	{:else if currentStep === 'waiting' && pinData}
 		<Card class="border-cr-border bg-cr-surface">
@@ -313,7 +291,9 @@ function openAuthUrl() {
 					<Loader2 class="size-4 animate-spin" />
 					<span class="text-sm">
 						{#if consecutivePollingErrors > 2}
-							Reconnecting... ({consecutivePollingErrors} check{consecutivePollingErrors === 1 ? '' : 's'} missed)
+							Reconnecting... ({consecutivePollingErrors}
+							check{consecutivePollingErrors === 1 ? '' : 's'}
+							missed)
 						{:else}
 							Waiting for authentication...
 						{/if}
@@ -340,7 +320,6 @@ function openAuthUrl() {
 				</div>
 			</CardContent>
 		</Card>
-
 	<!-- Authenticated state -->
 	{:else if currentStep === 'authenticated' && authenticatedEmail}
 		<Card class="border-emerald-500/30 bg-emerald-500/5">
@@ -352,13 +331,13 @@ function openAuthUrl() {
 					<div>
 						<CardTitle class="text-cr-text">{providerLabel} Authentication Successful</CardTitle>
 						<CardDescription class="text-cr-text-muted">
-							Signed in as <span class="font-medium text-cr-text" data-oauth-email>{authenticatedEmail}</span>
+							Signed in as
+							<span class="font-medium text-cr-text" data-oauth-email>{authenticatedEmail}</span>
 						</CardDescription>
 					</div>
 				</div>
 			</CardHeader>
 		</Card>
-
 	<!-- Expired state -->
 	{:else if currentStep === 'expired'}
 		<Card class="border-amber-500/30 bg-amber-500/5">
@@ -385,7 +364,6 @@ function openAuthUrl() {
 				</Button>
 			</CardContent>
 		</Card>
-
 	<!-- Error state -->
 	{:else if currentStep === 'error'}
 		<Card class="border-rose-500/30 bg-rose-500/5">

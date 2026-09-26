@@ -11,21 +11,21 @@
  * @module routes/(admin)/wizards/+page
  */
 
-import { Plus, Trash2, Wand2 } from "@lucide/svelte";
-import { goto, invalidateAll } from "$app/navigation";
-import { page } from "$app/state";
-import { deleteWizard, withErrorHandling } from "$lib/api/client";
-import { getErrorMessage, isNetworkError } from "$lib/api/errors";
-import ConfirmDialog from "$lib/components/confirm-dialog.svelte";
-import EmptyState from "$lib/components/empty-state.svelte";
-import ErrorState from "$lib/components/error-state.svelte";
-import Pagination from "$lib/components/pagination.svelte";
-import { Badge } from "$lib/components/ui/badge";
-import { Button } from "$lib/components/ui/button";
-import * as Card from "$lib/components/ui/card";
-import { Skeleton } from "$lib/components/ui/skeleton";
-import { showSuccess } from "$lib/utils/toast";
-import type { PageData } from "./$types";
+import { Plus, Trash2, Wand2 } from '@lucide/svelte';
+import { goto, invalidateAll } from '$app/navigation';
+import { page } from '$app/state';
+import { deleteWizard, withErrorHandling } from '$lib/api/client';
+import { getErrorMessage, isNetworkError } from '$lib/api/errors';
+import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+import EmptyState from '$lib/components/empty-state.svelte';
+import ErrorState from '$lib/components/error-state.svelte';
+import Pagination from '$lib/components/pagination.svelte';
+import { Badge } from '$lib/components/ui/badge';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
+import { Skeleton } from '$lib/components/ui/skeleton';
+import { showSuccess } from '$lib/utils/toast';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
@@ -60,7 +60,7 @@ function handleEditWizard(wizardId: string) {
  * Navigate to create wizard page.
  */
 function handleCreateWizard() {
-	goto("/wizards/new");
+	goto('/wizards/new');
 }
 
 /**
@@ -81,7 +81,7 @@ async function handleDeleteConfirm() {
 	try {
 		const result = await withErrorHandling(() => deleteWizard(target));
 		if (!result.error) {
-			showSuccess("Wizard deleted");
+			showSuccess('Wizard deleted');
 			await invalidateAll();
 		}
 	} finally {
@@ -96,7 +96,7 @@ async function handleDeleteConfirm() {
  */
 function handlePageChange(newPage: number) {
 	const url = new URL(page.url);
-	url.searchParams.set("page", String(newPage));
+	url.searchParams.set('page', String(newPage));
 	goto(url.toString(), { keepFocus: true, noScroll: true });
 }
 </script>
@@ -164,7 +164,10 @@ function handlePageChange(newPage: number) {
 									variant="ghost"
 									size="icon"
 									class="size-8 text-rose-400 hover:bg-rose-400/10 hover:text-rose-400"
-									onclick={(e: MouseEvent) => { e.stopPropagation(); handleDeleteRequest(wizard.id); }}
+									onclick={(e: MouseEvent) => {
+	e.stopPropagation();
+	handleDeleteRequest(wizard.id);
+}}
 								>
 									<Trash2 class="size-4" />
 								</Button>
@@ -204,5 +207,8 @@ function handlePageChange(newPage: number) {
 	variant="destructive"
 	loading={deleting}
 	onConfirm={handleDeleteConfirm}
-	onCancel={() => { showDeleteDialog = false; deleteTarget = null; }}
+	onCancel={() => {
+	showDeleteDialog = false;
+	deleteTarget = null;
+}}
 />

@@ -6,17 +6,21 @@
  * Requires checkbox before enabling proceed.
  * Records acceptance timestamp.
  */
-import { Check } from "@lucide/svelte";
-import { tosConfigSchema } from "$lib/schemas/wizard";
-import type { InteractionComponentProps } from "./registry";
+import { Check } from '@lucide/svelte';
+import { tosConfigSchema } from '$lib/schemas/wizard';
+import type { InteractionComponentProps } from './registry';
 
-const { interactionId, config: rawConfig, onComplete, disabled = false, completionData }: InteractionComponentProps = $props();
+const {
+	interactionId,
+	config: rawConfig,
+	onComplete,
+	disabled = false,
+	completionData
+}: InteractionComponentProps = $props();
 
 // Validate config with Zod schema, falling back gracefully for partial configs
 const config = $derived(tosConfigSchema.safeParse(rawConfig).data);
-const checkboxLabel = $derived(
-	config?.checkbox_label ?? "I accept the terms of service",
-);
+const checkboxLabel = $derived(config?.checkbox_label ?? 'I accept the terms of service');
 
 // Checkbox state — restore from completion data if navigating back
 let accepted = $state((() => completionData?.data?.accepted === true)());
@@ -29,12 +33,12 @@ function handleAccept() {
 
 	onComplete({
 		interactionId,
-		interactionType: "tos",
+		interactionType: 'tos',
 		data: {
 			accepted: true,
-			accepted_at: new Date().toISOString(),
+			accepted_at: new Date().toISOString()
 		},
-		completedAt: new Date().toISOString(),
+		completedAt: new Date().toISOString()
 	});
 }
 
@@ -58,7 +62,10 @@ function toggleAccepted() {
 				aria-checked={accepted}
 				class="checkbox"
 				class:checked={accepted}
-				onclick={(e) => { e.stopPropagation(); toggleAccepted(); }}
+				onclick={(e) => {
+	e.stopPropagation();
+	toggleAccepted();
+}}
 				{disabled}
 			>
 				{#if accepted}
@@ -81,92 +88,92 @@ function toggleAccepted() {
 </div>
 
 <style>
-	.tos-interaction {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 2rem;
-		padding: 2rem 0;
-	}
+.tos-interaction {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2rem;
+	padding: 2rem 0;
+}
 
-	/* Subtle card around checkbox area */
-	.checkbox-card {
-		width: 100%;
-		padding: 1.25rem 1.5rem;
-		background: var(--wizard-input-bg);
-		border: 1px solid var(--wizard-input-border);
-		border-radius: 0.75rem;
-		cursor: pointer;
-	}
+/* Subtle card around checkbox area */
+.checkbox-card {
+	width: 100%;
+	padding: 1.25rem 1.5rem;
+	background: var(--wizard-input-bg);
+	border: 1px solid var(--wizard-input-border);
+	border-radius: 0.75rem;
+	cursor: pointer;
+}
 
-	/* Checkbox container */
-	.checkbox-container {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		cursor: pointer;
-		max-width: 100%;
-	}
+/* Checkbox container */
+.checkbox-container {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	cursor: pointer;
+	max-width: 100%;
+}
 
-	/* Custom checkbox button — increased size for touch targets */
-	.checkbox {
-		flex-shrink: 0;
-		width: 1.75rem;
-		height: 1.75rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--wizard-input-hover-bg);
-		border: 2px solid var(--wizard-ring-border);
-		border-radius: 0.5rem;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
+/* Custom checkbox button — increased size for touch targets */
+.checkbox {
+	flex-shrink: 0;
+	width: 1.75rem;
+	height: 1.75rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--wizard-input-hover-bg);
+	border: 2px solid var(--wizard-ring-border);
+	border-radius: 0.5rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
 
-	.checkbox:hover:not(:disabled) {
-		border-color: var(--wizard-accent);
-		background: var(--wizard-indicator-bg);
-	}
+.checkbox:hover:not(:disabled) {
+	border-color: var(--wizard-accent);
+	background: var(--wizard-indicator-bg);
+}
 
-	.checkbox:focus-visible {
-		outline: none;
-		box-shadow:
-			0 0 0 2px var(--wizard-bg),
-			0 0 0 4px var(--wizard-focus-ring);
-	}
+.checkbox:focus-visible {
+	outline: none;
+	box-shadow:
+		0 0 0 2px var(--wizard-bg),
+		0 0 0 4px var(--wizard-focus-ring);
+}
 
-	.checkbox.checked {
-		background: var(--wizard-accent);
-		border-color: var(--wizard-accent);
-	}
+.checkbox.checked {
+	background: var(--wizard-accent);
+	border-color: var(--wizard-accent);
+}
 
-	.checkbox:disabled {
-		cursor: not-allowed;
-		opacity: 0.5;
-	}
+.checkbox:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
 
-	/* Check icon */
-	.checkbox :global(.check-icon) {
-		width: 1.125rem;
-		height: 1.125rem;
-		color: var(--wizard-bg);
-		stroke-width: 3;
-	}
+/* Check icon */
+.checkbox :global(.check-icon) {
+	width: 1.125rem;
+	height: 1.125rem;
+	color: var(--wizard-bg);
+	stroke-width: 3;
+}
 
-	/* Checkbox label */
-	.checkbox-label {
-		font-size: 1rem;
-		line-height: 1.5;
-		color: var(--wizard-text-secondary);
-		user-select: none;
-	}
+/* Checkbox label */
+.checkbox-label {
+	font-size: 1rem;
+	line-height: 1.5;
+	color: var(--wizard-text-secondary);
+	user-select: none;
+}
 
-	/* Accept button sizing */
-	.accept-btn {
-		min-width: 200px;
-		min-height: 44px;
-		padding: 1rem 2.5rem;
-		font-size: 1.0625rem;
-		border-radius: 0.625rem;
-	}
+/* Accept button sizing */
+.accept-btn {
+	min-width: 200px;
+	min-height: 44px;
+	padding: 1rem 2.5rem;
+	font-size: 1.0625rem;
+	border-radius: 0.625rem;
+}
 </style>

@@ -10,16 +10,10 @@
  * @module $lib/components/join/registration-error
  */
 
-import { AlertTriangle, RefreshCw, Server, User } from "@lucide/svelte";
-import type { RedemptionErrorResponse } from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "$lib/components/ui/card";
+import { AlertTriangle, RefreshCw, Server, User } from '@lucide/svelte';
+import type { RedemptionErrorResponse } from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 
 interface Props {
 	error: RedemptionErrorResponse;
@@ -33,16 +27,16 @@ const { error, onRetry }: Props = $props();
  */
 function getErrorTitle(errorCode: string): string {
 	switch (errorCode) {
-		case "USERNAME_TAKEN":
-			return "Username Already Taken";
-		case "SERVER_ERROR":
-			return "Server Connection Failed";
-		case "INVALID_INVITATION":
-			return "Invalid Invitation";
-		case "VALIDATION_ERROR":
-			return "Validation Error";
+		case 'USERNAME_TAKEN':
+			return 'Username Already Taken';
+		case 'SERVER_ERROR':
+			return 'Server Connection Failed';
+		case 'INVALID_INVITATION':
+			return 'Invalid Invitation';
+		case 'VALIDATION_ERROR':
+			return 'Validation Error';
 		default:
-			return "Registration Failed";
+			return 'Registration Failed';
 	}
 }
 
@@ -52,15 +46,13 @@ function getErrorTitle(errorCode: string): string {
 function getErrorDescription(
 	errorCode: string,
 	message: string,
-	failedServer?: string | null,
+	failedServer?: string | null
 ): string {
 	switch (errorCode) {
-		case "USERNAME_TAKEN":
-			return "This username is already in use. Please choose a different username and try again.";
-		case "SERVER_ERROR":
-			return failedServer
-				? `Failed to create account on ${failedServer}. ${message}`
-				: message;
+		case 'USERNAME_TAKEN':
+			return 'This username is already in use. Please choose a different username and try again.';
+		case 'SERVER_ERROR':
+			return failedServer ? `Failed to create account on ${failedServer}. ${message}` : message;
 		default:
 			return message;
 	}
@@ -71,9 +63,9 @@ function getErrorDescription(
  */
 function getErrorIcon(errorCode: string) {
 	switch (errorCode) {
-		case "USERNAME_TAKEN":
+		case 'USERNAME_TAKEN':
 			return User;
-		case "SERVER_ERROR":
+		case 'SERVER_ERROR':
 			return Server;
 		default:
 			return AlertTriangle;
@@ -104,7 +96,8 @@ const ErrorIcon = $derived(getErrorIcon(error.error_code));
 				<div class="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3">
 					<Server class="size-4 text-rose-400" />
 					<span class="text-sm text-cr-text-muted">
-						Failed server: <span class="font-medium text-cr-text" data-failed-server>{error.failed_server}</span>
+						Failed server:
+						<span class="font-medium text-cr-text" data-failed-server>{error.failed_server}</span>
 					</span>
 				</div>
 			</CardContent>
@@ -133,10 +126,7 @@ const ErrorIcon = $derived(getErrorIcon(error.error_code));
 
 	<!-- Retry Button -->
 	{#if onRetry}
-		<Button
-			onclick={onRetry}
-			class="w-full bg-cr-accent text-cr-bg hover:bg-cr-accent-hover"
-		>
+		<Button onclick={onRetry} class="w-full bg-cr-accent text-cr-bg hover:bg-cr-accent-hover">
 			<RefreshCw class="size-4 mr-2" />
 			Try Again
 		</Button>

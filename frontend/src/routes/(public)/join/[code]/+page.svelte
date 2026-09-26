@@ -25,59 +25,53 @@ import {
 	Loader2,
 	RefreshCw,
 	Server,
-	WifiOff,
-} from "@lucide/svelte";
-import { toast } from "svelte-sonner";
-import { browser } from "$app/environment";
-import { invalidateAll } from "$app/navigation";
+	WifiOff
+} from '@lucide/svelte';
+import { toast } from 'svelte-sonner';
+import { browser } from '$app/environment';
+import { invalidateAll } from '$app/navigation';
 import {
 	checkJoinHealth,
 	type JoinHealthResponse,
 	type RedemptionErrorResponse,
 	type RedemptionResponse,
 	redeemInvitation,
-	type WizardDetailResponse,
-} from "$lib/api/client";
-import { getErrorMessage, isNetworkError } from "$lib/api/errors";
-import ErrorState from "$lib/components/error-state.svelte";
+	type WizardDetailResponse
+} from '$lib/api/client';
+import { getErrorMessage, isNetworkError } from '$lib/api/errors';
+import ErrorState from '$lib/components/error-state.svelte';
 import {
 	OAuthJoinFlow,
 	RegistrationError,
 	RegistrationForm,
-	SuccessPage,
-} from "$lib/components/join";
-import { Button } from "$lib/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "$lib/components/ui/card";
-import { Skeleton } from "$lib/components/ui/skeleton";
-import { WizardShell } from "$lib/components/wizard";
+	SuccessPage
+} from '$lib/components/join';
+import { Button } from '$lib/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
+import { Skeleton } from '$lib/components/ui/skeleton';
+import { WizardShell } from '$lib/components/wizard';
 import {
 	type RegistrationInput,
 	registrationSchema,
 	sanitizeEmailToUsername,
-	transformRegistrationFormData,
-} from "$lib/schemas/join";
-import { getProvider, getProviderLabel } from "$lib/stores/providers.svelte";
-import type { PageData } from "./$types";
+	transformRegistrationFormData
+} from '$lib/schemas/join';
+import { getProvider, getProviderLabel } from '$lib/stores/providers.svelte';
+import type { PageData } from './$types';
 
 const { data }: { data: PageData } = $props();
 
 // Flow state - extended to include wizard steps
 type FlowStep =
-	| "validation"
-	| "pre_wizard"
-	| "registration"
-	| "oauth"
-	| "oauth_redeeming"
-	| "post_wizard"
-	| "success"
-	| "error";
-let currentStep = $state<FlowStep>("validation");
+	| 'validation'
+	| 'pre_wizard'
+	| 'registration'
+	| 'oauth'
+	| 'oauth_redeeming'
+	| 'post_wizard'
+	| 'success'
+	| 'error';
+let currentStep = $state<FlowStep>('validation');
 
 // Loading states
 let isRetrying = $state(false);
@@ -85,9 +79,9 @@ let isSubmitting = $state(false);
 
 // Form data
 let formData = $state<RegistrationInput>({
-	username: "",
-	password: "",
-	email: "",
+	username: '',
+	password: '',
+	email: ''
 });
 let formErrors = $state<Record<string, string[]>>({});
 
@@ -111,42 +105,40 @@ let preWizardToken = $state<string | null>(null);
 
 // Derive whether any target server is Plex (for success page)
 const hasPlexServer = $derived(
-	data.validation?.target_servers?.some((s) => s.server_type === "plex") ?? false,
+	data.validation?.target_servers?.some((s) => s.server_type === 'plex') ?? false
 );
 
 // Determine join flow type from provider metadata
 const hasCredentialCreateServer = $derived(
 	data.validation?.target_servers?.some((s) => {
 		const provider = getProvider(s.server_type);
-		return provider?.join_flow_type === "credential_create";
-	}) ?? false,
+		return provider?.join_flow_type === 'credential_create';
+	}) ?? false
 );
 
 const hasOAuthLinkServer = $derived(
 	data.validation?.target_servers?.some((s) => {
 		const provider = getProvider(s.server_type);
-		return provider?.join_flow_type === "oauth_link";
-	}) ?? false,
+		return provider?.join_flow_type === 'oauth_link';
+	}) ?? false
 );
 
 // Get the first OAuth server type for branding
 const oauthServerType = $derived(
 	data.validation?.target_servers?.find((s) => {
 		const provider = getProvider(s.server_type);
-		return provider?.join_flow_type === "oauth_link";
-	})?.server_type ?? "",
+		return provider?.join_flow_type === 'oauth_link';
+	})?.server_type ?? ''
 );
 
 // Check if invitation has pre-wizard
 const hasPreWizard = $derived(
-	data.validation?.valid === true &&
-		(data.validation?.pre_wizard?.steps?.length ?? 0) > 0,
+	data.validation?.valid === true && (data.validation?.pre_wizard?.steps?.length ?? 0) > 0
 );
 
 // Check if invitation has post-wizard
 const hasPostWizard = $derived(
-	data.validation?.valid === true &&
-		(data.validation?.post_wizard?.steps?.length ?? 0) > 0,
+	data.validation?.valid === true && (data.validation?.post_wizard?.steps?.length ?? 0) > 0
 );
 
 // Session storage key for wizard progress
@@ -179,8 +171,8 @@ $effect(() => {
 	// Track currentStep to trigger on phase changes
 	void currentStep;
 	if (browser) {
-		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "instant" : "smooth" });
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'instant' : 'smooth' });
 	}
 });
 
@@ -193,8 +185,8 @@ $effect(() => {
 				preWizardCompleted,
 				postWizardCompleted,
 				preWizardToken,
-				redemptionResponse: redemptionResponse,
-			}),
+				redemptionResponse: redemptionResponse
+			})
 		);
 	}
 });
@@ -204,16 +196,16 @@ $effect(() => {
  */
 function getFailureMessage(reason: string | null | undefined): string {
 	switch (reason) {
-		case "not_found":
-			return "This invitation code does not exist. Please check the code and try again.";
-		case "disabled":
-			return "This invitation has been disabled by the administrator.";
-		case "expired":
-			return "This invitation has expired and is no longer valid.";
-		case "max_uses_reached":
-			return "This invitation has reached its maximum number of uses.";
+		case 'not_found':
+			return 'This invitation code does not exist. Please check the code and try again.';
+		case 'disabled':
+			return 'This invitation has been disabled by the administrator.';
+		case 'expired':
+			return 'This invitation has expired and is no longer valid.';
+		case 'max_uses_reached':
+			return 'This invitation has reached its maximum number of uses.';
 		default:
-			return "This invitation code is not valid.";
+			return 'This invitation code is not valid.';
 	}
 }
 
@@ -235,15 +227,15 @@ async function handleRetry() {
 function proceedAfterHealthGate() {
 	// Check if pre-wizard needs to be completed first
 	if (hasPreWizard && !preWizardCompleted) {
-		currentStep = "pre_wizard";
+		currentStep = 'pre_wizard';
 		return;
 	}
 
 	// Determine which registration flow to use based on server types
 	if (hasOAuthLinkServer && !hasCredentialCreateServer) {
-		currentStep = "oauth";
+		currentStep = 'oauth';
 	} else {
-		currentStep = "registration";
+		currentStep = 'registration';
 	}
 }
 
@@ -265,7 +257,7 @@ async function handleContinue() {
 		if (result.error) {
 			if (result.status === 404) {
 				// 404 means the invitation code is invalid or expired — do not proceed
-				toast.error("This invitation code is no longer valid.");
+				toast.error('This invitation code is no longer valid.');
 				return;
 			}
 			// Other errors (5xx, network flaky, endpoint not deployed) — allow proceeding
@@ -285,9 +277,7 @@ async function handleContinue() {
 			proceedAfterHealthGate();
 		} else {
 			// Some servers unreachable — show health gate
-			toast.error(
-				`${unreachable.length} server${unreachable.length > 1 ? 's' : ''} unreachable`,
-			);
+			toast.error(`${unreachable.length} server${unreachable.length > 1 ? 's' : ''} unreachable`);
 		}
 	} catch {
 		// Network error on health check itself — allow proceeding
@@ -317,7 +307,7 @@ function skipHealthGate() {
  * Go back to validation step.
  */
 function handleBack() {
-	currentStep = "validation";
+	currentStep = 'validation';
 	formErrors = {};
 	oauthEmail = null;
 	oauthRedemptionToken = null;
@@ -331,9 +321,9 @@ function handlePreWizardComplete(completionToken?: string | null) {
 	preWizardToken = completionToken ?? null;
 	// Proceed to registration
 	if (hasOAuthLinkServer && !hasCredentialCreateServer) {
-		currentStep = "oauth";
+		currentStep = 'oauth';
 	} else {
-		currentStep = "registration";
+		currentStep = 'registration';
 	}
 }
 
@@ -344,9 +334,7 @@ function handlePreWizardComplete(completionToken?: string | null) {
 function handlePreWizardCancel() {
 	// Clear wizard progress from session storage
 	if (browser && data.validation?.pre_wizard?.id) {
-		sessionStorage.removeItem(
-			getWizardStorageKey(data.validation.pre_wizard.id),
-		);
+		sessionStorage.removeItem(getWizardStorageKey(data.validation.pre_wizard.id));
 	}
 	// Clear join flow state
 	if (browser && data.code) {
@@ -355,7 +343,7 @@ function handlePreWizardCancel() {
 	// Reset state
 	preWizardCompleted = false;
 	preWizardToken = null;
-	currentStep = "validation";
+	currentStep = 'validation';
 }
 
 /**
@@ -367,7 +355,7 @@ function handlePostWizardComplete() {
 	if (browser && data.code) {
 		sessionStorage.removeItem(getJoinFlowStorageKey(data.code));
 	}
-	currentStep = "success";
+	currentStep = 'success';
 }
 
 /**
@@ -377,12 +365,10 @@ function handlePostWizardComplete() {
 function handlePostWizardCancel() {
 	// Clear wizard progress from session storage
 	if (browser && data.validation?.post_wizard?.id) {
-		sessionStorage.removeItem(
-			getWizardStorageKey(data.validation.post_wizard.id),
-		);
+		sessionStorage.removeItem(getWizardStorageKey(data.validation.post_wizard.id));
 	}
 	postWizardCompleted = true;
-	currentStep = "success";
+	currentStep = 'success';
 }
 
 /**
@@ -412,7 +398,7 @@ async function handleRegistrationSubmit() {
 	try {
 		const apiData = {
 			...transformRegistrationFormData(result.data),
-			pre_wizard_token: preWizardToken ?? undefined,
+			pre_wizard_token: preWizardToken ?? undefined
 		};
 		const response = await redeemInvitation(data.code, apiData);
 
@@ -421,35 +407,33 @@ async function handleRegistrationSubmit() {
 			const errorBody = response.error as unknown as RedemptionErrorResponse;
 			if (errorBody.error_code) {
 				redemptionError = errorBody;
-				currentStep = "error";
-				toast.error(errorBody.message || "Registration failed");
+				currentStep = 'error';
+				toast.error(errorBody.message || 'Registration failed');
 			} else {
-				toast.error("An unexpected error occurred");
+				toast.error('An unexpected error occurred');
 			}
 			return;
 		}
 
 		if (response.data) {
 			// Check if it's an error response (has error_code)
-			const responseData = response.data as
-				| RedemptionResponse
-				| RedemptionErrorResponse;
-			if ("error_code" in responseData) {
+			const responseData = response.data as RedemptionResponse | RedemptionErrorResponse;
+			if ('error_code' in responseData) {
 				redemptionError = responseData as RedemptionErrorResponse;
-				currentStep = "error";
-				toast.error(redemptionError.message || "Registration failed");
+				currentStep = 'error';
+				toast.error(redemptionError.message || 'Registration failed');
 			} else if (responseData.success) {
 				redemptionResponse = responseData as RedemptionResponse;
 				// Check if post-wizard needs to be shown
 				if (hasPostWizard && !postWizardCompleted) {
-					currentStep = "post_wizard";
-					toast.success("Account created! Please complete the final steps.");
+					currentStep = 'post_wizard';
+					toast.success('Account created! Please complete the final steps.');
 				} else {
-					currentStep = "success";
-					toast.success("Account created successfully!");
+					currentStep = 'success';
+					toast.success('Account created successfully!');
 				}
 			} else {
-				toast.error("Registration failed");
+				toast.error('Registration failed');
 			}
 		}
 	} catch (err) {
@@ -465,7 +449,7 @@ async function handleRegistrationSubmit() {
 async function handleOAuthAuthenticated(email: string, redemptionToken: string) {
 	oauthEmail = email;
 	oauthRedemptionToken = redemptionToken;
-	currentStep = "oauth_redeeming";
+	currentStep = 'oauth_redeeming';
 
 	// Proceed to redeem the invitation with the one-time redemption token
 	// Use the email as username and a placeholder password
@@ -473,10 +457,10 @@ async function handleOAuthAuthenticated(email: string, redemptionToken: string) 
 	try {
 		const response = await redeemInvitation(data.code, {
 			username: sanitizeEmailToUsername(email),
-			password: "oauth_placeholder", // Placeholder - backend handles OAuth auth differently
+			password: 'oauth_placeholder', // Placeholder - backend handles OAuth auth differently
 			email: email,
 			redemption_token: redemptionToken,
-			pre_wizard_token: preWizardToken ?? undefined,
+			pre_wizard_token: preWizardToken ?? undefined
 		});
 
 		if (response.error) {
@@ -484,43 +468,41 @@ async function handleOAuthAuthenticated(email: string, redemptionToken: string) 
 			const errorBody = response.error as unknown as RedemptionErrorResponse;
 			if (errorBody.error_code) {
 				redemptionError = errorBody;
-				currentStep = "error";
-				toast.error(errorBody.message || "Registration failed");
+				currentStep = 'error';
+				toast.error(errorBody.message || 'Registration failed');
 			} else {
-				toast.error("An unexpected error occurred");
+				toast.error('An unexpected error occurred');
 			}
 			return;
 		}
 
 		if (response.data) {
-			const responseData = response.data as
-				| RedemptionResponse
-				| RedemptionErrorResponse;
-			if ("error_code" in responseData) {
+			const responseData = response.data as RedemptionResponse | RedemptionErrorResponse;
+			if ('error_code' in responseData) {
 				redemptionError = responseData as RedemptionErrorResponse;
-				currentStep = "error";
-				toast.error(redemptionError.message || "Registration failed");
+				currentStep = 'error';
+				toast.error(redemptionError.message || 'Registration failed');
 			} else if (responseData.success) {
 				redemptionResponse = responseData as RedemptionResponse;
 				// Check if post-wizard needs to be shown
 				if (hasPostWizard && !postWizardCompleted) {
-					currentStep = "post_wizard";
-					toast.success("Added to server! Please complete the final steps.");
+					currentStep = 'post_wizard';
+					toast.success('Added to server! Please complete the final steps.');
 				} else {
-					currentStep = "success";
-					toast.success("Successfully added to server!");
+					currentStep = 'success';
+					toast.success('Successfully added to server!');
 				}
 			} else {
-				toast.error("Registration failed");
+				toast.error('Registration failed');
 			}
 		}
 	} catch (err) {
 		redemptionError = {
 			success: false,
-			error_code: "NETWORK_ERROR",
-			message: getErrorMessage(err),
+			error_code: 'NETWORK_ERROR',
+			message: getErrorMessage(err)
 		};
-		currentStep = "error";
+		currentStep = 'error';
 		toast.error(getErrorMessage(err));
 	}
 }
@@ -529,7 +511,7 @@ async function handleOAuthAuthenticated(email: string, redemptionToken: string) 
  * Handle OAuth cancellation.
  */
 function handleOAuthCancel() {
-	currentStep = "validation";
+	currentStep = 'validation';
 	oauthEmail = null;
 	oauthRedemptionToken = null;
 }
@@ -543,17 +525,16 @@ function handleRegistrationRetry() {
 	oauthRedemptionToken = null;
 	// Go back to appropriate registration step
 	if (hasOAuthLinkServer && !hasCredentialCreateServer) {
-		currentStep = "oauth";
+		currentStep = 'oauth';
 	} else {
-		currentStep = "registration";
+		currentStep = 'registration';
 	}
 }
-
 </script>
 
 <svelte:head>
 	<!-- Prevent invitation code in URL from leaking via Referer header to OAuth providers -->
-	<meta name="referrer" content="no-referrer" />
+	<meta name="referrer" content="no-referrer">
 </svelte:head>
 
 <div class="space-y-4">
@@ -593,7 +574,6 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-
 	<!-- Error state (network/validation error) -->
 	{:else if data.error}
 		<div class="mx-auto w-full max-w-lg">
@@ -603,7 +583,6 @@ function handleRegistrationRetry() {
 				onRetry={handleRetry}
 			/>
 		</div>
-
 	<!-- Invalid code state -->
 	{:else if data.validation && !data.validation.valid}
 		<div class="mx-auto w-full max-w-lg">
@@ -628,7 +607,6 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-
 	<!-- Pre-wizard state -->
 	{:else if currentStep === 'pre_wizard' && data.validation?.pre_wizard}
 		<WizardShell
@@ -637,7 +615,6 @@ function handleRegistrationRetry() {
 			onCancel={handlePreWizardCancel}
 			storageScope={data.code}
 		/>
-
 	<!-- Post-wizard state -->
 	{:else if currentStep === 'post_wizard' && data.validation?.post_wizard}
 		<WizardShell
@@ -646,19 +623,16 @@ function handleRegistrationRetry() {
 			onCancel={handlePostWizardCancel}
 			storageScope={data.code}
 		/>
-
 	<!-- Success state -->
 	{:else if currentStep === 'success' && redemptionResponse}
 		<div class="mx-auto w-full max-w-lg">
 			<SuccessPage response={redemptionResponse} {hasPlexServer} />
 		</div>
-
 	<!-- Registration error state -->
 	{:else if currentStep === 'error' && redemptionError}
 		<div class="mx-auto w-full max-w-lg">
 			<RegistrationError error={redemptionError} onRetry={handleRegistrationRetry} />
 		</div>
-
 	<!-- Registration form state -->
 	{:else if currentStep === 'registration' && data.validation?.valid}
 		<div class="mx-auto w-full max-w-lg">
@@ -677,7 +651,7 @@ function handleRegistrationRetry() {
 						<div>
 							<CardTitle class="text-cr-text">Create Your Account</CardTitle>
 							<CardDescription class="text-cr-text-muted">
-									Enter your details to create your account
+								Enter your details to create your account
 							</CardDescription>
 						</div>
 					</div>
@@ -696,7 +670,6 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-
 	<!-- OAuth flow state -->
 	{:else if currentStep === 'oauth' && data.validation?.valid}
 		<div class="mx-auto w-full max-w-lg">
@@ -713,7 +686,9 @@ function handleRegistrationRetry() {
 							<ArrowLeft class="size-5" />
 						</Button>
 						<div>
-							<CardTitle class="text-cr-text">Sign in with {getProviderLabel(oauthServerType)}</CardTitle>
+							<CardTitle class="text-cr-text"
+								>Sign in with {getProviderLabel(oauthServerType)}</CardTitle
+							>
 							<CardDescription class="text-cr-text-muted">
 								Authenticate with your {getProviderLabel(oauthServerType)} account to get access
 							</CardDescription>
@@ -729,7 +704,6 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-
 	<!-- OAuth redeeming state -->
 	{:else if currentStep === 'oauth_redeeming'}
 		<div class="mx-auto w-full max-w-lg">
@@ -741,7 +715,9 @@ function handleRegistrationRetry() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent class="flex flex-col items-center gap-4 py-8">
-					<div class="size-8 animate-spin rounded-full border-2 border-cr-accent border-t-transparent"></div>
+					<div
+						class="size-8 animate-spin rounded-full border-2 border-cr-accent border-t-transparent"
+					></div>
 					{#if oauthEmail}
 						<p class="text-sm text-cr-text-muted">
 							Signed in as <span class="font-medium text-cr-text">{oauthEmail}</span>
@@ -750,7 +726,6 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-
 	<!-- Valid code state (validation step) -->
 	{:else if data.validation?.valid}
 		<div class="mx-auto w-full max-w-lg">
@@ -771,14 +746,22 @@ function handleRegistrationRetry() {
 				<CardContent class="space-y-6">
 					<!-- Duration info -->
 					{#if data.validation.duration_days}
-						<div data-duration-display class="flex items-center gap-3 rounded-lg border border-cr-border bg-cr-bg p-4">
+						<div
+							data-duration-display
+							class="flex items-center gap-3 rounded-lg border border-cr-border bg-cr-bg p-4"
+						>
 							<div class="rounded-full bg-cr-accent/15 p-2 text-cr-accent">
 								<Calendar class="size-5" />
 							</div>
 							<div>
 								<p class="font-medium text-cr-text">Access Duration</p>
 								<p class="text-sm text-cr-text-muted">
-									Your access will be valid for <span class="font-semibold text-cr-accent">{data.validation.duration_days} days</span> after registration.
+									Your access will be valid for
+									<span class="font-semibold text-cr-accent"
+										>{data.validation.duration_days}
+										days</span
+									>
+									after registration.
 								</p>
 							</div>
 						</div>
@@ -811,7 +794,9 @@ function handleRegistrationRetry() {
 							</div>
 							<div class="flex flex-wrap gap-2">
 								{#each data.validation.allowed_libraries as library}
-									<span class="rounded-full border border-cr-border bg-cr-bg px-3 py-1 text-sm text-cr-text">
+									<span
+										class="rounded-full border border-cr-border bg-cr-bg px-3 py-1 text-sm text-cr-text"
+									>
 										{library.name}
 									</span>
 								{/each}
@@ -826,7 +811,9 @@ function handleRegistrationRetry() {
 
 					<!-- Pre-wizard notice -->
 					{#if hasPreWizard}
-						<div class="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+						<div
+							class="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4"
+						>
 							<div class="rounded-full bg-amber-500/15 p-2 text-amber-400">
 								<AlertTriangle class="size-5" />
 							</div>

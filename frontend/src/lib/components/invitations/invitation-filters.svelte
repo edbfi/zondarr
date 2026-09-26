@@ -13,16 +13,16 @@
  * @module $lib/components/invitations/invitation-filters
  */
 
-import { ArrowDownAZ, ArrowUpAZ, Filter } from "@lucide/svelte";
-import type { ListInvitationsParams } from "$lib/api/client";
-import { Button } from "$lib/components/ui/button";
-import * as Select from "$lib/components/ui/select";
+import { ArrowDownAZ, ArrowUpAZ, Filter } from '@lucide/svelte';
+import type { ListInvitationsParams } from '$lib/api/client';
+import { Button } from '$lib/components/ui/button';
+import * as Select from '$lib/components/ui/select';
 
 interface Props {
 	enabled?: boolean;
 	expired?: boolean;
-	sortBy: "created_at" | "expires_at" | "use_count";
-	sortOrder: "asc" | "desc";
+	sortBy: 'created_at' | 'expires_at' | 'use_count';
+	sortOrder: 'asc' | 'desc';
 	onFilterChange: (params: Partial<ListInvitationsParams>) => void;
 }
 
@@ -30,23 +30,23 @@ const { enabled, expired, sortBy, sortOrder, onFilterChange }: Props = $props();
 
 // Convert boolean to select value
 const enabledValue = $derived.by(() => {
-	if (enabled === undefined) return "all";
-	return enabled ? "enabled" : "disabled";
+	if (enabled === undefined) return 'all';
+	return enabled ? 'enabled' : 'disabled';
 });
 
 const expiredValue = $derived.by(() => {
-	if (expired === undefined) return "all";
-	return expired ? "expired" : "active";
+	if (expired === undefined) return 'all';
+	return expired ? 'expired' : 'active';
 });
 
 /**
  * Handle enabled filter change.
  */
 function handleEnabledChange(value: string | undefined) {
-	if (value === "all" || value === undefined) {
+	if (value === 'all' || value === undefined) {
 		onFilterChange({ enabled: undefined });
 	} else {
-		onFilterChange({ enabled: value === "enabled" });
+		onFilterChange({ enabled: value === 'enabled' });
 	}
 }
 
@@ -54,10 +54,10 @@ function handleEnabledChange(value: string | undefined) {
  * Handle expired filter change.
  */
 function handleExpiredChange(value: string | undefined) {
-	if (value === "all" || value === undefined) {
+	if (value === 'all' || value === undefined) {
 		onFilterChange({ expired: undefined });
 	} else {
-		onFilterChange({ expired: value === "expired" });
+		onFilterChange({ expired: value === 'expired' });
 	}
 }
 
@@ -66,7 +66,7 @@ function handleExpiredChange(value: string | undefined) {
  */
 function handleSortByChange(value: string | undefined) {
 	if (value) {
-		onFilterChange({ sort_by: value as ListInvitationsParams["sort_by"] });
+		onFilterChange({ sort_by: value as ListInvitationsParams['sort_by'] });
 	}
 }
 
@@ -74,14 +74,14 @@ function handleSortByChange(value: string | undefined) {
  * Toggle sort order.
  */
 function toggleSortOrder() {
-	onFilterChange({ sort_order: sortOrder === "asc" ? "desc" : "asc" });
+	onFilterChange({ sort_order: sortOrder === 'asc' ? 'desc' : 'asc' });
 }
 
 // Sort by options
 const sortByOptions = [
-	{ value: "created_at", label: "Created Date" },
-	{ value: "expires_at", label: "Expiration Date" },
-	{ value: "use_count", label: "Use Count" },
+	{ value: 'created_at', label: 'Created Date' },
+	{ value: 'expires_at', label: 'Expiration Date' },
+	{ value: 'use_count', label: 'Use Count' }
 ] as const;
 </script>
 
@@ -132,7 +132,7 @@ const sortByOptions = [
 			class="w-40 border-cr-border bg-cr-bg text-cr-text hover:bg-cr-border/50"
 			aria-label="Sort by"
 		>
-			{sortByOptions.find(o => o.value === sortBy)?.label ?? 'Sort by'}
+			{sortByOptions.find((o) => o.value === sortBy)?.label ?? 'Sort by'}
 		</Select.Trigger>
 		<Select.Content class="border-cr-border bg-cr-surface">
 			{#each sortByOptions as option}

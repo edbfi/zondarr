@@ -6,8 +6,8 @@
  * Matches the structure of the actual user table.
  */
 
-import { Skeleton } from "$lib/components/ui/skeleton";
-import * as Table from "$lib/components/ui/table";
+import { Skeleton } from '$lib/components/ui/skeleton';
+import * as Table from '$lib/components/ui/table';
 </script>
 
 <div class="rounded-lg border border-cr-border bg-cr-surface">

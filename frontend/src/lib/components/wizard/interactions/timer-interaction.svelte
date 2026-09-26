@@ -15,12 +15,19 @@
  * sessionStorage so a mid-countdown refresh resumes from the correct
  * deadline instead of restarting at full duration.
  */
-import { onMount } from "svelte";
-import { browser } from "$app/environment";
-import { timerConfigSchema } from "$lib/schemas/wizard";
-import type { InteractionComponentProps } from "./registry";
+import { onMount } from 'svelte';
+import { browser } from '$app/environment';
+import { timerConfigSchema } from '$lib/schemas/wizard';
+import type { InteractionComponentProps } from './registry';
 
-const { interactionId, config: rawConfig, onComplete, disabled = false, completionData, storageScope }: InteractionComponentProps = $props();
+const {
+	interactionId,
+	config: rawConfig,
+	onComplete,
+	disabled = false,
+	completionData,
+	storageScope
+}: InteractionComponentProps = $props();
 
 // Validate config with Zod schema, falling back gracefully for partial configs
 const config = $derived(timerConfigSchema.safeParse(rawConfig).data);
@@ -52,9 +59,7 @@ const initialDuration = (() => {
 // key per invite session. The fallback preserves backward-compatible
 // behaviour for callers that haven't been updated.
 const storageKey = $derived(
-	storageScope
-		? `wizard-timer-${storageScope}-${interactionId}`
-		: `wizard-timer-${interactionId}`,
+	storageScope ? `wizard-timer-${storageScope}-${interactionId}` : `wizard-timer-${interactionId}`
 );
 
 // Timer state — initialize to actual duration so SSR renders the countdown, not "Timer complete"
@@ -74,28 +79,22 @@ let acknowledgedByParent = $state(false);
 
 // Derived values
 const isComplete = $derived(remainingSeconds <= 0);
-const isFinalCountdown = $derived(
-	remainingSeconds > 0 && remainingSeconds <= 5,
-);
+const isFinalCountdown = $derived(remainingSeconds > 0 && remainingSeconds <= 5);
 const progress = $derived(
-	durationSeconds > 0
-		? ((durationSeconds - remainingSeconds) / durationSeconds) * 100
-		: 100,
+	durationSeconds > 0 ? ((durationSeconds - remainingSeconds) / durationSeconds) * 100 : 100
 );
 
 // Format remaining time as MM:SS
 const formattedTime = $derived.by(() => {
 	const mins = Math.floor(remainingSeconds / 60);
 	const secs = remainingSeconds % 60;
-	return `${mins}:${secs.toString().padStart(2, "0")}`;
+	return `${mins}:${secs.toString().padStart(2, '0')}`;
 });
 
 // SVG circle calculations
 const radius = 70;
 const circumference = 2 * Math.PI * radius;
-const strokeDashoffset = $derived(
-	circumference - (progress / 100) * circumference,
-);
+const strokeDashoffset = $derived(circumference - (progress / 100) * circumference);
 
 function fireComplete() {
 	if (hasFired || disabled) return;
@@ -113,10 +112,10 @@ function fireComplete() {
 	}
 	onComplete({
 		interactionId,
-		interactionType: "timer",
+		interactionType: 'timer',
 		data: { waited: true },
 		startedAt: startedAt ?? undefined,
-		completedAt: new Date().toISOString(),
+		completedAt: new Date().toISOString()
 	});
 }
 
@@ -188,13 +187,13 @@ onMount(() => {
 $effect(() => {
 	if (!browser || alreadyCompleted) return;
 	const handler = () => recompute();
-	document.addEventListener("visibilitychange", handler);
-	window.addEventListener("focus", handler);
-	window.addEventListener("pageshow", handler);
+	document.addEventListener('visibilitychange', handler);
+	window.addEventListener('focus', handler);
+	window.addEventListener('pageshow', handler);
 	return () => {
-		document.removeEventListener("visibilitychange", handler);
-		window.removeEventListener("focus", handler);
-		window.removeEventListener("pageshow", handler);
+		document.removeEventListener('visibilitychange', handler);
+		window.removeEventListener('focus', handler);
+		window.removeEventListener('pageshow', handler);
 	};
 });
 
@@ -270,10 +269,10 @@ $effect(() => {
 			acknowledgedByParent = false;
 			onComplete({
 				interactionId,
-				interactionType: "timer",
+				interactionType: 'timer',
 				data: { waited: true },
 				startedAt: startedAt ?? undefined,
-				completedAt: new Date().toISOString(),
+				completedAt: new Date().toISOString()
 			});
 		}, 0);
 		return () => clearTimeout(timeout);
@@ -315,144 +314,144 @@ $effect(() => {
 </div>
 
 <style>
-	.timer-interaction {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 2rem;
-		padding: 2rem 0;
-	}
+.timer-interaction {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2rem;
+	padding: 2rem 0;
+}
 
-	/* Circular timer ring */
-	.timer-ring {
-		position: relative;
-		width: 160px;
-		height: 160px;
-	}
+/* Circular timer ring */
+.timer-ring {
+	position: relative;
+	width: 160px;
+	height: 160px;
+}
 
-	.progress-svg {
-		width: 100%;
-		height: 100%;
-		transform: rotate(-90deg);
-	}
+.progress-svg {
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+}
 
-	/* Track circle */
-	.track {
-		fill: none;
-		stroke: var(--wizard-border);
-		stroke-width: 6;
-	}
+/* Track circle */
+.track {
+	fill: none;
+	stroke: var(--wizard-border);
+	stroke-width: 6;
+}
 
-	/* Progress circle with gradient */
-	.progress {
-		fill: none;
-		stroke: url(#timer-gradient);
-		stroke-width: 6;
-		stroke-linecap: round;
-		transition: stroke-dashoffset 0.3s ease;
-	}
+/* Progress circle with gradient */
+.progress {
+	fill: none;
+	stroke: url(#timer-gradient);
+	stroke-width: 6;
+	stroke-linecap: round;
+	transition: stroke-dashoffset 0.3s ease;
+}
 
-	/* Gradient definition - using inline style since SVG gradients need to be in the SVG */
-	.timer-ring::before {
-		content: '';
-		position: absolute;
-		inset: -4px;
-		border-radius: 50%;
-		background: transparent;
-		transition: box-shadow 0.3s ease;
-	}
+/* Gradient definition - using inline style since SVG gradients need to be in the SVG */
+.timer-ring::before {
+	content: "";
+	position: absolute;
+	inset: -4px;
+	border-radius: 50%;
+	background: transparent;
+	transition: box-shadow 0.3s ease;
+}
 
-	/* Pulse animation on final 5 seconds */
-	.timer-ring.pulse::before {
-		animation: timer-pulse 1s ease-in-out infinite;
-	}
+/* Pulse animation on final 5 seconds */
+.timer-ring.pulse::before {
+	animation: timer-pulse 1s ease-in-out infinite;
+}
 
-	/* Glow on completion */
-	.timer-ring.complete::before {
+/* Glow on completion */
+.timer-ring.complete::before {
+	box-shadow:
+		0 0 20px var(--wizard-success-glow-lg),
+		0 0 40px var(--wizard-success-glow-sm);
+}
+
+.timer-ring.complete .progress {
+	stroke: var(--wizard-success);
+}
+
+/* Time display in center */
+.time-display {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+}
+
+.time-value {
+	font-family: "JetBrains Mono", "Fira Code", monospace;
+	font-size: 2.5rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--wizard-text);
+	letter-spacing: -0.02em;
+}
+
+.timer-ring.pulse .time-value {
+	color: var(--wizard-accent);
+	animation: time-pulse 1s ease-in-out infinite;
+}
+
+.timer-ring.complete .time-value {
+	color: var(--wizard-success);
+}
+
+.time-label {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--wizard-text-dim);
+}
+
+/* Animations */
+@keyframes timer-pulse {
+	0%,
+	100% {
 		box-shadow:
-			0 0 20px var(--wizard-success-glow-lg),
-			0 0 40px var(--wizard-success-glow-sm);
+			0 0 12px var(--wizard-accent-glow-xl),
+			0 0 24px var(--wizard-accent-glow-sm);
 	}
+	50% {
+		box-shadow:
+			0 0 20px var(--wizard-accent-glow-active),
+			0 0 40px var(--wizard-accent-glow-lg);
+	}
+}
 
-	.timer-ring.complete .progress {
-		stroke: var(--wizard-success);
+@keyframes time-pulse {
+	0%,
+	100% {
+		opacity: 1;
 	}
+	50% {
+		opacity: 0.7;
+	}
+}
 
-	/* Time display in center */
-	.time-display {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.25rem;
-	}
+/* Completion status indicator */
+.completion-status {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--wizard-success);
+	font-size: 0.9375rem;
+	font-weight: 500;
+}
 
-	.time-value {
-		font-family: 'JetBrains Mono', 'Fira Code', monospace;
-		font-size: 2.5rem;
-		font-weight: 600;
-		font-variant-numeric: tabular-nums;
-		color: var(--wizard-text);
-		letter-spacing: -0.02em;
-	}
-
-	.timer-ring.pulse .time-value {
-		color: var(--wizard-accent);
-		animation: time-pulse 1s ease-in-out infinite;
-	}
-
-	.timer-ring.complete .time-value {
-		color: var(--wizard-success);
-	}
-
-	.time-label {
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--wizard-text-dim);
-	}
-
-	/* Animations */
-	@keyframes timer-pulse {
-		0%,
-		100% {
-			box-shadow:
-				0 0 12px var(--wizard-accent-glow-xl),
-				0 0 24px var(--wizard-accent-glow-sm);
-		}
-		50% {
-			box-shadow:
-				0 0 20px var(--wizard-accent-glow-active),
-				0 0 40px var(--wizard-accent-glow-lg);
-		}
-	}
-
-	@keyframes time-pulse {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.7;
-		}
-	}
-
-	/* Completion status indicator */
-	.completion-status {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: var(--wizard-success);
-		font-size: 0.9375rem;
-		font-weight: 500;
-	}
-
-	.checkmark-icon {
-		width: 1.25rem;
-		height: 1.25rem;
-	}
+.checkmark-icon {
+	width: 1.25rem;
+	height: 1.25rem;
+}
 </style>
 
 <!-- SVG gradient definition -->
