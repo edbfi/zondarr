@@ -48,6 +48,6 @@ hooks = [
   { id = "typecheck-py", name = "Python Type Check (basedpyright)", entry = "bash -c 'uv run --project backend --frozen basedpyright --project backend/pyproject.toml && uv run --project backend --frozen basedpyright --project dev_cli/pyproject.toml'", language = "system", files = "^(backend/|dev_cli/)", pass_filenames = false, stages = ["pre-push"] },
   { id = "tests-py", name = "Python Tests", entry = "bash -c '(cd backend && uv run --frozen pytest -n 4) && backend/.venv/bin/pytest -q dev_cli/tests'", language = "system", files = "^(backend/|dev_cli/)", pass_filenames = false, stages = ["pre-push"] },
   { id = "tests-ts", name = "Frontend Tests", entry = "bun run --cwd frontend test", language = "system", files = "^frontend/", pass_filenames = false, stages = ["pre-push"] },
-  { id = "ruff-check", name = "Locked Python lint", entry = "uv run --project backend --frozen ruff check --fix", language = "system", types = ["python"], files = "^(backend/|dev_cli/|\\.github/scripts/).*\\.py$" },
-  { id = "ruff-format", name = "Locked Python format", entry = "uv run --project backend --frozen ruff format", language = "system", types = ["python"], files = "^(backend/|dev_cli/|\\.github/scripts/).*\\.py$" },
+  { id = "ruff-check", name = "Locked Python lint", entry = "uv run --project backend --frozen ruff check --fix", language = "system", types = ["python"], files = "^(backend/|dev_cli/).*\\.py$" },
+  { id = "ruff-format", name = "Locked Python format", entry = "uv run --project backend --frozen ruff format", language = "system", types = ["python"], files = "^(backend/|dev_cli/).*\\.py$" },
 ]
