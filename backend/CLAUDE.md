@@ -4,7 +4,7 @@ Run everything below from `backend/`. pytest's config (`testpaths`, `pythonpath`
 
 | Task | Command |
 | --- | --- |
-| All tests | `uv run pytest` (xdist `-n auto`; CI and pre-push pin `-n 4`) |
+| All tests | `uv run pytest` (xdist `-n auto`; pre-push pins `-n 4`) |
 | One file | `uv run pytest tests/test_totp.py -n0` |
 | One case | `uv run pytest "tests/test_totp.py::TestTOTPEncryption::test_encrypt_decrypt_roundtrip" -n0` |
 | Typecheck | `uv run basedpyright` (`recommended` mode, `migrations/` excluded) |
@@ -22,7 +22,7 @@ Run everything below from `backend/`. pytest's config (`testpaths`, `pythonpath`
 - Every route requires JWT auth by default. Public handlers opt out with `exclude_from_auth=True` on the decorator. CSRF exemptions are a separate hard-coded set, `_CSRF_EXCLUDE_PATHS_BASE` in `core/csrf.py`.
 - `zondarr/app.py` runs `app = create_app()` at import, and that needs `SECRET_KEY` in the environment. Tests must not import `zondarr.app`. Build a minimal `Litestar(route_handlers=[XController], dependencies={"session": ...}, exception_handlers={...})` instead, as `tests/test_settings_controller.py::_make_test_app` does.
 - `Settings` (`config.py`) is filled only by the explicit env-to-field dict in `load_settings()`. Adding a field to the Struct alone never reads the environment. Add the env lookup there, and document the variable in `/.env.example`.
-- Tests create the schema with `Base.metadata.create_all` and never run Alembic, so a missing migration still passes pytest. It fails only in CI's integration smoke (`.github/scripts/smoke.py`) or at runtime.
+- Tests create the schema with `Base.metadata.create_all` and never run Alembic, so a missing migration still passes pytest. Nothing in the test suite or prek hooks runs Alembic; migrations are only exercised when `alembic upgrade head` runs (`uv run dev_cli` does this at startup).
 
 ## Workflows
 

@@ -8,7 +8,7 @@
 	},
 	"files": {
 		"ignoreUnknown": true,
-		"includes": ["biome.json", "frontend/**", ".github/scripts/*.ts"]
+		"includes": ["biome.json", "frontend/**"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -33,13 +33,5 @@
 		"formatter": {
 			"semicolons": "always"
 		}
-	},
-	"overrides": [
-		{
-			"includes": [".github/scripts/*.ts"],
-			"formatter": {
-				"lineWidth": 80
-			}
-		}
-	]
+	}
 }

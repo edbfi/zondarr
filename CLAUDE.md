@@ -12,9 +12,7 @@ Zondarr: invitation and user management for Plex/Jellyfin. `backend/` is Python 
 | Backend tests | `cd backend && uv run pytest` |
 | Frontend tests | `bun run --cwd frontend test` |
 | dev_cli tests | `backend/.venv/bin/pytest -q dev_cli/tests` |
-| Everything CI's `python` job runs | `bash .github/scripts/check-python.sh` |
 | Everything CI's `frontend` job runs | `cd frontend && bun run check:biome && bun run check && bun run test` |
-| Generated API types still match the backend | `bun .github/scripts/check-api.ts` (needs `backend/.venv` and `frontend/node_modules`) |
 | All prek hooks | `bun run lint` (= `prek run --all-files`) |
 
 The scoped files list single-file and single-case commands.
@@ -25,8 +23,8 @@ The scoped files list single-file and single-case commands.
 
 - Commits to `main` are blocked by prek's `no-commit-to-branch` hook once the hooks are installed. Running `bun install` at the root installs them via `prepare`. Work on a branch.
 - prek's pre-push stage runs basedpyright, svelte-check, backend pytest, dev_cli pytest and vitest. When `git push` fails locally, it is usually these hooks and not the remote. Commit messages must be Conventional Commits (a `commit-msg` hook checks them).
-- Ruff is pinned (`ruff==0.16.8` in `backend/pyproject.toml`), and prek and CI both run it through the backend project: `uv run --project backend --frozen ruff check --fix <paths>`. `dev_cli/` and `.github/scripts/` inherit the backend Ruff config through `extend`.
-- Changing the backend's OpenAPI surface also means regenerating `frontend/src/lib/api/types.d.ts`. CI's integration job fails on any drift. See `frontend/CLAUDE.md`.
+- Ruff is pinned (`ruff==0.16.8` in `backend/pyproject.toml`), and prek runs it through the backend project: `uv run --project backend --frozen ruff check --fix <paths>`. `dev_cli/` inherits the backend Ruff config through `extend`.
+- Changing the backend's OpenAPI surface also means regenerating `frontend/src/lib/api/types.d.ts`. Nothing checks for drift automatically. See `frontend/CLAUDE.md`.
 - Backend and frontend reach each other two ways. In production, the browser calls same-origin `/api/*`, which `frontend/src/routes/api/[...path]/+server.ts` proxies to `INTERNAL_API_URL`. In dev, `dev_cli` sets `PUBLIC_API_URL`, so the browser calls `:8000` directly and relies on `CORS_ORIGINS`. The proxy forwards `Origin`/`Referer` because `backend/src/zondarr/core/csrf.py` validates them. Don't strip those headers.
 - Tests use SQLite and fake media clients. Nothing talks to real Plex/Jellyfin or PostgreSQL.
 

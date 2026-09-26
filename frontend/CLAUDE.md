@@ -13,12 +13,11 @@ Run these from `frontend/`, or prefix them with `bun run --cwd frontend` from th
 
 ## Gotchas
 
-- `src/lib/api/types.d.ts` is generated from the backend OpenAPI schema. Don't edit it by hand. After `generate:api`, run `node_modules/.bin/biome format --write src/lib/api/types.d.ts`. The committed file is Biome-formatted, and both `check:biome` and CI's `bun .github/scripts/check-api.ts` compare against that form.
+- `src/lib/api/types.d.ts` is generated from the backend OpenAPI schema. Don't edit it by hand. After `generate:api`, run `node_modules/.bin/biome format --write src/lib/api/types.d.ts`. The committed file is Biome-formatted, and `check:biome` checks that form.
 - Styling is UnoCSS (`uno.config.ts`: presetWind4, presetShadcn, presetIcons). `tailwind.config.js` is an empty stub kept only for the shadcn-svelte CLI, so theme settings there have no effect. The app's own colors are `--cr-*` variables in `src/app.css`, exposed as `cr-*` utilities in `uno.config.ts`.
 - `vitest-setup.ts` mocks `$env/dynamic/public` and `$env/dynamic/private` as `{}`, so `PUBLIC_API_URL` and friends are always unset in tests.
 - Component tests are named `*.svelte.test.ts` (plain `*.test.ts` is for non-component modules). Components that need `children` snippets or `bind:this` are rendered through a `*-test-wrapper.svelte`, as in `src/lib/components/error-boundary-test-wrapper.svelte`.
 - `src/hooks.server.ts` redirects unauthenticated requests to `/login` unless the path is in `PUBLIC_PATHS`. A new public page needs an entry there.
-- `smoke/*.spec.ts` is a Playwright test that CI drives through `.github/scripts/smoke.py` against built servers. Vitest never picks it up, and running `bun run smoke:browser` directly fails because `SMOKE_URL` is unset.
 
 ## Calling the backend
 
@@ -53,4 +52,4 @@ Biome is pinned to 2.5.14. The configuration uses Git ignores, the recommended l
 
 The exact-file formatter overrides protect components containing `{@const ...}`: Biome 2.5.14 inserts parentheses that Svelte rejects with `expected_pattern`. These files still receive lint and import checks. Recheck them with the Svelte compiler when upgrading Biome before removing the exceptions. Do not run a formatter with these overrides bypassed.
 
-The frontend extends the root configuration with `"extends": "//"`. The root limits Biome to the frontend, its own configuration and existing TypeScript maintenance scripts; those scripts retain their original 80-column format. The three generic form components remain excluded because of parser limitations. Generated API types remain formatted under the existing generation contract.
+The frontend extends the root configuration with `"extends": "//"`. The root limits Biome to the frontend and its own configuration. The three generic form components remain excluded because of parser limitations. Generated API types remain formatted under the existing generation contract.

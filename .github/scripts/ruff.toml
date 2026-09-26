@@ -1,5 +1,0 @@
-extend = "../../backend/pyproject.toml"
-
-[lint.per-file-ignores]
-# CI assertions validate real local servers; the fixed subprocesses use developer PATH.
-"smoke.py" = ["S101", "S106", "S603", "S607"]
