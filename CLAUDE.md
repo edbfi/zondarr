@@ -35,4 +35,3 @@ The scoped files list single-file and single-case commands.
 - `.agents/rules/python-3_14-litestar-api.md` covers general Litestar, msgspec and Granian guidance. It is generic: where it disagrees with this repo, follow the repo (see the table in `backend/CLAUDE.md`). Read it before writing unfamiliar Litestar or msgspec code.
 - `.agents/rules/svelte5-sveltekit-app.md` covers general Svelte 5 runes, SvelteKit, UnoCSS and shadcn-svelte guidance. It is generic: where it disagrees with this repo, follow the repo (see the table in `frontend/CLAUDE.md`). Read it before writing new components.
 - `.env.example` lists every environment variable with its default and how dev_cli and Docker handle it. Read it before touching config, auth or deployment wiring.
-- `CI.md` describes CI jobs, the integration smoke test (`.github/scripts/smoke.py`), Renovate and Biome repair policy. Read it only when changing `.github/` or diagnosing a CI-only failure.
