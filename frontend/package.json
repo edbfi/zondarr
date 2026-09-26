@@ -18,7 +18,6 @@
 		"check:native": "bunx --bun svelte-check --tsgo --tsconfig ./tsconfig.json"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.14",
 		"@internationalized/date": "3.12.4",
 		"@lucide/svelte": "1.47.0",
 		"@sveltejs/kit": "2.70.3",
