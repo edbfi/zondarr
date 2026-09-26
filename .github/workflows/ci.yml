@@ -13,13 +13,13 @@ concurrency:
   cancel-in-progress: true
 jobs:
   python:
-    uses: edbfi/automation/.github/workflows/python.yml@v4.0.0
+    uses: edbfi/automation/.github/workflows/python.yml@v4.1.0
     with:
       version: '3.14'
       command: bash .github/scripts/check-python.sh
       timeout-minutes: 30
   frontend:
-    uses: edbfi/automation/.github/workflows/bun.yml@v4.0.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v4.1.0
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
@@ -83,7 +83,7 @@ jobs:
     - name: Reject tracked-file mutation
       run: git diff --exit-code HEAD
   hygiene:
-    uses: edbfi/automation/.github/workflows/bun.yml@v4.0.0
+    uses: edbfi/automation/.github/workflows/bun.yml@v4.1.0
     with:
       # renovate: datasource=npm depName=bun
       version: 1.4.2
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
-    - uses: edbfi/automation/actions/gate@v4.0.0
+    - uses: edbfi/automation/actions/gate@v4.1.0
       with:
         needs: ${{ toJSON(needs) }}
         required: python frontend integration hygiene
