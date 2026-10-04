@@ -28,7 +28,7 @@ import {
 	type CreateServerInput,
 	createServerSchema,
 	transformCreateServerData,
-} from "$lib/schemas/server";
+} from "$lib/schemas/media-server";
 import { getAllProviders, getProviderActiveToggleStyle } from "$lib/stores/providers.svelte";
 import { showError, showSuccess } from "$lib/utils/toast";
 

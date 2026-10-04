@@ -4,7 +4,7 @@
  * Provides client-side validation matching backend constraints for:
  * - Creating new media servers
  *
- * @module $lib/schemas/server
+ * @module $lib/schemas/media-server
  */
 
 import { z } from 'zod';
