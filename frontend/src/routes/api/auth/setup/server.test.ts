@@ -245,4 +245,36 @@ describe('POST /api/auth/setup (hardened proxy)', () => {
 			]);
 		}
 	);
+
+	it('does not pass front, forwarded or hop-by-hop headers to the backend (M16)', async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValue(new Response('{}', { status: 201 }));
+		const request = new Request('http://frontend.local/api/auth/setup', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'content-length': '64',
+				origin: 'http://frontend.local',
+				'x-zondarr-origin-proto': 'https',
+				'x-zondarr-origin-host': 'evil.test',
+				'x-zondarr-peer': '203.0.113.9',
+				'x-forwarded-for': '203.0.113.9',
+				'x-forwarded-proto': 'https',
+				forwarded: 'for=203.0.113.9',
+				connection: 'keep-alive'
+			},
+			body: JSON.stringify({ username: 'admin', password: 'pass', bootstrap_token: 'manual' })
+		});
+		const event = {
+			request,
+			url: new URL(request.url),
+			cookies: { get: vi.fn(() => undefined), delete: vi.fn() }
+		};
+
+		await POST(event as never);
+
+		const forwarded = new Headers((fetchSpy.mock.calls[0] as [string, RequestInit])[1].headers);
+		expect([...forwarded.keys()].sort()).toEqual(['content-type', 'origin']);
+	});
 });

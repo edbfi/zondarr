@@ -2,6 +2,10 @@
  * What the frontend passes on between the browser and the backend: the `/api/*` proxy, the
  * setup endpoint and the session refresh in `hooks.server.ts`.
  *
+ * Requests reach the backend without the headers this app's front sets (`scripts/serve.ts`) and
+ * without client-supplied `X-Forwarded-*` and `Forwarded` headers: the backend reads none of them
+ * today, and none of them is trustworthy by the time it gets there.
+ *
  * Cookies the backend sets reach the browser through the frontend, so their `Secure` attribute
  * follows the app's own scheme (`event.url`), as for the cookies the frontend sets itself. The
  * backend only knows its own `SECURE_COOKIES` setting, and browsers refuse `Secure` cookies over
@@ -11,6 +15,32 @@
  */
 import type { Cookies } from '@sveltejs/kit';
 import { isSecureRequest } from './request-origin';
+
+/** The headers `scripts/serve.ts` sets on every request it fronts. */
+export const FRONT_HEADERS = [
+	'x-zondarr-origin-proto',
+	'x-zondarr-origin-host',
+	'x-zondarr-peer'
+] as const;
+
+const HOP_BY_HOP = ['host', 'connection', 'keep-alive', 'transfer-encoding', 'upgrade'];
+const NEVER_FORWARDED = new Set<string>([...HOP_BY_HOP, ...FRONT_HEADERS, 'forwarded']);
+
+/**
+ * The request headers to send to the backend: everything the client sent (including `Origin`,
+ * `Referer` and `Cookie`, which the backend checks) except hop-by-hop headers, the front's
+ * headers, `Forwarded`, every `X-Forwarded-*` header and any `extra` header the caller names.
+ */
+export function backendRequestHeaders(source: Headers, extra: readonly string[] = []): Headers {
+	const dropped = new Set(extra.map((name) => name.toLowerCase()));
+	const headers = new Headers();
+	for (const [name, value] of source) {
+		// Headers iterates lowercase names.
+		if (NEVER_FORWARDED.has(name) || name.startsWith('x-forwarded-') || dropped.has(name)) continue;
+		headers.append(name, value);
+	}
+	return headers;
+}
 
 type SetCookieAttributes = Omit<ReturnType<Cookies['parse']>, 'name' | 'value'>;
 

@@ -1,34 +1,18 @@
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
-import { relayResponseHeaders } from '$lib/server/backend-relay';
+import { backendRequestHeaders, relayResponseHeaders } from '$lib/server/backend-relay';
 import type { RequestHandler } from './$types';
 
 const INTERNAL_API_URL =
 	env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
 
-// Headers to strip from proxied requests:
-// - Hop-by-hop: connection, keep-alive, transfer-encoding, upgrade
-// - Proxy-rewritten: host (overridden by upstream fetch target)
-// Origin and Referer must be preserved for CSRF origin validation.
-const STRIP_REQUEST_HEADERS = new Set([
-	'host',
-	'connection',
-	'keep-alive',
-	'transfer-encoding',
-	'upgrade'
-]);
-
 const handler: RequestHandler = async ({ request, url, params }) => {
 	const path = params.path;
 	const upstream = `${INTERNAL_API_URL}/api/${path}${url.search}`;
 
-	// Forward headers, stripping hop-by-hop and proxy-local headers
-	const headers = new Headers();
-	for (const [key, value] of request.headers) {
-		if (!STRIP_REQUEST_HEADERS.has(key.toLowerCase())) {
-			headers.set(key, value);
-		}
-	}
+	// Origin and Referer pass through: the backend validates them (core/csrf.py). Hop-by-hop
+	// headers, the front's own headers and client-sent forwarded headers do not (M16).
+	const headers = backendRequestHeaders(request.headers);
 
 	const hasBody = !['GET', 'HEAD'].includes(request.method);
 

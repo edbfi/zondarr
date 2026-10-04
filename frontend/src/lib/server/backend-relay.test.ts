@@ -1,6 +1,17 @@
 import { parseSetCookie } from 'cookie';
 import { describe, expect, it } from 'vitest';
-import { relayedCookieOptions, relayResponseHeaders, relaySetCookie } from './backend-relay';
+import {
+	HOST_HEADER as FRONT_HOST_HEADER,
+	PEER_HEADER as FRONT_PEER_HEADER,
+	PROTOCOL_HEADER as FRONT_PROTOCOL_HEADER
+} from '../../../scripts/serve';
+import {
+	backendRequestHeaders,
+	FRONT_HEADERS,
+	relayedCookieOptions,
+	relayResponseHeaders,
+	relaySetCookie
+} from './backend-relay';
 
 const HTTP = new URL('http://192.168.1.10:3000/api/auth/login');
 const HTTPS = new URL('https://zondarr.example.com/api/auth/login');
@@ -87,5 +98,47 @@ describe('relayedCookieOptions', () => {
 			sameSite: false,
 			secure: false
 		});
+	});
+});
+
+describe('backendRequestHeaders', () => {
+	it('names exactly the headers scripts/serve.ts sets', () => {
+		expect([...FRONT_HEADERS].sort()).toEqual(
+			[FRONT_PROTOCOL_HEADER, FRONT_HOST_HEADER, FRONT_PEER_HEADER].sort()
+		);
+	});
+
+	it('drops the front headers, forwarded headers and hop-by-hop headers, in any case', () => {
+		const source = new Headers({
+			Origin: 'http://192.168.1.10:3000',
+			Referer: 'http://192.168.1.10:3000/users',
+			Cookie: 'zondarr_access_token=abc',
+			'Content-Type': 'application/json',
+			'X-Zondarr-Origin-Proto': 'https',
+			'x-zondarr-origin-host': 'evil.test',
+			'x-zondarr-peer': '203.0.113.9',
+			'X-Forwarded-For': '203.0.113.9',
+			'X-Forwarded-Proto': 'https',
+			'X-Forwarded-Host': 'evil.test',
+			'X-Forwarded-Port': '443',
+			'X-Forwarded-Prefix': '/evil',
+			Forwarded: 'for=203.0.113.9',
+			Host: 'evil.test',
+			Connection: 'keep-alive',
+			'Keep-Alive': 'timeout=5',
+			'Transfer-Encoding': 'chunked',
+			Upgrade: 'websocket'
+		});
+		expect([...backendRequestHeaders(source).entries()]).toEqual([
+			['content-type', 'application/json'],
+			['cookie', 'zondarr_access_token=abc'],
+			['origin', 'http://192.168.1.10:3000'],
+			['referer', 'http://192.168.1.10:3000/users']
+		]);
+	});
+
+	it('drops extra headers a caller names', () => {
+		const source = new Headers({ 'content-length': '12', 'content-type': 'application/json' });
+		expect([...backendRequestHeaders(source, ['Content-Length']).keys()]).toEqual(['content-type']);
 	});
 });

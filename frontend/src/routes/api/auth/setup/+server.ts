@@ -1,19 +1,10 @@
 import { readFileSync } from 'node:fs';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
-import { relayResponseHeaders } from '$lib/server/backend-relay';
+import { backendRequestHeaders, relayResponseHeaders } from '$lib/server/backend-relay';
 import { isSecureRequest } from '$lib/server/request-origin';
 import { consumeNonce } from '$lib/server/setup-nonce';
 import type { RequestHandler } from './$types';
-
-const STRIP_REQUEST_HEADERS = new Set([
-	'host',
-	'connection',
-	'keep-alive',
-	'transfer-encoding',
-	'upgrade',
-	'content-length'
-]);
 
 function readBootstrapToken(): string | null {
 	const filePath = env.BOOTSTRAP_TOKEN_FILE;
@@ -31,12 +22,8 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 		env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
 	const upstream = `${internalApiUrl}/api/auth/setup`;
 
-	const headers = new Headers();
-	for (const [key, value] of request.headers) {
-		if (!STRIP_REQUEST_HEADERS.has(key.toLowerCase())) {
-			headers.set(key, value);
-		}
-	}
+	// As in the /api proxy (M16), plus Content-Length: the body is re-serialized below.
+	const headers = backendRequestHeaders(request.headers, ['content-length']);
 
 	let body: string;
 	try {
