@@ -1,5 +1,6 @@
 """Tests for dev_cli.runner command construction."""
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +22,27 @@ def _build_runner(*, repo_root: Path, reload: bool) -> DevRunner:
 
 
 class DevRunnerCommandTests(unittest.TestCase):
+    def test_backend_serves_through_litestar_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            runner = _build_runner(repo_root=Path(tmp_dir), reload=False)
+
+            backend = next(
+                server for server in runner.servers if server.name == "backend"
+            )
+
+            self.assertEqual(
+                backend.cmd[1:6],
+                ["-m", "litestar", "--app", "zondarr.app:app", "run"],
+            )
+            # The venv interpreter directly: a `uv run` wrapper would forward
+            # SIGTERM a second time and make litestar-granian kill the workers.
+            self.assertEqual(
+                Path(backend.cmd[0]).parts[-4:-1],
+                ("backend", ".venv", "bin" if sys.platform != "win32" else "Scripts"),
+            )
+            self.assertNotIn("uv", backend.cmd)
+            self.assertNotIn("granian", backend.cmd)
+
     def test_backend_reload_ignores_bootstrap_token_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             repo_root = Path(tmp_dir)

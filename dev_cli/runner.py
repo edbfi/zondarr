@@ -102,6 +102,20 @@ class ServerProcess:
         remove_pid(self.repo_root, self.name)
 
 
+def _backend_python(backend_dir: Path) -> str:
+    """Return the backend virtualenv's interpreter.
+
+    The server is not started through ``uv run``: uv forwards SIGTERM to its
+    child, so the group-wide SIGTERM of ``dev_cli stop`` reaches ``litestar
+    run`` twice, and litestar-granian answers a second signal by killing the
+    workers (exit 137) instead of letting them drain. Pre-flight has already
+    synced the environment by the time the server starts.
+    """
+    if sys.platform == "win32":
+        return str(backend_dir / ".venv" / "Scripts" / "python.exe")
+    return str(backend_dir / ".venv" / "bin" / "python")
+
+
 @final
 class DevRunner:
     """Orchestrates multiple ServerProcess instances."""
@@ -142,12 +156,12 @@ class DevRunner:
                 **({"DEV_SKIP_AUTH": "true"} if self.skip_auth else {}),
             }
             backend_cmd = [
-                "uv",
-                "run",
-                "granian",
+                _backend_python(self.repo_root / "backend"),
+                "-m",
+                "litestar",
+                "--app",
                 "zondarr.app:app",
-                "--interface",
-                "asgi",
+                "run",
                 "--host",
                 "0.0.0.0",  # noqa: S104 — existing explicit development-server listener.
                 "--port",
