@@ -94,6 +94,12 @@ async function handle(request) {
 				headers: { 'content-type': sse ? 'text/event-stream' : 'application/octet-stream' }
 			});
 		}
+		case '/slow': {
+			// Like a request waiting on the backend: reads the body, then answers after `ms`.
+			const body = await request.text();
+			await sleep(Number(url.searchParams.get('ms') || 3000));
+			return new Response(`slow ${body.length}`);
+		}
 		case '/big':
 			return new Response(big, { headers: { 'content-type': 'application/octet-stream' } });
 		case '/stop':
