@@ -55,7 +55,7 @@ async function handleRetry() {
  * Handle filter changes by updating URL params.
  */
 function handleFilterChange(newParams: Partial<ListInvitationsParams>) {
-	const url = new URL(page.url);
+	const url = new URL(page.url.href);
 
 	// Update or remove each param
 	for (const [key, value] of Object.entries(newParams)) {
@@ -71,7 +71,7 @@ function handleFilterChange(newParams: Partial<ListInvitationsParams>) {
 		url.searchParams.set('page', '1');
 	}
 
-	goto(url.toString(), { keepFocus: true, noScroll: true });
+	goto(url.toString(), { reset: false });
 }
 
 /**

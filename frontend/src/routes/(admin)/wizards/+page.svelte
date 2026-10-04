@@ -95,9 +95,9 @@ async function handleDeleteConfirm() {
  * Handle page change.
  */
 function handlePageChange(newPage: number) {
-	const url = new URL(page.url);
+	const url = new URL(page.url.href);
 	url.searchParams.set('page', String(newPage));
-	goto(url.toString(), { keepFocus: true, noScroll: true });
+	goto(url.toString(), { reset: false });
 }
 </script>
 
