@@ -28,11 +28,20 @@ const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 /** @param {Request} request */
 async function handle(request) {
-	const url = new URL(request.url);
-	switch (url.pathname) {
+	// As adapter-bun's normalize_request: a Host header that does not parse (Bun then builds a
+	// relative or invalid request.url) gets the adapter's own 400.
+	let url;
+	try {
+		url = new URL(request.url);
+	} catch {
+		return new Response('Bad Request', { status: 400 });
+	}
+	// /echo/<anything> echoes too, so a test can send an encoded path.
+	switch (url.pathname.startsWith('/echo/') ? '/echo' : url.pathname) {
 		case '/echo':
 			return Response.json({
 				method: request.method,
+				url: request.url,
 				path: url.pathname,
 				search: url.search,
 				body: await request.text(),

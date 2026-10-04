@@ -11,6 +11,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
 	endQuietly,
+	forwardPath,
 	HOST_HEADER,
 	MISSING_ORIGIN_WARNING,
 	missingOriginWarning,
@@ -132,6 +133,21 @@ async function echo(port: number, options: Parameters<typeof call>[2] = {}) {
 		headers: Record<string, string>;
 		env: Record<string, string | null>;
 	};
+}
+
+/** A raw HTTP/1.1 request, so the Host header and the path are exactly what is written. */
+function rawRequest(port: number, head: string): Promise<string> {
+	return new Promise((done, fail) => {
+		let received = '';
+		const socket = connect(port, '127.0.0.1', () => {
+			socket.write(`${head}\r\nConnection: close\r\n\r\n`);
+		});
+		socket.on('data', (chunk) => {
+			received += chunk.toString();
+		});
+		socket.on('end', () => done(received));
+		socket.on('error', fail);
+	});
 }
 
 const socketDirectories = (temp: string) =>
@@ -341,6 +357,18 @@ describe('prepare', () => {
 	});
 });
 
+describe('forwardPath', () => {
+	it.each([
+		['http://x/_app/immutable/a%20b.js?v=%2F&q', '/_app/immutable/a%20b.js?v=%2F&q'],
+		['http://x//double', '//double'],
+		['http://x', '/'],
+		['http://[::1/odd?host', '/odd?host'],
+		['/relative?when=the+Host+is+unparseable', '/relative?when=the+Host+is+unparseable']
+	])('forwards %s as %s', (requestUrl, path) => {
+		expect(forwardPath(requestUrl)).toBe(path);
+	});
+});
+
 describe('endQuietly', () => {
 	it('passes chunks through and closes instead of erroring', async () => {
 		let step = 0;
@@ -497,6 +525,34 @@ describe('serve.ts process', () => {
 		const gzip = await call(server.port, '/gzip', { headers: { 'accept-encoding': 'gzip' } });
 		expect(gzip.headers['content-encoding']).toBe('gzip');
 		expect(gzip.body.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]));
+	});
+
+	it('forwards an encoded path and query byte for byte', async () => {
+		const port = await freePort();
+		const server = await start({ ORIGIN: `http://127.0.0.1:${port}`, PORT: String(port) });
+		const reply = await rawRequest(
+			server.port,
+			'GET /echo/caf%C3%A9%2Fx%20y?q=a%20b&r=%2F HTTP/1.1\r\nHost: anything'
+		);
+		expect(reply).toMatch(/^HTTP\/1\.1 200 /);
+		const seen = JSON.parse(reply.slice(reply.indexOf('\r\n\r\n') + 4));
+		expect(seen.url).toMatch(/^http:\/\/[^/]+\/echo\/caf%C3%A9%2Fx%20y\?q=a%20b&r=%2F$/);
+	});
+
+	// Bun builds request.url from the client's Host. The front must not parse it: it forwards the
+	// request, and the adapter (here the stand-in, mirroring adapter-bun) answers with its own 400.
+	it.each([
+		['a Host the URL parser rejects', 'a b'],
+		['an empty Host', ''],
+		['an unclosed IPv6 Host', '[::1'],
+		['a Host with a stray percent sign', 'ex%ample']
+	])('forwards a request with %s instead of failing in the front', async (_case, host) => {
+		const port = await freePort();
+		const server = await start({ ORIGIN: `http://127.0.0.1:${port}`, PORT: String(port) });
+		const reply = await rawRequest(server.port, `GET /echo?x=1 HTTP/1.1\r\nHost: ${host}`);
+		expect(reply).toMatch(/^HTTP\/1\.1 400 /);
+		expect(reply.slice(reply.indexOf('\r\n\r\n') + 4)).toBe('Bad Request');
+		expect(server.output()).not.toMatch(/TypeError|Invalid URL/);
 	});
 
 	it('propagates a client abort to the adapter', async () => {
