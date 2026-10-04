@@ -41,6 +41,11 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
+Start that backend with `DEBUG=true` (as `dev_cli` does) or with
+`CSRF_ORIGIN=http://localhost:5173`. Otherwise its CSRF check rejects the browser's
+writes from the dev server with 403 (sign-in and setup are exempt, so the failures
+start after login).
+
 In production the browser calls same-origin `/api/*`, which the server proxies to
 `INTERNAL_API_URL`; leave `PUBLIC_API_URL` empty. See
 [`.env.example`](../.env.example) for the settings.
