@@ -363,7 +363,8 @@ describe('forwardPath', () => {
 		['http://x//double', '//double'],
 		['http://x', '/'],
 		['http://[::1/odd?host', '/odd?host'],
-		['/relative?when=the+Host+is+unparseable', '/relative?when=the+Host+is+unparseable']
+		['/relative?when=the+Host+is+unparseable', '/relative?when=the+Host+is+unparseable'],
+		['/login?next=http://x/y', '/login?next=http://x/y']
 	])('forwards %s as %s', (requestUrl, path) => {
 		expect(forwardPath(requestUrl)).toBe(path);
 	});

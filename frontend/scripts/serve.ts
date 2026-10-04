@@ -87,6 +87,9 @@ export function missingOriginWarning(environment: Environment): string | null {
  * not parse (Bun then gives a relative `request.url`).
  */
 export function forwardPath(requestUrl: string): string {
+	// Already a bare path (the Host did not parse): forward it whole, even when its query holds
+	// a URL with "://".
+	if (requestUrl.startsWith('/')) return requestUrl;
 	const scheme = requestUrl.indexOf('://');
 	const start = scheme === -1 ? 0 : requestUrl.indexOf('/', scheme + 3);
 	return start === -1 ? '/' : requestUrl.slice(start);
