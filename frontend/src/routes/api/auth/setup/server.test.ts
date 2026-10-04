@@ -16,13 +16,9 @@ const { privateEnv, publicEnv, mockConsumeNonce, mockReadFileSync } = vi.hoisted
 	mockReadFileSync: vi.fn()
 }));
 
-vi.mock('$env/dynamic/private', () => ({
-	env: privateEnv
-}));
+vi.mock('$app/env/private', () => privateEnv);
 
-vi.mock('$env/dynamic/public', () => ({
-	env: publicEnv
-}));
+vi.mock('$app/env/public', () => publicEnv);
 
 vi.mock('node:fs', async (importOriginal) => {
 	const actual = (await importOriginal()) as Record<string, unknown>;

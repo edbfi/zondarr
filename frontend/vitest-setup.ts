@@ -1,10 +1,12 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// Mock SvelteKit's $env modules for test environment
-vi.mock('$env/dynamic/public', () => ({
-	env: {}
+// Mock SvelteKit's $app/env modules for the test environment: every variable unset.
+vi.mock('$app/env/public', () => ({
+	PUBLIC_API_URL: undefined
 }));
-vi.mock('$env/dynamic/private', () => ({
-	env: {}
+vi.mock('$app/env/private', () => ({
+	INTERNAL_API_URL: undefined,
+	DEV_SKIP_AUTH: undefined,
+	BOOTSTRAP_TOKEN_FILE: undefined
 }));

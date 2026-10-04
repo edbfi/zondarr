@@ -1,5 +1,5 @@
-import { env } from '$env/dynamic/private';
-import { env as publicEnv } from '$env/dynamic/public';
+import * as env from '$app/env/private';
+import * as publicEnv from '$app/env/public';
 import type { RequestHandler } from './$types';
 
 const INTERNAL_API_URL =

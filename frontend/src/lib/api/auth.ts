@@ -5,7 +5,7 @@
  * Types are imported from the auto-generated OpenAPI types.
  */
 
-import { env } from '$env/dynamic/public';
+import * as env from '$app/env/public';
 import type { components } from './types';
 
 const API_BASE_URL = env.PUBLIC_API_URL ?? '';

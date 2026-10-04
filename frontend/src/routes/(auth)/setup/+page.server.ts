@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { isRedirect, redirect } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import { getAuthMethods, getMe, type OnboardingStep } from '$lib/api/auth';
 import { isNetworkError } from '$lib/api/errors';
 import { createValidatedNonce } from '$lib/server/setup-nonce';
