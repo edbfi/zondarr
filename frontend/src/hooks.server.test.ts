@@ -236,3 +236,31 @@ describe('origin check for every write', () => {
 		}
 	);
 });
+
+describe('cookie Secure flag follows the request origin (M13)', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it.each([
+		['https:', true],
+		['http:', false]
+	])('deletes stale token cookies over %s with secure: %s', async (protocol, secure) => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 401 }));
+		const event = makeEvent('/dashboard', 'expired-token');
+		Object.assign(event, { url: new URL(`${protocol}//frontend.local/dashboard`) });
+
+		await expect(handle({ event, resolve: vi.fn() } as never)).rejects.toMatchObject({
+			status: 302,
+			location: '/login'
+		});
+		expect(event.cookies.delete).toHaveBeenCalledWith('zondarr_access_token', {
+			path: '/',
+			secure
+		});
+		expect(event.cookies.delete).toHaveBeenCalledWith('zondarr_refresh_token', {
+			path: '/',
+			secure
+		});
+	});
+});

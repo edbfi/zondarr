@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
+import { isSecureRequest } from '$lib/server/request-origin';
 import { consumeNonce } from '$lib/server/setup-nonce';
 import type { RequestHandler } from './$types';
 
@@ -24,7 +25,7 @@ function readBootstrapToken(): string | null {
 	}
 }
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const internalApiUrl =
 		env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
 	const upstream = `${internalApiUrl}/api/auth/setup`;
@@ -45,7 +46,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			const fileToken = readBootstrapToken();
 			if (fileToken) {
 				const nonce = cookies.get('zondarr_setup_nonce');
-				cookies.delete('zondarr_setup_nonce', { path: '/' });
+				cookies.delete('zondarr_setup_nonce', { path: '/', secure: isSecureRequest(url) });
 
 				if (!nonce || !consumeNonce(nonce)) {
 					return new Response(

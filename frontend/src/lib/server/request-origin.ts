@@ -1,5 +1,5 @@
 /**
- * Request-origin helpers for the server hook.
+ * Request-origin helpers for the server hook and the routes that set cookies.
  *
  * `url` is always `event.url`: SvelteKit builds it from the app's own origin (the
  * front's `ORIGIN`, a trusted proxy's protocol and host headers, or the adapter's
@@ -32,4 +32,13 @@ export function foreignWriteResponse(): Response {
 		},
 		{ status: 403 }
 	);
+}
+
+/**
+ * The `secure` attribute for cookies the frontend itself sets or deletes: `Secure` only
+ * when the app's origin is `https`. Browsers refuse `Secure` cookies (and deletions) over
+ * plain HTTP outside loopback, so Kit's default would break plain-HTTP deployments.
+ */
+export function isSecureRequest(url: URL): boolean {
+	return url.protocol === 'https:';
 }

@@ -55,10 +55,11 @@ function makeRequest(body: Record<string, unknown>, nonceCookie?: string): Reque
 	});
 }
 
-function makeEvent(body: Record<string, unknown>, nonceCookie?: string) {
+function makeEvent(body: Record<string, unknown>, nonceCookie?: string, protocol = 'http:') {
 	const request = makeRequest(body, nonceCookie);
 	return {
 		request,
+		url: new URL(`${protocol}//frontend.local/api/auth/setup`),
 		cookies: {
 			get: vi.fn((name: string) => {
 				if (name === 'zondarr_setup_nonce') return nonceCookie;
@@ -191,5 +192,22 @@ describe('POST /api/auth/setup (hardened proxy)', () => {
 
 		const body = await response.json();
 		expect(body.detail).toContain('Setup authorization expired or invalid');
+	});
+
+	it.each([
+		['https:', true],
+		['http:', false]
+	])('deletes the nonce cookie over %s with secure: %s (M13)', async (protocol, secure) => {
+		mockConsumeNonce.mockReturnValue(false);
+		mockReadFileSync.mockReturnValue('secret-bootstrap-token\n');
+
+		const event = makeEvent(
+			{ username: 'admin', password: 'pass', bootstrap_token: '' },
+			'some-nonce',
+			protocol
+		);
+		await POST(event as never);
+
+		expect(event.cookies.delete).toHaveBeenCalledWith('zondarr_setup_nonce', { path: '/', secure });
 	});
 });

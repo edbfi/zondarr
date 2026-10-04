@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
-import { foreignWriteResponse, isForeignWrite } from '$lib/server/request-origin';
+import { foreignWriteResponse, isForeignWrite, isSecureRequest } from '$lib/server/request-origin';
 
 const SSR_API_URL = env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -119,8 +119,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 				}
 
 				if (!refreshed) {
-					event.cookies.delete('zondarr_access_token', { path: '/' });
-					event.cookies.delete('zondarr_refresh_token', { path: '/' });
+					const secure = isSecureRequest(event.url);
+					event.cookies.delete('zondarr_access_token', { path: '/', secure });
+					event.cookies.delete('zondarr_refresh_token', { path: '/', secure });
 					event.locals.user = null;
 				}
 			} else {
