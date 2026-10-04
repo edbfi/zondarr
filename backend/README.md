@@ -8,8 +8,8 @@ Unified invitation and user management system for media servers (Plex, Jellyfin)
 # Install dependencies
 uv sync
 
-# Run development server
-granian zondarr.app:app --interface asgi --host 0.0.0.0 --port 8000
+# Run development server (Granian, through litestar-granian's GranianPlugin)
+uv run litestar --app zondarr.app:app run --host 0.0.0.0 --port 8000
 
 # Type checking
 basedpyright
