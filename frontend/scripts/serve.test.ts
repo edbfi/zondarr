@@ -2,7 +2,7 @@
 // scripts/serve.ts runs under Bun; these tests run on Node (Vitest). The pure parts are tested in
 // process; the network behaviour is exercised by spawning `bun scripts/serve.ts` in a temporary
 // directory whose build/index.js is a stand-in adapter (scripts/fixtures/standin-adapter.js).
-import { type ChildProcess, spawn } from 'node:child_process';
+import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { request as httpRequest, type IncomingMessage } from 'node:http';
 import { connect, createServer, type Server } from 'node:net';
@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+	endQuietly,
 	HOST_HEADER,
 	MISSING_ORIGIN_WARNING,
 	missingOriginWarning,
@@ -290,6 +291,36 @@ describe('prepare', () => {
 	});
 });
 
+describe('endQuietly', () => {
+	it('passes chunks through and closes instead of erroring', async () => {
+		let step = 0;
+		const broken = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				step++;
+				if (step === 1) controller.enqueue(new TextEncoder().encode('data: one\n\n'));
+				else controller.error(new Error('socket closed'));
+			}
+		});
+		expect(await new Response(endQuietly(broken)).text()).toBe('data: one\n\n');
+	});
+
+	it('cancels the upstream when the client goes away', async () => {
+		let cancelled = false;
+		const upstream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				controller.enqueue(new TextEncoder().encode('.'));
+			},
+			cancel() {
+				cancelled = true;
+			}
+		});
+		const reader = endQuietly(upstream).getReader();
+		await reader.read();
+		await reader.cancel();
+		expect(cancelled).toBe(true);
+	});
+});
+
 describe('serve with injected dependencies', () => {
 	it('without ORIGIN logs exactly one warning and imports the adapter directly', async () => {
 		const log = { log: vi.fn(), warn: vi.fn() };
@@ -449,6 +480,37 @@ describe('serve.ts process', () => {
 		expect(reply.headers['content-type']).toBe('text/event-stream');
 		expect(reply.body.toString()).toBe('data: one\n\ndata: two\n\n');
 	}, 10_000);
+
+	it('ends a proxied event stream normally when the adapter breaks it off, without log noise', async () => {
+		const port = await freePort();
+		const server = await start({ ORIGIN: `http://127.0.0.1:${port}`, PORT: String(port) });
+		const curl = spawnSync(
+			'curl',
+			['-sN', '--max-time', '10', `http://127.0.0.1:${server.port}/sse-break`],
+			{
+				encoding: 'utf8'
+			}
+		);
+		expect(curl.stdout).toBe('data: one\n\n');
+		// 0, not 56 or 18: the public stream ended cleanly, so EventSource just reconnects.
+		expect(curl.status).toBe(0);
+		await new Promise((done) => setTimeout(done, 200));
+		expect(server.output()).not.toMatch(/TypeError|closed unexpectedly/);
+	}, 15_000);
+
+	it('still breaks off any other response the adapter breaks off, so truncation shows', async () => {
+		const port = await freePort();
+		const server = await start({ ORIGIN: `http://127.0.0.1:${port}`, PORT: String(port) });
+		const curl = spawnSync(
+			'curl',
+			['-sN', '--max-time', '10', `http://127.0.0.1:${server.port}/download-break`],
+			{
+				encoding: 'utf8'
+			}
+		);
+		expect(curl.stdout).toBe('partial');
+		expect(curl.status).not.toBe(0);
+	}, 15_000);
 
 	// This pins the outcome (a slow client still downloading when the adapter has drained and
 	// emitted sveltekit:shutdown gets every byte; the front stops accepting and removes the

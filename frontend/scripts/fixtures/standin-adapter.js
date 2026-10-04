@@ -68,6 +68,22 @@ async function handle(request) {
 			});
 			return new Response(stream, { headers: { 'content-type': 'text/plain' } });
 		}
+		case '/sse-break':
+		case '/download-break': {
+			// One chunk, then the connection is torn down mid-response, as the adapter's
+			// force-close at the end of its shutdown drain does.
+			const sse = url.pathname === '/sse-break';
+			const stream = new ReadableStream({
+				async start(controller) {
+					controller.enqueue(new TextEncoder().encode(sse ? 'data: one\n\n' : 'partial'));
+					await sleep(300);
+					server.stop(true);
+				}
+			});
+			return new Response(stream, {
+				headers: { 'content-type': sse ? 'text/event-stream' : 'application/octet-stream' }
+			});
+		}
 		case '/big':
 			return new Response(big, { headers: { 'content-type': 'application/octet-stream' } });
 		case '/stop':

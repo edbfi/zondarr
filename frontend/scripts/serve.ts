@@ -69,6 +69,34 @@ export function missingOriginWarning(environment: Environment): string | null {
 	return environment.ORIGIN || environment.PROTOCOL_HEADER ? null : MISSING_ORIGIN_WARNING;
 }
 
+/**
+ * An event-stream body that ends normally when the adapter breaks it off.
+ *
+ * At the end of its shutdown drain the adapter force-closes the event streams still open. Passed
+ * through as is, that failure would reset the public connection too (browsers report a connection
+ * reset, and Bun logs a TypeError); ending the stream instead lets EventSource reconnect as after
+ * any end of stream. Only event streams get this: they have no length, so nothing looks complete
+ * that is not. Other responses keep the error, so a truncated download stays visible. A client
+ * that goes away still cancels the upstream.
+ */
+export function endQuietly(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+	const reader = body.getReader();
+	return new ReadableStream<Uint8Array>({
+		async pull(controller) {
+			try {
+				const { done, value } = await reader.read();
+				if (done) controller.close();
+				else controller.enqueue(value);
+			} catch {
+				controller.close();
+			}
+		},
+		cancel(reason) {
+			return reader.cancel(reason);
+		}
+	});
+}
+
 export type Plan =
 	| { mode: 'direct'; warning: string | null }
 	| {
@@ -173,8 +201,17 @@ export async function serve(
 				} catch {
 					return new Response('Service Unavailable', { status: 503 });
 				}
-				if (response.headers.get('content-type')?.startsWith('text/event-stream')) {
+				if (
+					response.headers.get('content-type')?.startsWith('text/event-stream') &&
+					response.body
+				) {
 					server.timeout(request, 0);
+					// Ends normally if the adapter breaks it off at the end of its shutdown drain.
+					return new Response(endQuietly(response.body), {
+						status: response.status,
+						statusText: response.statusText,
+						headers: response.headers
+					});
 				}
 				return response;
 			}
