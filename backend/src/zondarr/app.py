@@ -2,7 +2,7 @@
 
 Provides:
 - create_app(): Factory function for creating Litestar application instances
-- app: Default application instance for Granian deployment
+- app: Default application instance, served by ``litestar run`` (Granian)
 
 The application factory pattern enables:
 - Dependency injection override for testing
@@ -10,8 +10,8 @@ The application factory pattern enables:
 - Clean separation of concerns
 
 Usage:
-    # Production (Granian)
-    granian zondarr.app:app --interface asgi
+    # Production and development (Granian, through GranianPlugin)
+    litestar --app zondarr.app:app run
 
     # Testing
     from zondarr.app import create_app
@@ -38,6 +38,7 @@ from litestar.openapi.plugins import ScalarRenderPlugin, SwaggerRenderPlugin
 from litestar.openapi.spec import Components, SecurityScheme, Tag
 from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
 from litestar.types import ControllerRouterHandler
+from litestar_granian import GranianPlugin
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from structlog.types import Processor
 
@@ -411,6 +412,7 @@ def create_app(settings: Settings | None = None) -> Litestar:
         openapi_config=_create_openapi_config(),
         plugins=[
             StructlogPlugin(config=_create_structlog_config()),
+            GranianPlugin(),
         ],
         exception_handlers={
             AuthenticationError: authentication_error_handler,
@@ -426,6 +428,6 @@ def create_app(settings: Settings | None = None) -> Litestar:
     )
 
 
-# Default application instance for Granian deployment
-# Usage: granian zondarr.app:app --interface asgi
+# Default application instance, served by ``litestar run`` (GranianPlugin)
+# Usage: litestar --app zondarr.app:app run
 app = create_app()
