@@ -1,6 +1,6 @@
 <script lang="ts">
 import { Lock, Plug, ShieldCheck } from '@lucide/svelte';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import type { CsrfOriginTestResponse } from '$lib/api/client';
 import { getCsrfOrigin, setCsrfOrigin, testCsrfOrigin, withErrorHandling } from '$lib/api/client';
 import { asErrorResponse } from '$lib/api/errors';

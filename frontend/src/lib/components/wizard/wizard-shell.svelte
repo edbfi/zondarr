@@ -6,7 +6,7 @@
  * and session persistence. Renders markdown content with XSS sanitization.
  * Interactions are rendered internally via the interaction type registry.
  */
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { WizardDetailResponse } from "$lib/api/client";
 import { validateStep } from "$lib/api/client";
 import { getInteractionType, type InteractionCompletionData } from "./interactions";

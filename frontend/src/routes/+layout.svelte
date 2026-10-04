@@ -3,7 +3,7 @@ import 'virtual:uno.css';
 import '../app.css';
 import { ModeWatcher } from 'mode-watcher';
 import type { Snippet } from 'svelte';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { api } from '$lib/api/client';
 import favicon from '$lib/assets/favicon.svg';
 import { Toaster } from '$lib/components/ui/sonner';
