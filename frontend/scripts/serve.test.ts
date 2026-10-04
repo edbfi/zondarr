@@ -559,6 +559,56 @@ describe('serve.ts process', () => {
 		expect(socketDirectories(server.temp)).toEqual([]);
 	}, 20_000);
 
+	it('exits 1 and leaves no socket directory on a second signal during adapter load', async () => {
+		const port = await freePort();
+		const server = await start(
+			{ ORIGIN: `http://127.0.0.1:${port}`, PORT: String(port), STANDIN_LOAD_DELAY_MS: '3000' },
+			{ waitFor: 'exit' }
+		);
+		const accepting = () =>
+			new Promise<boolean>((done) => {
+				const socket = connect(port, '127.0.0.1');
+				socket.once('connect', () => {
+					socket.destroy();
+					done(true);
+				});
+				socket.once('error', () => done(false));
+			});
+		await expect.poll(accepting, { timeout: 5000, interval: 25 }).toBe(true);
+		expect(socketDirectories(server.temp)).toHaveLength(1);
+		server.child.kill('SIGTERM');
+		await new Promise((done) => setTimeout(done, 200));
+		server.child.kill('SIGTERM');
+		expect(await server.exited).toEqual({ code: 1, signal: null });
+		expect(server.output()).not.toContain('standin listening');
+		expect(socketDirectories(server.temp)).toEqual([]);
+	}, 20_000);
+
+	it('removes the socket directory when a second signal forces the exit after loading', async () => {
+		const port = await freePort();
+		const server = await start({
+			ORIGIN: `http://127.0.0.1:${port}`,
+			PORT: String(port),
+			SHUTDOWN_TIMEOUT: '30'
+		});
+		// Keep a request in flight so the first signal starts a drain that does not finish.
+		const held = new Promise<void>((done) => {
+			const req = httpRequest({ host: '127.0.0.1', port: server.port, path: '/hold' }, (res) => {
+				res.once('data', () => done());
+				res.on('error', () => {});
+			});
+			req.on('error', () => {});
+			req.end();
+		});
+		await held;
+		expect(socketDirectories(server.temp)).toHaveLength(1);
+		server.child.kill('SIGTERM');
+		await new Promise((done) => setTimeout(done, 300));
+		server.child.kill('SIGTERM');
+		expect(await server.exited).toEqual({ code: 1, signal: null });
+		expect(socketDirectories(server.temp)).toEqual([]);
+	}, 20_000);
+
 	it('leaves nothing behind when the adapter fails to load', async () => {
 		const port = await freePort();
 		const server = await start(

@@ -198,15 +198,22 @@ export async function serve(
 	};
 	// The adapter installs its own SIGTERM/SIGINT handlers only when it has finished loading. A
 	// signal that arrives earlier is remembered and delivered again once they exist, so the
-	// adapter still drains and emits sveltekit:shutdown.
+	// adapter still drains and emits sveltekit:shutdown. A second signal before then exits with
+	// status 1, as the adapter does for a second signal. These handlers stay registered (never
+	// the default handler, which would skip the cleanup below).
 	let loaded = false;
 	let earlySignal: NodeJS.Signals | undefined;
 	const onSignal = (signal: NodeJS.Signals) => {
 		startDrain();
-		if (!loaded) earlySignal ??= signal;
+		if (loaded) return;
+		if (earlySignal) process.exit(1);
+		earlySignal = signal;
 	};
-	process.once('SIGTERM', onSignal);
-	process.once('SIGINT', onSignal);
+	process.on('SIGTERM', onSignal);
+	process.on('SIGINT', onSignal);
+	// Every exit, including the adapter's process.exit(1) on a second signal, removes the
+	// socket directory (synchronously, as exit handlers must).
+	process.once('exit', removeSocketDirectory);
 	process.once('sveltekit:shutdown', async () => {
 		const drain = startDrain();
 		let timer: ReturnType<typeof setTimeout> | undefined;
