@@ -2,7 +2,7 @@
 // scripts/serve.ts runs under Bun; these tests run on Node (Vitest). The pure parts are tested in
 // process; the network behaviour is exercised by spawning `bun scripts/serve.ts` in a temporary
 // directory whose build/index.js is a stand-in adapter (scripts/fixtures/standin-adapter.js).
-import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { request as httpRequest, type IncomingMessage } from 'node:http';
 import { connect, createServer, type Server } from 'node:net';
@@ -481,19 +481,40 @@ describe('serve.ts process', () => {
 		expect(reply.body.toString()).toBe('data: one\n\ndata: two\n\n');
 	}, 10_000);
 
+	/** Reads a response to its end and reports how it ended: a clean end, or a reset mid-body. */
+	function readToEnd(port: number, path: string) {
+		return new Promise<{ body: string; outcome: 'complete' | 'incomplete' | 'error' }>((done) => {
+			let body = '';
+			let settled = false;
+			// Node reports a reset on the request (ECONNRESET) before the response's aborted event,
+			// after delivering any data received, so both paths settle with the body read so far.
+			const finish = (outcome: 'complete' | 'incomplete' | 'error') => {
+				if (settled) return;
+				settled = true;
+				done({ body, outcome });
+			};
+			const req = httpRequest({ host: '127.0.0.1', port, path }, (res) => {
+				res.setEncoding('utf8');
+				res.on('data', (chunk: string) => {
+					body += chunk;
+				});
+				res.on('end', () => finish(res.complete ? 'complete' : 'incomplete'));
+				res.on('aborted', () => finish('incomplete'));
+				res.on('error', () => finish('error'));
+			});
+			req.on('error', () => finish('error'));
+			req.end();
+		});
+	}
+
 	it('ends a proxied event stream normally when the adapter breaks it off, without log noise', async () => {
 		const port = await freePort();
 		const server = await start({ ORIGIN: `http://127.0.0.1:${port}`, PORT: String(port) });
-		const curl = spawnSync(
-			'curl',
-			['-sN', '--max-time', '10', `http://127.0.0.1:${server.port}/sse-break`],
-			{
-				encoding: 'utf8'
-			}
-		);
-		expect(curl.stdout).toBe('data: one\n\n');
-		// 0, not 56 or 18: the public stream ended cleanly, so EventSource just reconnects.
-		expect(curl.status).toBe(0);
+		// A clean end of the public stream (not a reset), so EventSource just reconnects.
+		expect(await readToEnd(server.port, '/sse-break')).toEqual({
+			body: 'data: one\n\n',
+			outcome: 'complete'
+		});
 		await new Promise((done) => setTimeout(done, 200));
 		expect(server.output()).not.toMatch(/TypeError|closed unexpectedly/);
 	}, 15_000);
@@ -501,15 +522,10 @@ describe('serve.ts process', () => {
 	it('still breaks off any other response the adapter breaks off, so truncation shows', async () => {
 		const port = await freePort();
 		const server = await start({ ORIGIN: `http://127.0.0.1:${port}`, PORT: String(port) });
-		const curl = spawnSync(
-			'curl',
-			['-sN', '--max-time', '10', `http://127.0.0.1:${server.port}/download-break`],
-			{
-				encoding: 'utf8'
-			}
-		);
-		expect(curl.stdout).toBe('partial');
-		expect(curl.status).not.toBe(0);
+		// A reset mid-body: never a clean end, and never a stall (that would hit the test timeout).
+		const result = await readToEnd(server.port, '/download-break');
+		expect(result.body).toBe('partial');
+		expect(['incomplete', 'error']).toContain(result.outcome);
 	}, 15_000);
 
 	// This pins the outcome (a slow client still downloading when the adapter has drained and
