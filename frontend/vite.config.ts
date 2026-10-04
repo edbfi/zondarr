@@ -1,6 +1,6 @@
+import adapter from '@sveltejs/adapter-bun';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
-import adapter from 'svelte-adapter-bun';
 import UnoCSS from 'unocss/vite';
 import { defineConfig } from 'vitest/config';
 
