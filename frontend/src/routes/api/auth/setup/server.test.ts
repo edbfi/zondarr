@@ -210,4 +210,39 @@ describe('POST /api/auth/setup (hardened proxy)', () => {
 
 		expect(event.cookies.delete).toHaveBeenCalledWith('zondarr_setup_nonce', { path: '/', secure });
 	});
+
+	it.each([
+		['http:', false],
+		['https:', true]
+	])(
+		'relays the backend session cookies over %s with secure: %s (M16)',
+		async (protocol, secure) => {
+			const upstream = new Headers({ 'content-type': 'application/json' });
+			upstream.append(
+				'set-cookie',
+				'zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax; Secure'
+			);
+			upstream.append(
+				'set-cookie',
+				'zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax'
+			);
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+				new Response('{"id":"user-1"}', { status: 201, headers: upstream })
+			);
+
+			const event = makeEvent(
+				{ username: 'admin', password: 'pass', bootstrap_token: 'manual-token' },
+				undefined,
+				protocol
+			);
+			const response = await POST(event as never);
+
+			expect(response.status).toBe(201);
+			const flag = secure ? '; Secure' : '';
+			expect(response.headers.getSetCookie()).toEqual([
+				`zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax${flag}`,
+				`zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax${flag}`
+			]);
+		}
+	);
 });

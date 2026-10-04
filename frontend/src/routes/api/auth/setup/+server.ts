@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
+import { relayResponseHeaders } from '$lib/server/backend-relay';
 import { isSecureRequest } from '$lib/server/request-origin';
 import { consumeNonce } from '$lib/server/setup-nonce';
 import type { RequestHandler } from './$types';
@@ -84,7 +85,8 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 		return new Response(responseBody, {
 			status: response.status,
 			statusText: response.statusText,
-			headers: response.headers
+			// Backend cookies get Secure from this app's own scheme (M16).
+			headers: relayResponseHeaders(response.headers, url)
 		});
 	} catch {
 		return new Response(JSON.stringify({ detail: 'Backend unavailable' }), {

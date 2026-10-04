@@ -1,5 +1,6 @@
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
+import { relayResponseHeaders } from '$lib/server/backend-relay';
 import type { RequestHandler } from './$types';
 
 const INTERNAL_API_URL =
@@ -44,12 +45,14 @@ const handler: RequestHandler = async ({ request, url, params }) => {
 		// SSE responses must stream; buffer everything else to avoid
 		// ReadableStream being consumed during SvelteKit's SSR cloning.
 		const isEventStream = response.headers.get('content-type')?.includes('text/event-stream');
+		// Backend cookies get Secure from this app's own scheme, not the backend's setting (M16).
+		const responseHeaders = relayResponseHeaders(response.headers, url);
 
 		if (isEventStream) {
 			return new Response(response.body, {
 				status: response.status,
 				statusText: response.statusText,
-				headers: response.headers
+				headers: responseHeaders
 			});
 		}
 
@@ -57,7 +60,7 @@ const handler: RequestHandler = async ({ request, url, params }) => {
 		return new Response(body, {
 			status: response.status,
 			statusText: response.statusText,
-			headers: response.headers
+			headers: responseHeaders
 		});
 	} catch {
 		return new Response(JSON.stringify({ detail: 'Backend unavailable' }), {

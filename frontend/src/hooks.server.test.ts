@@ -1,3 +1,4 @@
+import { parseSetCookie } from 'cookie';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { privateEnv, publicEnv } = vi.hoisted(() => ({
@@ -263,4 +264,117 @@ describe('cookie Secure flag follows the request origin (M13)', () => {
 			secure
 		});
 	});
+});
+
+describe('session refresh relays backend cookies with Secure from the request origin (M16)', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	const user = {
+		id: '00000000-0000-0000-0000-000000000001',
+		username: 'admin',
+		email: null,
+		auth_method: 'local',
+		onboarding_required: false,
+		onboarding_step: 'complete'
+	};
+
+	/** /api/auth/me answers 401, the refresh answers with `setCookies`, the retried /me 200. */
+	function backendRefreshing(setCookies: string[]) {
+		const refreshed = new Headers({ 'content-type': 'application/json' });
+		for (const cookie of setCookies) refreshed.append('set-cookie', cookie);
+		return vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(new Response('{}', { status: 401 }))
+			.mockResolvedValueOnce(new Response('{}', { status: 200, headers: refreshed }))
+			.mockResolvedValueOnce(Response.json(user));
+	}
+
+	function refreshEvent(protocol: string) {
+		const url = new URL(`${protocol}//frontend.local/dashboard`);
+		return {
+			request: new Request(url),
+			cookies: {
+				get: vi.fn((name: string) =>
+					name === 'zondarr_access_token' ? 'expired-access' : 'refresh-token'
+				),
+				set: vi.fn(),
+				delete: vi.fn(),
+				parse: parseSetCookie
+			},
+			locals: {} as { user?: unknown },
+			url
+		};
+	}
+
+	async function refresh(protocol: string, setCookies: string[]) {
+		backendRefreshing(setCookies);
+		const event = refreshEvent(protocol);
+		const resolve = okResolve();
+		const response = await handle({ event, resolve } as never);
+		expect(response.status).toBe(200);
+		expect(event.locals.user).toEqual(user);
+		return event.cookies.set;
+	}
+
+	it('drops the backend Secure over http and keeps every other attribute', async () => {
+		const set = await refresh('http:', [
+			'zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax; Secure',
+			'zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax; Secure'
+		]);
+		expect(set).toHaveBeenCalledTimes(2);
+		expect(set).toHaveBeenCalledWith('zondarr_access_token', 'new-access', {
+			httpOnly: true,
+			maxAge: 900,
+			path: '/',
+			sameSite: 'lax',
+			secure: false
+		});
+		expect(set).toHaveBeenCalledWith('zondarr_refresh_token', 'new-refresh', {
+			httpOnly: true,
+			maxAge: 604800,
+			path: '/',
+			sameSite: 'lax',
+			secure: false
+		});
+	});
+
+	it('adds Secure over https when the backend did not set it', async () => {
+		const set = await refresh('https:', [
+			'zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax',
+			'zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax'
+		]);
+		expect(set).toHaveBeenCalledWith(
+			'zondarr_access_token',
+			'new-access',
+			expect.objectContaining({ secure: true, maxAge: 900 })
+		);
+		expect(set).toHaveBeenCalledWith(
+			'zondarr_refresh_token',
+			'new-refresh',
+			expect.objectContaining({ secure: true, maxAge: 604800 })
+		);
+	});
+
+	it.each([
+		['http:', false],
+		['https:', true]
+	])(
+		'over %s keeps the backend Path, Expires and SameSite and its missing HttpOnly',
+		async (protocol, secure) => {
+			const set = await refresh(protocol, [
+				'zondarr_access_token=new-access; Path=/app; Expires=Wed, 21 Oct 2026 07:28:00 GMT; SameSite=Strict',
+				'unrelated=ignored; Path=/'
+			]);
+			expect(set).toHaveBeenCalledOnce();
+			expect(set).toHaveBeenCalledWith('zondarr_access_token', 'new-access', {
+				httpOnly: false,
+				expires: new Date('2026-10-21T07:28:00Z'),
+				path: '/app',
+				sameSite: 'strict',
+				secure
+			});
+		}
+	);
 });

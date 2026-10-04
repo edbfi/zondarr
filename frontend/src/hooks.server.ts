@@ -2,6 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
+import { relayedCookieOptions } from '$lib/server/backend-relay';
 import { foreignWriteResponse, isForeignWrite, isSecureRequest } from '$lib/server/request-origin';
 
 const SSR_API_URL = env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
@@ -60,43 +61,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 						});
 
 						if (refreshResponse.ok) {
-							// Extract set-cookie headers from refresh response
-							const setCookieHeaders = refreshResponse.headers.getSetCookie();
-							for (const header of setCookieHeaders) {
-								const nameValue = header.split(';')[0];
-								if (!nameValue) continue;
-								const eqIndex = nameValue.indexOf('=');
-								if (eqIndex === -1) continue;
-								const name = nameValue.slice(0, eqIndex).trim();
-								const value = nameValue.slice(eqIndex + 1).trim();
-
-								if (name === 'zondarr_access_token' || name === 'zondarr_refresh_token') {
-									// Parse Set-Cookie attributes to preserve secure, sameSite, maxAge
-									const parts = header.split(';').slice(1);
-									let secure = false;
-									let sameSite: 'lax' | 'strict' | 'none' = 'lax';
-									let maxAge: number | undefined;
-									for (const part of parts) {
-										const lower = part.trim().toLowerCase();
-										if (lower === 'secure') {
-											secure = true;
-										} else if (lower.startsWith('samesite=')) {
-											const val = lower.split('=')[1];
-											if (val === 'strict' || val === 'lax' || val === 'none') {
-												sameSite = val;
-											}
-										} else if (lower.startsWith('max-age=')) {
-											const val = part.trim().split('=')[1];
-											if (val) maxAge = parseInt(val, 10);
-										}
-									}
-									event.cookies.set(name, value, {
-										path: '/',
-										httpOnly: true,
-										secure,
-										sameSite,
-										...(maxAge !== undefined ? { maxAge } : {})
-									});
+							// Re-set the backend's session cookies with its own attributes, except
+							// Secure, which follows this app's scheme (M16).
+							for (const header of refreshResponse.headers.getSetCookie()) {
+								const { name, value, ...attributes } = event.cookies.parse(header);
+								const session = name === 'zondarr_access_token' || name === 'zondarr_refresh_token';
+								if (session && value !== undefined) {
+									event.cookies.set(name, value, relayedCookieOptions(attributes, event.url));
 								}
 							}
 

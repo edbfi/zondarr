@@ -62,4 +62,42 @@ describe('API proxy route', () => {
 		expect(response.status).toBe(201);
 		await expect(response.json()).resolves.toEqual({ ok: true });
 	});
+
+	describe.each([
+		['http:', false],
+		['https:', true]
+	])('relays backend cookies over %s with secure: %s (M16)', (protocol, secure) => {
+		const backendCookies = [
+			'zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax; Secure',
+			'zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax',
+			'zondarr_access_token=""; HttpOnly; Max-Age=0; Path=/; SameSite=lax'
+		];
+		const relayed = (secureFlag: boolean) => [
+			`zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax${secureFlag ? '; Secure' : ''}`,
+			`zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax${secureFlag ? '; Secure' : ''}`,
+			`zondarr_access_token=""; HttpOnly; Max-Age=0; Path=/; SameSite=lax${secureFlag ? '; Secure' : ''}`
+		];
+
+		it.each([
+			['a buffered', 'application/json'],
+			['an event-stream', 'text/event-stream']
+		])('in %s response', async (_kind, contentType) => {
+			const upstream = new Headers({ 'content-type': contentType, 'x-request-id': 'abc' });
+			for (const cookie of backendCookies) upstream.append('set-cookie', cookie);
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+				new Response('{}', { status: 200, headers: upstream })
+			);
+			const request = new Request(`${protocol}//frontend.local/api/auth/login`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json', origin: `${protocol}//frontend.local` },
+				body: '{}'
+			});
+
+			const response = await POST(makeEvent(request, 'auth/login'));
+
+			expect(response.headers.getSetCookie()).toEqual(relayed(secure));
+			expect(response.headers.get('content-type')).toBe(contentType);
+			expect(response.headers.get('x-request-id')).toBe('abc');
+		});
+	});
 });
