@@ -6,7 +6,14 @@
 		"strict": true,
 		"target": "ES2022",
 		"noUncheckedIndexedAccess": true,
+		"types": ["bun", "$app/types"],
 		"paths": { "$lib": ["./src/lib"], "$lib/*": ["./src/lib/*"] }
 	},
-	"include": ["src", "vite.config.ts", "vitest-setup.ts"]
+	"include": [
+		"src",
+		"vite.config.ts",
+		"vitest-setup.ts",
+		"scripts/serve.ts",
+		"scripts/serve.test.ts"
+	]
 }

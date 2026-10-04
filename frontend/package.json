@@ -14,7 +14,7 @@
 		"test:watch": "vitest",
 		"generate:api": "openapi-typescript http://localhost:8000/docs/openapi.json -o src/lib/api/types.d.ts",
 		"check:biome": "biome ci ..",
-		"start": "NODE_ENV=production bun ./build/index.js",
+		"start": "NODE_ENV=production bun scripts/serve.ts",
 		"check:native": "bunx --bun svelte-check --tsgo --tsconfig ./tsconfig.json"
 	},
 	"devDependencies": {
@@ -26,6 +26,7 @@
 		"@testing-library/jest-dom": "7.0.1",
 		"@testing-library/svelte": "5.4.2",
 		"@testing-library/user-event": "14.6.7",
+		"@types/bun": "1.4.2",
 		"@types/jsdom": "30.0.0",
 		"@typescript/native": "npm:typescript@7.0.2",
 		"@unocss/preset-icons": "66.10.5",

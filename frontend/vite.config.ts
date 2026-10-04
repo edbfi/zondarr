@@ -48,7 +48,7 @@ export default defineConfig({
 				extends: true,
 				test: {
 					name: 'server',
-					include: ['src/**/*.{test,spec}.{js,ts}'],
+					include: ['src/**/*.{test,spec}.{js,ts}', 'scripts/**/*.test.ts'],
 					exclude: componentTests
 				}
 			}
