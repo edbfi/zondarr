@@ -108,8 +108,8 @@ def _backend_python(backend_dir: Path) -> str:
     The server is not started through ``uv run``: uv forwards SIGTERM to its
     child, so the group-wide SIGTERM of ``dev_cli stop`` reaches ``litestar
     run`` twice, and litestar-granian answers a second signal by killing the
-    workers (exit 137) instead of letting them drain. Pre-flight has already
-    synced the environment by the time the server starts.
+    workers (exit 137) instead of letting them drain. Pre-flight syncs the
+    environment before the server starts (``--skip-checks`` skips that sync).
     """
     if sys.platform == "win32":
         return str(backend_dir / ".venv" / "Scripts" / "python.exe")
