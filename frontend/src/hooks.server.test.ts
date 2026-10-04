@@ -1,4 +1,3 @@
-import { parseSetCookie } from 'cookie';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { privateEnv, publicEnv } = vi.hoisted(() => ({
@@ -280,6 +279,61 @@ describe('session refresh relays backend cookies with Secure from the request or
 		onboarding_step: 'complete'
 	};
 
+	/**
+	 * What event.cookies.parse (cookie's parseSetCookie) returns for each header below, written out
+	 * by hand so the test does not import a package this app does not declare.
+	 */
+	const PARSED: Record<string, Record<string, unknown>> = {
+		'zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax; Secure': {
+			name: 'zondarr_access_token',
+			value: 'new-access',
+			httpOnly: true,
+			maxAge: 900,
+			path: '/',
+			sameSite: 'lax',
+			secure: true
+		},
+		'zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax; Secure': {
+			name: 'zondarr_refresh_token',
+			value: 'new-refresh',
+			httpOnly: true,
+			maxAge: 604800,
+			path: '/',
+			sameSite: 'lax',
+			secure: true
+		},
+		'zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax': {
+			name: 'zondarr_access_token',
+			value: 'new-access',
+			httpOnly: true,
+			maxAge: 900,
+			path: '/',
+			sameSite: 'lax'
+		},
+		'zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax': {
+			name: 'zondarr_refresh_token',
+			value: 'new-refresh',
+			httpOnly: true,
+			maxAge: 604800,
+			path: '/',
+			sameSite: 'lax'
+		},
+		'zondarr_access_token=new-access; Path=/app; Expires=Wed, 21 Oct 2026 07:28:00 GMT; SameSite=Strict':
+			{
+				name: 'zondarr_access_token',
+				value: 'new-access',
+				path: '/app',
+				expires: new Date('2026-10-21T07:28:00Z'),
+				sameSite: 'strict'
+			},
+		'unrelated=ignored; Path=/': { name: 'unrelated', value: 'ignored', path: '/' }
+	};
+	const parse = (header: string) => {
+		const parsed = PARSED[header];
+		if (!parsed) throw new Error(`no parsed fixture for ${header}`);
+		return parsed;
+	};
+
 	/** /api/auth/me answers 401, the refresh answers with `setCookies`, the retried /me 200. */
 	function backendRefreshing(setCookies: string[]) {
 		const refreshed = new Headers({ 'content-type': 'application/json' });
@@ -301,7 +355,7 @@ describe('session refresh relays backend cookies with Secure from the request or
 				),
 				set: vi.fn(),
 				delete: vi.fn(),
-				parse: parseSetCookie
+				parse
 			},
 			locals: {} as { user?: unknown },
 			url

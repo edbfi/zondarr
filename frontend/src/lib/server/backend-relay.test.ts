@@ -1,4 +1,3 @@
-import { parseSetCookie } from 'cookie';
 import { describe, expect, it } from 'vitest';
 import {
 	HOST_HEADER as FRONT_HOST_HEADER,
@@ -68,31 +67,34 @@ describe('relayResponseHeaders', () => {
 });
 
 describe('relayedCookieOptions', () => {
-	const options = (header: string, url: URL) => {
-		const { name: _name, value: _value, ...attributes } = parseSetCookie(header);
-		return relayedCookieOptions(attributes, url);
-	};
-
+	// The attributes as event.cookies.parse returns them (cookie's parseSetCookie), written out
+	// by hand so the tests do not import a package this app does not declare.
 	it('keeps the backend attributes and takes Secure from the request origin', () => {
-		const header = 'a=b; HttpOnly; Max-Age=900; Path=/; SameSite=lax; Secure';
-		expect(options(header, HTTP)).toEqual({
-			httpOnly: true,
-			maxAge: 900,
-			path: '/',
-			sameSite: 'lax',
-			secure: false
-		});
-		expect(options('a=b; HttpOnly; Max-Age=900; Path=/; SameSite=lax', HTTPS)).toEqual({
+		// 'a=b; HttpOnly; Max-Age=900; Path=/; SameSite=lax; Secure'
+		const secureBackend = {
 			httpOnly: true,
 			maxAge: 900,
 			path: '/',
 			sameSite: 'lax',
 			secure: true
+		} as const;
+		expect(relayedCookieOptions(secureBackend, HTTP)).toEqual({ ...secureBackend, secure: false });
+		// 'a=b; Path=/app; Expires=Wed, 21 Oct 2026 07:28:00 GMT; SameSite=Strict'
+		const plainBackend = {
+			path: '/app',
+			expires: new Date('2026-10-21T07:28:00Z'),
+			sameSite: 'strict'
+		} as const;
+		expect(relayedCookieOptions(plainBackend, HTTPS)).toEqual({
+			...plainBackend,
+			httpOnly: false,
+			secure: true
 		});
 	});
 
 	it('does not add HttpOnly or SameSite the backend left out, and defaults Path to /', () => {
-		expect(options('a=b', HTTP)).toEqual({
+		// 'a=b'
+		expect(relayedCookieOptions({}, HTTP)).toEqual({
 			httpOnly: false,
 			path: '/',
 			sameSite: false,
