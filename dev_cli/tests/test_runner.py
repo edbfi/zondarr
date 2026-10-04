@@ -1,5 +1,8 @@
 """Tests for dev_cli.runner command construction."""
 
+import asyncio
+import contextlib
+import io
 import sys
 import tempfile
 import unittest
@@ -74,3 +77,24 @@ class DevRunnerCommandTests(unittest.TestCase):
 
             self.assertNotIn("--reload", backend.cmd)
             self.assertNotIn("--reload-ignore-paths", backend.cmd)
+
+
+class DevRunnerMissingVenvTests(unittest.TestCase):
+    def test_missing_backend_venv_fails_with_a_message(self) -> None:
+        # `--skip-checks` skips the sync that creates backend/.venv, so the
+        # interpreter may be missing: report it instead of a FileNotFoundError.
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            runner = DevRunner(
+                repo_root=Path(tmp_dir),
+                backend_port=8000,
+                frontend_port=5173,
+                backend_only=True,
+                frontend_only=False,
+            )
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                code = asyncio.run(runner.run())
+
+            self.assertEqual(code, 1)
+            self.assertIn("uv sync --extra dev", out.getvalue())
+            self.assertEqual(runner.servers[0].process, None)

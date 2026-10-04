@@ -245,6 +245,14 @@ class DevRunner:
             print_error("No servers to run (check --backend-only / --frontend-only)")
             return 1
 
+        backend_python = Path(_backend_python(self.repo_root / "backend"))
+        if not self.frontend_only and not backend_python.exists():
+            print_error(
+                f"Backend environment missing ({backend_python}): run "
+                + "`uv sync --extra dev` in backend/, or start without --skip-checks"
+            )
+            return 1
+
         # Install signal handlers
         loop = asyncio.get_running_loop()
         if sys.platform != "win32":
