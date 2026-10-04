@@ -1,42 +1,51 @@
-# sv
+# Zondarr frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The SvelteKit app for Zondarr (Svelte 5, TypeScript, UnoCSS), run with Bun. The
+Python backend lives in [`../backend`](../backend); the repository
+[README](../README.md) covers the whole project, and [`CLAUDE.md`](CLAUDE.md) in
+this directory lists the conventions and gotchas.
 
-## Creating a project
+## Requirements
 
-If you're seeing this, you've probably already done this step. Congrats!
+Bun **1.4.2**, matching `packageManager` in `package.json`. The Biome and prek
+tooling is installed at the repository root, so run `bun install` there once as
+well.
+
+## Commands
+
+Run these from `frontend/`, or prefix them with `bun run --cwd frontend` from the
+repository root.
+
+| Task | Command |
+| --- | --- |
+| Install dependencies | `bun install --frozen-lockfile` |
+| Development server | `bun run dev` |
+| Production build | `bun run build` |
+| Preview the build | `bun run preview` |
+| Start the built server | `bun run start` |
+| Type check | `bun run check` |
+| Lint and format check | `bun run check:biome` |
+| Tests | `bun run test` |
+| Regenerate API types | `bun run generate:api` (backend running on `:8000`) |
+
+Use `bun run test`, not `bun test`: the latter is Bun's own runner and does not
+compile Svelte.
+
+## Running with the backend
+
+`uv run dev_cli` from the repository root starts the backend and this dev server
+together. To run the frontend alone against a backend that is already running:
 
 ```sh
-# create a new project
-npx sv create my-app
+bun install --frozen-lockfile
+bun run dev
 ```
 
-To recreate this project with the same configuration:
+Start that backend with `DEBUG=true` (as `dev_cli` does) or with
+`CSRF_ORIGIN=http://localhost:5173`. Otherwise its CSRF check rejects the browser's
+writes from the dev server with 403 (sign-in and setup are exempt, so the failures
+start after login).
 
-```sh
-# recreate this project
-npx sv create --template minimal --types ts --no-install frontend
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+In production the browser calls same-origin `/api/*`, which the server proxies to
+`INTERNAL_API_URL`; leave `PUBLIC_API_URL` empty. See
+[`.env.example`](../.env.example) for the settings.
