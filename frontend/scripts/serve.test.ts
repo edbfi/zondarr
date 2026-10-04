@@ -14,6 +14,7 @@ import {
 	HOST_HEADER,
 	MISSING_ORIGIN_WARNING,
 	missingOriginWarning,
+	ORIGIN_ERROR,
 	PEER_HEADER,
 	PROTOCOL_HEADER,
 	parseOrigin,
@@ -136,42 +137,73 @@ async function echo(port: number, options: Parameters<typeof call>[2] = {}) {
 const socketDirectories = (temp: string) =>
 	readdirSync(temp).filter((name) => name.startsWith('zondarr-'));
 
+/** The exact texts of the shared origin contract (00-coordination 3.1), with Zondarr's name. */
+const CONTRACT_ERROR =
+	'ORIGIN must be a bare http(s) origin such as http://192.168.1.10:3000 (no path, query, fragment or credentials).';
+const CONTRACT_WARNING =
+	'ORIGIN is not set: Zondarr assumes it is served over HTTPS behind a proxy that preserves the Host header. Over plain HTTP, signing in and saving changes (including first-run setup) will fail. Set ORIGIN to the address users open, for example ORIGIN=http://192.168.1.10:3000.';
+
+/** The message `parseOrigin` throws for `value`, or null when it accepts it. */
+function parseError(value: string): string | null {
+	try {
+		parseOrigin(value);
+		return null;
+	} catch (error) {
+		return (error as Error).message;
+	}
+}
+
 describe('parseOrigin', () => {
+	it('uses the contract texts', () => {
+		expect(ORIGIN_ERROR).toBe(CONTRACT_ERROR);
+		expect(MISSING_ORIGIN_WARNING).toBe(CONTRACT_WARNING);
+	});
+
 	it.each([
 		'http://192.168.1.10:3000',
 		'https://zondarr.example.com',
-		'http://localhost:4173/',
+		'http://localhost:4173',
 		'http://[::1]:3000',
 		'https://zondarr.example.com:8443'
-	])('accepts %s', (value) => {
-		expect(parseOrigin(value).origin).toBe(value.replace(/\/$/, ''));
+	])('accepts %s as it is', (value) => {
+		expect(parseOrigin(value).origin).toBe(value);
+	});
+
+	it.each([
+		['a trailing slash', 'http://localhost:4173/', 'http://localhost:4173'],
+		['surrounding whitespace', '  https://zondarr.example.com \n', 'https://zondarr.example.com'],
+		['an uppercase scheme and host', 'HTTP://Zondarr.Example:8080', 'http://zondarr.example:8080'],
+		['a default port on http', 'http://zondarr.example:80', 'http://zondarr.example'],
+		['a default port on https', 'https://zondarr.example:443', 'https://zondarr.example'],
+		['an IDN host', 'http://bücher.example:3000', 'http://xn--bcher-kva.example:3000'],
+		['all of them at once', ' HTTPS://ZONDARR.Example:443/ ', 'https://zondarr.example']
+	])('normalizes %s to the canonical origin', (_case, value, canonical) => {
+		expect(parseOrigin(value).origin).toBe(canonical);
 	});
 
 	it.each([
 		['a path', 'http://example.com/app'],
+		['two slashes', 'http://example.com//'],
 		['a query', 'http://example.com/?a=1'],
+		['an empty query', 'http://example.com?'],
 		['a fragment', 'http://example.com/#top'],
-		['an explicit default port', 'https://example.com:443'],
-		['an uppercase host', 'http://Example.com'],
+		['an empty fragment', 'http://example.com#'],
+		['a user name', 'http://user@example.com'],
+		['a user name and password', 'http://user:pw@example.com'],
 		['a non-http(s) scheme', 'ftp://example.com'],
 		['garbage', 'not a url'],
 		['an empty host', 'http://']
-	])('rejects %s with a clear startup error naming ORIGIN', (_reason, value) => {
-		expect(() => parseOrigin(value)).toThrow(/^ORIGIN must be a bare http\(s\) origin/);
+	])('rejects %s with exactly the contract error', (_reason, value) => {
+		expect(parseError(value)).toBe(CONTRACT_ERROR);
 	});
 
-	it('names credentials as the reason without echoing them', () => {
-		const secret = fakeSecret();
-		expect(() => parseOrigin(`http://user:${secret}@example.com`)).toThrow(
-			'ORIGIN must be a bare http(s) origin: it contains credentials.'
-		);
-	});
-
-	it('never echoes credentials, even when the URL parser rejects the value', () => {
+	it('never echoes the value, even when the URL parser rejects it', () => {
 		const secret = fakeSecret();
 		for (const value of [
+			`http://user:${secret}@example.com`,
 			`http://user:${secret}@example.com/x`,
-			`http://user:${secret}@exa mple.com`
+			`http://user:${secret}@exa mple.com`,
+			`http://example.com/${secret}`
 		]) {
 			let caught: unknown;
 			try {
@@ -180,9 +212,9 @@ describe('parseOrigin', () => {
 				caught = error;
 			}
 			expect(caught).toBeInstanceOf(Error);
+			expect((caught as Error).message).toBe(CONTRACT_ERROR);
 			expect((caught as Error).cause).toBeUndefined();
 			expect(Object.keys(caught as object)).toEqual([]);
-			expect(String((caught as Error).message)).not.toContain(secret);
 			expect(JSON.stringify(caught)).not.toContain(secret);
 		}
 	});
@@ -190,8 +222,8 @@ describe('parseOrigin', () => {
 
 describe('missingOriginWarning (M10.2)', () => {
 	it('warns when neither ORIGIN nor PROTOCOL_HEADER is set', () => {
-		expect(missingOriginWarning({})).toBe(MISSING_ORIGIN_WARNING);
-		expect(MISSING_ORIGIN_WARNING).toMatch(/must set ORIGIN/);
+		expect(missingOriginWarning({})).toBe(CONTRACT_WARNING);
+		expect(missingOriginWarning({ ORIGIN: ' ', PROTOCOL_HEADER: '' })).toBe(CONTRACT_WARNING);
 	});
 
 	it.each([
@@ -230,6 +262,24 @@ describe('prepare', () => {
 			mode: 'direct',
 			warning: null
 		});
+	});
+
+	it('treats a blank ORIGIN as unset', () => {
+		const environment: Record<string, string | undefined> = { ORIGIN: '  ' };
+		expect(prepare(environment)).toEqual({ mode: 'direct', warning: CONTRACT_WARNING });
+		expect(environment).not.toHaveProperty('ORIGIN');
+		expect(environment).not.toHaveProperty('SOCKET_PATH');
+	});
+
+	it('exports the canonical ORIGIN for the app', () => {
+		const environment: Record<string, string | undefined> = {
+			ORIGIN: ' HTTP://Zondarr.Example:80/ '
+		};
+		const plan = prepare(environment);
+		if (plan.mode !== 'front') throw new Error('expected the front');
+		cleanups.push(() => rmSync(plan.directory, { recursive: true, force: true }));
+		expect(environment.ORIGIN).toBe('http://zondarr.example');
+		expect(plan.origin.origin).toBe('http://zondarr.example');
 	});
 
 	it('with ORIGIN prepares a private socket and the front headers', () => {
@@ -397,6 +447,16 @@ describe('serve.ts process', () => {
 		expect(seen.headers[PEER_HEADER]).toBe('127.0.0.1');
 		// Forwarded headers pass through untouched; the adapter only trusts the ones it is told to.
 		expect(seen.headers['x-forwarded-for']).toBe('203.0.113.9');
+	});
+
+	it('normalizes ORIGIN and the app reads the canonical value', async () => {
+		const port = await freePort();
+		const server = await start({ ORIGIN: ` HTTP://LocalHost:${port}/ `, PORT: String(port) });
+		expect(server.output()).toContain(`for http://localhost:${port}`);
+		const seen = await echo(server.port);
+		expect(seen.env.ORIGIN).toBe(`http://localhost:${port}`);
+		expect(seen.headers[PROTOCOL_HEADER]).toBe('http');
+		expect(seen.headers[HOST_HEADER]).toBe(`localhost:${port}`);
 	});
 
 	it('passes an operator ADDRESS_HEADER through and drops a client-supplied peer header', async () => {
@@ -725,13 +785,14 @@ describe('serve.ts process', () => {
 	it.each([
 		['credentials', (secret: string) => `http://user:${secret}@zondarr.example.com`],
 		['a value the URL parser rejects', (secret: string) => `http://user:${secret}@exa mple.com`],
-		['a path', (secret: string) => `http://zondarr.example.com/${secret}`]
+		['a path', (secret: string) => `http://zondarr.example.com/${secret}`],
+		['a query', (secret: string) => `http://zondarr.example.com/?${secret}`]
 	])('fails clearly on a malformed ORIGIN (%s) without echoing it', async (_case, build) => {
 		const secret = fakeSecret();
 		const server = await start({ ORIGIN: build(secret) }, { waitFor: 'exit' });
 		const { code } = await server.exited;
 		expect(code).not.toBe(0);
-		expect(server.output()).toContain('ORIGIN must be a bare http(s) origin');
+		expect(server.output()).toContain(CONTRACT_ERROR);
 		expect(server.output()).not.toContain(secret);
 		expect(server.output()).not.toContain('standin listening');
 		expect(socketDirectories(server.temp)).toEqual([]);

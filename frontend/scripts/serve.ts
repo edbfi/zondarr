@@ -18,35 +18,45 @@ export const PROTOCOL_HEADER = 'x-zondarr-origin-proto';
 export const HOST_HEADER = 'x-zondarr-origin-host';
 export const PEER_HEADER = 'x-zondarr-peer';
 
+/** The startup error for a malformed ORIGIN (the shared origin contract); it never echoes the value. */
+export const ORIGIN_ERROR =
+	'ORIGIN must be a bare http(s) origin such as http://192.168.1.10:3000 (no path, query, fragment or credentials).';
+
+/** The one startup warning without ORIGIN or PROTOCOL_HEADER (the shared origin contract). */
 export const MISSING_ORIGIN_WARNING =
-	'ORIGIN is not set: the server assumes https://<Host>. Plain-HTTP deployments must set ORIGIN ' +
-	'(for example ORIGIN=http://192.168.1.10:3000), or same-origin writes are rejected with 403. ' +
-	'Ignore this behind a TLS proxy that preserves Host.';
+	'ORIGIN is not set: Zondarr assumes it is served over HTTPS behind a proxy that preserves the ' +
+	'Host header. Over plain HTTP, signing in and saving changes (including first-run setup) will ' +
+	'fail. Set ORIGIN to the address users open, for example ORIGIN=http://192.168.1.10:3000.';
+
+/** A variable's value with surrounding whitespace removed; empty means unset. */
+function setting(value: string | undefined): string | undefined {
+	return value?.trim() || undefined;
+}
 
 /**
- * Parses ORIGIN, which must be a bare http(s) origin (a trailing `/` is tolerated). The error
- * never echoes the value, which may carry credentials, and never wraps the URL parser's error
- * (Bun's ERR_INVALID_URL keeps the raw input).
+ * Parses ORIGIN as the shared origin contract says: trimmed, an http(s) URL with no credentials,
+ * no path but `/` and no `?` or `#`. The returned URL's `origin` is the canonical value (lowercase
+ * scheme and host, default port dropped, IDN as punycode, no trailing `/`). The error never echoes
+ * the value, which may carry credentials, and never wraps the URL parser's error (Bun's
+ * ERR_INVALID_URL keeps the raw input).
  */
 export function parseOrigin(value: string): URL {
+	const trimmed = value.trim();
 	let url: URL | undefined;
 	try {
-		url = new URL(value);
+		url = new URL(trimmed);
 	} catch {
 		// fall through to the redacted error below
 	}
-	if (!url) throw new Error('ORIGIN must be a bare http(s) origin: it is not a valid URL.');
-	if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-		throw new Error('ORIGIN must be a bare http(s) origin: the scheme must be http or https.');
-	}
-	if (url.username || url.password) {
-		throw new Error('ORIGIN must be a bare http(s) origin: it contains credentials.');
-	}
-	if (url.origin !== value.replace(/\/$/, '')) {
-		throw new Error(
-			'ORIGIN must be a bare http(s) origin: remove any path, query, fragment or default port, ' +
-				'and write the host in lowercase.'
-		);
+	if (
+		!url ||
+		(url.protocol !== 'http:' && url.protocol !== 'https:') ||
+		url.username ||
+		url.password ||
+		url.pathname !== '/' ||
+		/[?#]/.test(trimmed)
+	) {
+		throw new Error(ORIGIN_ERROR);
 	}
 	return url;
 }
@@ -66,7 +76,9 @@ export function shutdownTimeoutSeconds(environment: Environment): number {
 
 /** The one startup warning (M10.2): only when neither ORIGIN nor PROTOCOL_HEADER is configured. */
 export function missingOriginWarning(environment: Environment): string | null {
-	return environment.ORIGIN || environment.PROTOCOL_HEADER ? null : MISSING_ORIGIN_WARNING;
+	return setting(environment.ORIGIN) || setting(environment.PROTOCOL_HEADER)
+		? null
+		: MISSING_ORIGIN_WARNING;
 }
 
 /**
@@ -118,12 +130,17 @@ export function prepare(environment: Environment): Plan {
 	// working. An explicit CONNECTION_IDLE_TIMEOUT wins.
 	if (environment.IDLE_TIMEOUT) environment.CONNECTION_IDLE_TIMEOUT ??= environment.IDLE_TIMEOUT;
 
-	if (!environment.ORIGIN) {
-		// The origin is never derived from the request's Host header here (DNS rebinding).
+	const configured = setting(environment.ORIGIN);
+	if (!configured) {
+		// A blank ORIGIN is unset. The origin is never derived from the request's Host header
+		// here (DNS rebinding).
+		delete environment.ORIGIN;
 		return { mode: 'direct', warning: missingOriginWarning(environment) };
 	}
 
-	const origin = parseOrigin(environment.ORIGIN);
+	const origin = parseOrigin(configured);
+	// The app reads the same canonical string the front supplies.
+	environment.ORIGIN = origin.origin;
 	const hostname = environment.HOST || '0.0.0.0';
 	const port = integer('PORT', environment.PORT || '3000', 65535);
 	const idle = environment.CONNECTION_IDLE_TIMEOUT;

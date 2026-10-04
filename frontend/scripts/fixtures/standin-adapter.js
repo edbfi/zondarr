@@ -14,6 +14,7 @@ if (process.env.STANDIN_LOAD_DELAY_MS) {
 const env = process.env;
 const seen = Object.fromEntries(
 	[
+		'ORIGIN',
 		'SOCKET_PATH',
 		'PROTOCOL_HEADER',
 		'HOST_HEADER',
