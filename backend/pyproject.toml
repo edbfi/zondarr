@@ -11,7 +11,7 @@ requires-python = ">=3.14"
 dependencies = [
     "litestar>=2.24.0,<3",
     "msgspec>=0.19",
-    "granian>=2.6",
+    "granian>=2.7.9",
     "sqlalchemy[asyncio]>=2.0",
     "aiosqlite>=0.21",
     "asyncpg>=0.30",
@@ -25,6 +25,7 @@ dependencies = [
     "pyotp>=2.9",
     "segno>=1.6",
     "cryptography>=46.0",
+    "litestar-granian>=0.16.0",
 ]
 
 [project.optional-dependencies]
@@ -36,7 +37,6 @@ dev = [
     "hypothesis>=6.130",
     "ruff==0.16.9",
     "basedpyright>=1.29",
-    "granian[reload]>=2.6",
 ]
 
 [project.scripts]

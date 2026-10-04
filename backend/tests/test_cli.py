@@ -1,15 +1,46 @@
-"""The wheel's advertised console entry point must be callable."""
+"""The wheel's console entry point must serve through ``litestar run``.
 
-import pytest
+Both checks run in a subprocess: ``zondarr.app`` builds its application at
+import, which needs ``SECRET_KEY`` and configures structlog globally, and tests
+must not import it (see ``backend/CLAUDE.md``).
+"""
 
-from zondarr.cli import main
+import os
+import subprocess
+import sys
 
 
-def test_cli_help(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    monkeypatch.setattr("sys.argv", ["zondarr", "--help"])
-    with pytest.raises(SystemExit) as result:
-        main()
-    assert result.value.code == 0
-    assert "Usage: zondarr" in capsys.readouterr().out
+def _run(code: str, *args: str) -> subprocess.CompletedProcess[str]:
+    env = {
+        **os.environ,
+        "SECRET_KEY": "a" * 32,
+        "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
+    }
+    return subprocess.run(  # noqa: S603 — fixed interpreter and arguments.
+        [sys.executable, "-c", code, *args],
+        capture_output=True,
+        check=False,
+        env=env,
+        text=True,
+        timeout=120,
+    )
+
+
+def test_app_registers_granian_plugin() -> None:
+    code = "\n".join(
+        [
+            "from litestar_granian import GranianPlugin",
+            "from zondarr.app import app",
+            "assert any(isinstance(p, GranianPlugin) for p in app.plugins)",
+        ]
+    )
+    result = _run(code)
+    assert result.returncode == 0, result.stderr
+
+
+def test_cli_help() -> None:
+    result = _run("from zondarr.cli import main; main()", "--help")
+    assert result.returncode == 0, result.stderr
+    assert "Usage: zondarr" in result.stdout
+    # Only litestar-granian's `run` has this; bare granian spells it --log-level.
+    assert "--granian-log-level" in result.stdout

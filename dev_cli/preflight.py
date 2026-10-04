@@ -192,12 +192,16 @@ def _resolve_sqlite_path(backend_dir: Path, /) -> Path | None:
 
 
 def _install_backend_deps(backend_dir: Path, /) -> bool:
-    """Run ``uv sync`` if the backend .venv is missing."""
-    venv = backend_dir / ".venv"
-    if venv.exists():
-        return True
+    """Run ``uv sync --extra dev`` so the backend .venv matches ``uv.lock``.
 
-    print_info("Backend .venv not found — running uv sync --extra dev...")
+    It runs on every start and is a fast no-op when nothing changed. The dev
+    backend is started with the .venv's interpreter and not through ``uv run``
+    (see ``runner._backend_python``), so a .venv that predates a dependency
+    change would otherwise fail at import.
+    """
+    missing = not (backend_dir / ".venv").exists()
+    if missing:
+        print_info("Backend .venv not found — running uv sync --extra dev...")
     result = subprocess.run(
         ["uv", "sync", "--extra", "dev"],  # noqa: S607 — developer-selected uv on PATH.
         cwd=backend_dir,
@@ -207,7 +211,8 @@ def _install_backend_deps(backend_dir: Path, /) -> bool:
     if result.returncode != 0:
         print_error(f"uv sync failed:\n{result.stderr.strip()}")
         return False
-    print_info("Backend dependencies installed")
+    if missing:
+        print_info("Backend dependencies installed")
     return True
 
 

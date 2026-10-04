@@ -7,6 +7,7 @@ Run everything below from `backend/`. pytest's config (`testpaths`, `pythonpath`
 | All tests | `uv run pytest` (xdist `-n auto`; pre-push pins `-n 4`) |
 | One file | `uv run pytest tests/test_totp.py -n0` |
 | One case | `uv run pytest "tests/test_totp.py::TestTOTPEncryption::test_encrypt_decrypt_roundtrip" -n0` |
+| Run the server | `uv run litestar --app zondarr.app:app run` (Granian through `GranianPlugin`; needs `SECRET_KEY`, even for `--help`, because the app is built at import; `uv run zondarr` is the same command). Production adds `--host 0.0.0.0 --workers N --runtime-mode st --backpressure 16 --respawn-failed-workers --workers-kill-timeout 10 --workers-lifetime 6h`. Granian's own log flags are `--granian-log-level` and `--granian-access-log`; `GRANIAN_*` variables (for example `GRANIAN_WORKERS`) also work |
 | Typecheck | `uv run basedpyright` (`recommended` mode, `migrations/` excluded) |
 | Lint / format | `uv run --frozen ruff check --fix . && uv run --frozen ruff format .` |
 | New migration | `uv run alembic revision --autogenerate -m "..."` |
@@ -53,7 +54,6 @@ Run everything below from `backend/`. pytest's config (`testpaths`, `pythonpath`
 | Rule file says | This repo does (follow this) |
 | --- | --- |
 | Advanced Alchemy repositories/services, `SQLAlchemyPlugin` | Own `Repository[T]` base plus a DI session from `core/database.py` |
-| `litestar run` with `GranianPlugin` | Plain `granian zondarr.app:app --interface asgi` (dev_cli), or the `zondarr` entry point (`cli.py`) |
 | Dev tools in `[dependency-groups]` | `[project.optional-dependencies].dev`, installed with `--extra dev` / `--all-extras` |
 
 Inline `# pyright: ignore[reportAny]` on the offending line is the local way to handle `Any` leaking from third-party code. Don't loosen `typeCheckingMode`.

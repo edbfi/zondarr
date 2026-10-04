@@ -1,12 +1,16 @@
-"""Tests for dev_cli.preflight._ensure_secret_key persistence."""
+"""Tests for dev_cli.preflight: secret key persistence and backend dependency sync."""
 
 import os
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from dev_cli.preflight import (
     _ensure_secret_key as _ensure_secret_key,  # pyright: ignore[reportPrivateUsage]  # testing private function
+)
+from dev_cli.preflight import (
+    _install_backend_deps as _install_backend_deps,  # pyright: ignore[reportPrivateUsage]  # testing private function
 )
 
 
@@ -90,3 +94,19 @@ def test_key_stable_across_calls() -> None:
             second = os.environ["SECRET_KEY"]
 
         assert first == second
+
+
+def test_backend_deps_sync_runs_even_when_venv_exists() -> None:
+    """An existing .venv is still synced: the dev server no longer goes through `uv run`."""
+    with tempfile.TemporaryDirectory() as tmp:
+        backend = Path(tmp)
+        (backend / ".venv").mkdir()
+        with patch(
+            "dev_cli.preflight.subprocess.run",
+            return_value=SimpleNamespace(returncode=0, stderr=""),
+        ) as run:
+            assert _install_backend_deps(backend)
+
+        run.assert_called_once()
+        assert run.call_args.args[0] == ["uv", "sync", "--extra", "dev"]
+        assert run.call_args.kwargs["cwd"] == backend
