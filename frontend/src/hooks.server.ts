@@ -2,6 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
+import { foreignWriteResponse, isForeignWrite } from '$lib/server/request-origin';
 
 const SSR_API_URL = env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -12,6 +13,13 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// Reject writes of any content type whose Origin is not this app's own origin, before
+	// any route runs. SvelteKit itself checks only bodyless and form writes, and the
+	// backend exempts its auth endpoints and requests without Origin/Referer.
+	if (isForeignWrite(event.request, event.url)) {
+		return foreignWriteResponse();
+	}
+
 	// Try to get user info from the access token cookie
 	const accessToken = event.cookies.get('zondarr_access_token');
 	const skipAuth = ['true', '1', 'yes'].includes((env.DEV_SKIP_AUTH ?? '').toLowerCase());
