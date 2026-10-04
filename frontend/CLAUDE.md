@@ -4,7 +4,7 @@ Run these from `frontend/`, or prefix them with `bun run --cwd frontend` from th
 
 | Task | Command |
 | --- | --- |
-| All tests | `bun run test` (vitest, jsdom, `--maxWorkers=4`). Not `bun test`: that is Bun's own runner and does not compile Svelte |
+| All tests | `bun run test` (vitest, jsdom, `--maxWorkers=4`; two projects, `components` and `server`, plus the front's tests in `scripts/serve.test.ts`). Not `bun test`: that is Bun's own runner and does not compile Svelte |
 | One file | `bun run test src/lib/api/client.test.ts` |
 | One case | `bun run test src/lib/api/client.test.ts -t "test name"` |
 | Typecheck | `bun run check` (svelte-check, then a second pass with `--tsgo` via `check:native`) |
@@ -15,9 +15,10 @@ Run these from `frontend/`, or prefix them with `bun run --cwd frontend` from th
 
 - `src/lib/api/types.d.ts` is generated from the backend OpenAPI schema. Don't edit it by hand. After `generate:api`, run `bunx --no-install biome format --write src/lib/api/types.d.ts`. The committed file is Biome-formatted, and `check:biome` checks that form.
 - Styling is UnoCSS (`uno.config.ts`: presetWind4, presetShadcn, presetIcons). `tailwind.config.js` is an empty stub kept only for the shadcn-svelte CLI, so theme settings there have no effect. The app's own colors are `--cr-*` variables in `src/app.css`, exposed as `cr-*` utilities in `uno.config.ts`.
-- `vitest-setup.ts` mocks `$env/dynamic/public` and `$env/dynamic/private` as `{}`, so `PUBLIC_API_URL` and friends are always unset in tests.
-- Component tests are named `*.svelte.test.ts` (plain `*.test.ts` is for non-component modules). Components that need `children` snippets or `bind:this` are rendered through a `*-test-wrapper.svelte`, as in `src/lib/components/error-boundary-test-wrapper.svelte`.
-- `src/hooks.server.ts` redirects unauthenticated requests to `/login` unless the path is in `PUBLIC_PATHS`. A new public page needs an entry there.
+- Environment variables are declared in `src/env.ts` (SvelteKit 3 exposes only declared ones; an undeclared one reads as `undefined`) and read through `$app/env/private` or `$app/env/public`. `src/env.test.ts` fails when a read variable is not declared. `vitest-setup.ts` mocks both modules with every variable `undefined`, so `PUBLIC_API_URL` and friends are always unset in tests.
+- Component tests are named `*.svelte.test.ts` (plain `*.test.ts` is for non-component modules) and run in the `components` Vitest project, the only one with `svelteTesting()`; a plain `*.test.ts` that renders must be added to `componentTests` in `vite.config.ts`. Never render components in the `server` project: Kit 3's server `redirect()` breaks under the browser condition. Components that need `children` snippets or `bind:this` are rendered through a `*-test-wrapper.svelte`, as in `src/lib/components/error-boundary-test-wrapper.svelte`.
+- `src/hooks.server.ts` redirects unauthenticated requests to `/login` unless the path is in `PUBLIC_PATHS`. A new public page needs an entry there. It also rejects any `POST`/`PUT`/`PATCH`/`DELETE` whose `Origin` is not `event.url.origin` (403, `FRONTEND_ORIGIN_MISMATCH`), and cookies the frontend sets or deletes take `secure` from `isSecureRequest(event.url)` (`$lib/server/request-origin.ts`).
+- `@sveltejs/adapter-bun` is configured in `vite.config.ts` (`precompress: true`; no `svelte.config.js`), and `$lib` is an explicit alias there and in `tsconfig.json`. Production runs `bun run start`, which starts `scripts/serve.ts`: with `ORIGIN` set it fronts the adapter over a private Unix socket; without it the adapter listens directly and assumes `https` + `Host`. Its tests run in the `server` project against `scripts/fixtures/standin-adapter.js`.
 
 ## Calling the backend
 
@@ -42,9 +43,8 @@ Wrappers take the client as their last parameter, defaulting to the browser clie
 
 | Rule file says | This repo does (follow this) |
 | --- | --- |
-| `@sveltejs/adapter-node` | `svelte-adapter-bun` (`svelte.config.js`); production runs `bun run start` |
-| `vite dev` runs on Node | Scripts force Bun: `bun --bun vite dev` / `build` / `preview` |
-| `vitest-browser-svelte` in Browser Mode | `@testing-library/svelte` + jsdom (`vite.config.ts`) |
+| `vite dev` runs on Node; no `preview` script | Scripts force Bun: `bun --bun vite dev` / `build` / `preview` |
+| `vitest-browser-svelte` in Browser Mode | `@testing-library/svelte` + jsdom in both Vitest projects (`vite.config.ts`) |
 
 ## Biome configuration
 

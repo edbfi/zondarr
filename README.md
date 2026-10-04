@@ -39,11 +39,19 @@ bun run build
 bun run start
 ```
 
-`start` runs the built SvelteKit server with Bun in production mode. The Python
+`start` runs `scripts/serve.ts` with Bun in production mode. The Python
 backend runs separately; configure `INTERNAL_API_URL` for the frontend's server-side
 API proxy. Leave `PUBLIC_API_URL` empty for same-origin browser requests. See
 [.env.example](.env.example) for backend security, database and bootstrap settings.
-The container keeps both services under s6 and directly runs the same Bun entry point.
+The container keeps both services under s6 and runs the same entry point.
+
+Set `ORIGIN` to the public origin when serving plain HTTP, for example
+`ORIGIN=http://192.168.1.10:3000`. The frontend then fronts the SvelteKit server and
+uses that origin for its same-origin checks. Without `ORIGIN` the server assumes
+`https://<Host>`, which is right behind a TLS proxy that preserves `Host`; over plain
+HTTP it rejects every write (logins, logouts, saves) with 403, and a startup warning
+says so. `ORIGIN` must be a bare `http(s)` origin (no path or credentials), or the
+frontend refuses to start. Set the backend's `CSRF_ORIGIN` to the same origin.
 
 ## License
 GNU Affero General Public License v3.0
