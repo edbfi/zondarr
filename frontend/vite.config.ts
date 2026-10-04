@@ -1,10 +1,15 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
+import adapter from 'svelte-adapter-bun';
 import UnoCSS from 'unocss/vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-	plugins: [UnoCSS(), sveltekit(), svelteTesting()],
+	plugins: [
+		UnoCSS(),
+		sveltekit({ adapter: adapter({ out: 'build', precompress: true }) }),
+		svelteTesting()
+	],
 	optimizeDeps: {
 		include: ['clsx', 'tailwind-merge', 'tailwind-variants', 'openapi-fetch', 'dompurify', 'marked']
 	},
