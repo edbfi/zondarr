@@ -1,17 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { env } from '$env/dynamic/private';
-import { env as publicEnv } from '$env/dynamic/public';
+import * as env from '$app/env/private';
+import * as publicEnv from '$app/env/public';
+import { backendRequestHeaders, relayResponseHeaders } from '$lib/server/backend-relay';
+import { isSecureRequest } from '$lib/server/request-origin';
 import { consumeNonce } from '$lib/server/setup-nonce';
 import type { RequestHandler } from './$types';
-
-const STRIP_REQUEST_HEADERS = new Set([
-	'host',
-	'connection',
-	'keep-alive',
-	'transfer-encoding',
-	'upgrade',
-	'content-length'
-]);
 
 function readBootstrapToken(): string | null {
 	const filePath = env.BOOTSTRAP_TOKEN_FILE;
@@ -24,17 +17,13 @@ function readBootstrapToken(): string | null {
 	}
 }
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const internalApiUrl =
 		env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
 	const upstream = `${internalApiUrl}/api/auth/setup`;
 
-	const headers = new Headers();
-	for (const [key, value] of request.headers) {
-		if (!STRIP_REQUEST_HEADERS.has(key.toLowerCase())) {
-			headers.set(key, value);
-		}
-	}
+	// As in the /api proxy (M16), plus Content-Length: the body is re-serialized below.
+	const headers = backendRequestHeaders(request.headers, ['content-length']);
 
 	let body: string;
 	try {
@@ -45,7 +34,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			const fileToken = readBootstrapToken();
 			if (fileToken) {
 				const nonce = cookies.get('zondarr_setup_nonce');
-				cookies.delete('zondarr_setup_nonce', { path: '/' });
+				cookies.delete('zondarr_setup_nonce', { path: '/', secure: isSecureRequest(url) });
 
 				if (!nonce || !consumeNonce(nonce)) {
 					return new Response(
@@ -83,7 +72,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return new Response(responseBody, {
 			status: response.status,
 			statusText: response.statusText,
-			headers: response.headers
+			// Backend cookies get Secure from this app's own scheme (M16).
+			headers: relayResponseHeaders(response.headers, url)
 		});
 	} catch {
 		return new Response(JSON.stringify({ detail: 'Backend unavailable' }), {

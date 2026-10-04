@@ -10,7 +10,7 @@ import { cleanup, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$lib/api/client', async () => {
 	const actual = await vi.importActual('$lib/api/client');
 	return {

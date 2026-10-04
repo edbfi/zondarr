@@ -16,13 +16,9 @@ const { privateEnv, publicEnv, mockConsumeNonce, mockReadFileSync } = vi.hoisted
 	mockReadFileSync: vi.fn()
 }));
 
-vi.mock('$env/dynamic/private', () => ({
-	env: privateEnv
-}));
+vi.mock('$app/env/private', () => privateEnv);
 
-vi.mock('$env/dynamic/public', () => ({
-	env: publicEnv
-}));
+vi.mock('$app/env/public', () => publicEnv);
 
 vi.mock('node:fs', async (importOriginal) => {
 	const actual = (await importOriginal()) as Record<string, unknown>;
@@ -59,10 +55,11 @@ function makeRequest(body: Record<string, unknown>, nonceCookie?: string): Reque
 	});
 }
 
-function makeEvent(body: Record<string, unknown>, nonceCookie?: string) {
+function makeEvent(body: Record<string, unknown>, nonceCookie?: string, protocol = 'http:') {
 	const request = makeRequest(body, nonceCookie);
 	return {
 		request,
+		url: new URL(`${protocol}//frontend.local/api/auth/setup`),
 		cookies: {
 			get: vi.fn((name: string) => {
 				if (name === 'zondarr_setup_nonce') return nonceCookie;
@@ -195,5 +192,89 @@ describe('POST /api/auth/setup (hardened proxy)', () => {
 
 		const body = await response.json();
 		expect(body.detail).toContain('Setup authorization expired or invalid');
+	});
+
+	it.each([
+		['https:', true],
+		['http:', false]
+	])('deletes the nonce cookie over %s with secure: %s (M13)', async (protocol, secure) => {
+		mockConsumeNonce.mockReturnValue(false);
+		mockReadFileSync.mockReturnValue('secret-bootstrap-token\n');
+
+		const event = makeEvent(
+			{ username: 'admin', password: 'pass', bootstrap_token: '' },
+			'some-nonce',
+			protocol
+		);
+		await POST(event as never);
+
+		expect(event.cookies.delete).toHaveBeenCalledWith('zondarr_setup_nonce', { path: '/', secure });
+	});
+
+	it.each([
+		['http:', false],
+		['https:', true]
+	])(
+		'relays the backend session cookies over %s with secure: %s (M16)',
+		async (protocol, secure) => {
+			const upstream = new Headers({ 'content-type': 'application/json' });
+			upstream.append(
+				'set-cookie',
+				'zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax; Secure'
+			);
+			upstream.append(
+				'set-cookie',
+				'zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax'
+			);
+			vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+				new Response('{"id":"user-1"}', { status: 201, headers: upstream })
+			);
+
+			const event = makeEvent(
+				{ username: 'admin', password: 'pass', bootstrap_token: 'manual-token' },
+				undefined,
+				protocol
+			);
+			const response = await POST(event as never);
+
+			expect(response.status).toBe(201);
+			const flag = secure ? '; Secure' : '';
+			expect(response.headers.getSetCookie()).toEqual([
+				`zondarr_access_token=new-access; HttpOnly; Max-Age=900; Path=/; SameSite=lax${flag}`,
+				`zondarr_refresh_token=new-refresh; HttpOnly; Max-Age=604800; Path=/; SameSite=lax${flag}`
+			]);
+		}
+	);
+
+	it('does not pass front, forwarded or hop-by-hop headers to the backend (M16)', async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValue(new Response('{}', { status: 201 }));
+		const request = new Request('http://frontend.local/api/auth/setup', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'content-length': '64',
+				origin: 'http://frontend.local',
+				'x-zondarr-origin-proto': 'https',
+				'x-zondarr-origin-host': 'evil.test',
+				'x-zondarr-peer': '203.0.113.9',
+				'x-forwarded-for': '203.0.113.9',
+				'x-forwarded-proto': 'https',
+				forwarded: 'for=203.0.113.9',
+				connection: 'keep-alive'
+			},
+			body: JSON.stringify({ username: 'admin', password: 'pass', bootstrap_token: 'manual' })
+		});
+		const event = {
+			request,
+			url: new URL(request.url),
+			cookies: { get: vi.fn(() => undefined), delete: vi.fn() }
+		};
+
+		await POST(event as never);
+
+		const forwarded = new Headers((fetchSpy.mock.calls[0] as [string, RequestInit])[1].headers);
+		expect([...forwarded.keys()].sort()).toEqual(['content-type', 'origin']);
 	});
 });

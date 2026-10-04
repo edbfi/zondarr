@@ -7,7 +7,7 @@
  * @module $lib/stores/log-stream
  */
 
-import { env } from '$env/dynamic/public';
+import * as env from '$app/env/public';
 
 // =============================================================================
 // Types

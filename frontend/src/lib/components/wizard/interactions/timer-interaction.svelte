@@ -16,7 +16,7 @@
  * deadline instead of restarting at full duration.
  */
 import { onMount } from 'svelte';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { timerConfigSchema } from '$lib/schemas/wizard';
 import type { InteractionComponentProps } from './registry';
 

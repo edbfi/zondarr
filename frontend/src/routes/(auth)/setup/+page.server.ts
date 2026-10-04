@@ -1,9 +1,10 @@
 import { timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { isRedirect, redirect } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import { getAuthMethods, getMe, type OnboardingStep } from '$lib/api/auth';
 import { isNetworkError } from '$lib/api/errors';
+import { isSecureRequest } from '$lib/server/request-origin';
 import { createValidatedNonce } from '$lib/server/setup-nonce';
 import type { PageServerLoad } from './$types';
 
@@ -39,6 +40,7 @@ export const load: PageServerLoad = async ({ fetch, cookies, url }) => {
 					const nonce = createValidatedNonce();
 					cookies.set('zondarr_setup_nonce', nonce, {
 						httpOnly: true,
+						secure: isSecureRequest(url),
 						sameSite: 'strict',
 						path: '/',
 						maxAge: 600

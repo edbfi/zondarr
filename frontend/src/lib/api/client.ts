@@ -8,7 +8,7 @@
  */
 
 import createClient, { type Client } from 'openapi-fetch';
-import { env } from '$env/dynamic/public';
+import * as env from '$app/env/public';
 import { showApiError, showNetworkError } from '$lib/utils/toast';
 import type { components, paths } from './types';
 
