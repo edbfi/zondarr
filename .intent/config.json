@@ -2,19 +2,19 @@
   "scripts": [
     {
       "name": "prepare",
-      "command": "npm run prepare",
+      "command": "bun run prepare",
       "mode": "command",
       "category": "other"
     },
     {
       "name": "lint",
-      "command": "npm run lint",
+      "command": "bun run lint",
       "mode": "command",
       "category": "lint"
     },
     {
       "name": "lint:staged",
-      "command": "npm run lint:staged",
+      "command": "bun run lint:staged",
       "mode": "command",
       "category": "lint"
     }
