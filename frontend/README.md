@@ -2,8 +2,7 @@
 
 The SvelteKit app for Zondarr (Svelte 5, TypeScript, UnoCSS), run with Bun. The
 Python backend lives in [`../backend`](../backend); the repository
-[README](../README.md) covers the whole project, and [`CLAUDE.md`](CLAUDE.md) in
-this directory lists the conventions and gotchas.
+[README](../README.md) covers the whole project.
 
 ## Requirements
 
