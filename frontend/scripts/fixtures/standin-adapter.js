@@ -1,6 +1,7 @@
 // Stand-in for the @sveltejs/adapter-bun build output (build/index.js), used by scripts/serve.test.ts.
 // It reads the same environment variables as @sveltejs/adapter-bun, listens on SOCKET_PATH or
-// HOST/PORT, and drains and emits sveltekit:shutdown on SIGTERM the way the adapter does.
+// HOST/PORT, and drains and emits sveltekit:shutdown on SIGTERM or SIGINT the way the adapter does
+// (like the adapter, it does not handle SIGHUP).
 import { writeFileSync } from 'node:fs';
 import process from 'node:process';
 
@@ -96,6 +97,7 @@ async function handle(request) {
 		}
 		case '/slow': {
 			// Like a request waiting on the backend: reads the body, then answers after `ms`.
+			console.log('standin slow request received');
 			const body = await request.text();
 			await sleep(Number(url.searchParams.get('ms') || 3000));
 			return new Response(`slow ${body.length}`);
@@ -123,6 +125,8 @@ console.log(`standin listening on ${env.SOCKET_PATH || server.url}`);
 
 let stopping = false;
 async function shutdown(reason) {
+	// Logged on every signal, so a test can tell which signal reached the adapter and when.
+	console.log(`standin got ${reason}`);
 	if (stopping) return process.exit(1);
 	stopping = true;
 	const timeout = Number(env.SHUTDOWN_TIMEOUT || 30) * 1000;
@@ -135,7 +139,7 @@ async function shutdown(reason) {
 	]);
 	clearTimeout(timer);
 	if (!drained) await server.stop(true);
-	console.log('standin drained');
+	console.log(`standin drained (${reason})`);
 	process.emit('sveltekit:shutdown', reason);
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
