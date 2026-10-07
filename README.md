@@ -32,14 +32,16 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Build and start the production frontend from the same directory:
+Build and start the production frontend, still in `frontend/`:
 
 ```sh
 bun run build
-bun run start
+NODE_ENV=production bun scripts/serve.ts
 ```
 
-`start` runs `scripts/serve.ts` with Bun in production mode. The Python
+This is the command the `start` script runs. Run it directly: with Bun 1.4.2's
+default shell, `bun run start` and `bun start` deliver one Ctrl+C twice, which
+skips the `SHUTDOWN_TIMEOUT` drain and stops at once with exit status 1. The Python
 backend runs separately; configure `INTERNAL_API_URL` for the frontend's server-side
 API proxy. Leave `PUBLIC_API_URL` empty for same-origin browser requests. See
 [.env.example](.env.example) for backend security, database and bootstrap settings.
@@ -55,7 +57,7 @@ fail, and one startup warning says so. Leave `ORIGIN` unset only behind an HTTPS
 reverse proxy that passes the original `Host`. `ORIGIN` must be a bare `http(s)`
 origin (no path, query, fragment or credentials), or the frontend refuses to start;
 letter case, a default port and a trailing `/` are normalized. With `ORIGIN` set,
-`start` fronts the SvelteKit server and supplies that origin.
+`scripts/serve.ts` fronts the SvelteKit server and supplies that origin.
 
 The backend's own CSRF check reads `CSRF_ORIGIN`: set it to the same value. The
 Docker image defaults `CSRF_ORIGIN` to `ORIGIN`.
