@@ -2,7 +2,7 @@
 
 Both checks run in a subprocess: ``zondarr.app`` builds its application at
 import, which needs ``SECRET_KEY`` and configures structlog globally, and tests
-must not import it (see ``backend/CLAUDE.md``).
+must not import it.
 """
 
 import os
