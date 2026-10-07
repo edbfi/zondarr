@@ -63,9 +63,9 @@ function toggleAccepted() {
 				class="checkbox"
 				class:checked={accepted}
 				onclick={(e) => {
-	e.stopPropagation();
-	toggleAccepted();
-}}
+					e.stopPropagation();
+					toggleAccepted();
+				}}
 				{disabled}
 			>
 				{#if accepted}

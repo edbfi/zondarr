@@ -108,10 +108,10 @@ function getInputType(fieldType: string): string {
 						bind:value={fieldValues[field.name]}
 						placeholder={field.placeholder}
 						autocomplete={field.field_type === 'password'
-	? 'current-password'
-	: field.name === 'username'
-		? 'username'
-		: undefined}
+							? 'current-password'
+							: field.name === 'username'
+								? 'username'
+								: undefined}
 						class="h-8 border-cr-border bg-cr-surface text-cr-text text-sm placeholder:text-cr-text-dim"
 					/>
 					{#if errors[field.name]}

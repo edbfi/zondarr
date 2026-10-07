@@ -1,7 +1,16 @@
 <script lang="ts">
 import { Eye, EyeOff, Info, KeyRound, Plug, X } from '@lucide/svelte';
-import type { ConnectionTestRequest, ConnectionTestResponse, EnvCredentialResponse } from '$lib/api/client';
-import { createServer, getEnvCredentials, testConnection, withErrorHandling } from '$lib/api/client';
+import type {
+	ConnectionTestRequest,
+	ConnectionTestResponse,
+	EnvCredentialResponse
+} from '$lib/api/client';
+import {
+	createServer,
+	getEnvCredentials,
+	testConnection,
+	withErrorHandling
+} from '$lib/api/client';
 import { asErrorResponse } from '$lib/api/errors';
 import { Button } from '$lib/components/ui/button';
 import * as Card from '$lib/components/ui/card';
@@ -43,9 +52,7 @@ let errors = $state<Record<string, string[]>>({});
 let envCredentials = $state<EnvCredentialResponse[]>([]);
 let envDismissed = $state(false);
 
-const completeEnvCredentials = $derived(
-	envCredentials.filter((c) => c.has_url && c.has_api_key)
-);
+const completeEnvCredentials = $derived(envCredentials.filter((c) => c.has_url && c.has_api_key));
 const showEnvBanner = $derived(!envDismissed && completeEnvCredentials.length > 0);
 
 // Fetch env credentials on mount
@@ -113,7 +120,8 @@ function getFieldErrors(field: string): string[] {
 }
 
 const canTest = $derived(
-	formData.use_env_credentials || ((formData.url ?? '').trim().length > 0 && (formData.api_key ?? '').trim().length > 0)
+	formData.use_env_credentials ||
+		((formData.url ?? '').trim().length > 0 && (formData.api_key ?? '').trim().length > 0)
 );
 const connectionVerified = $derived(testResult?.success === true);
 
@@ -131,10 +139,9 @@ async function handleTestConnection() {
 			? { server_type: testedServerType, use_env_credentials: true as const }
 			: { url: testedUrl, api_key: testedApiKey ?? null };
 
-		const result = await withErrorHandling(
-			() => testConnection(testPayload),
-			{ showErrorToast: false }
-		);
+		const result = await withErrorHandling(() => testConnection(testPayload), {
+			showErrorToast: false
+		});
 
 		if (
 			formData.url !== testedUrl ||
@@ -235,7 +242,8 @@ async function handleSubmit(event: Event) {
 						>
 							<span
 								class="shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold"
-								style="background: {providerMeta?.color ?? '#6b7280'}20; color: {providerMeta?.color ?? '#6b7280'}"
+								style="background: {providerMeta?.color ??
+									'#6b7280'}20; color: {providerMeta?.color ?? '#6b7280'}"
 							>
 								{credential.display_name}
 							</span>
@@ -302,7 +310,9 @@ async function handleSubmit(event: Event) {
 			<div class="space-y-2">
 				<Label for="server-url" class="text-cr-text">Server URL</Label>
 				{#if formData.use_env_credentials}
-					<div class="flex items-center gap-2 rounded-md border border-cr-accent/30 bg-cr-accent/5 px-3 py-2">
+					<div
+						class="flex items-center gap-2 rounded-md border border-cr-accent/30 bg-cr-accent/5 px-3 py-2"
+					>
 						<KeyRound class="size-4 shrink-0 text-cr-accent" />
 						<span class="flex-1 text-sm text-cr-text">Configured in environment</span>
 					</div>
@@ -333,7 +343,9 @@ async function handleSubmit(event: Event) {
 			<div class="space-y-2">
 				<Label for="server-api-key" class="text-cr-text">API Key</Label>
 				{#if formData.use_env_credentials}
-					<div class="flex items-center gap-2 rounded-md border border-cr-accent/30 bg-cr-accent/5 px-3 py-2">
+					<div
+						class="flex items-center gap-2 rounded-md border border-cr-accent/30 bg-cr-accent/5 px-3 py-2"
+					>
 						<KeyRound class="size-4 shrink-0 text-cr-accent" />
 						<span class="flex-1 text-sm text-cr-text">Using environment credentials</span>
 						<button
@@ -411,17 +423,16 @@ async function handleSubmit(event: Event) {
 						)}
 						<div
 							class="rounded-md border px-3 py-2 text-sm"
-							style="border-color: {providerMeta?.color ?? '#22c55e'}40; background: {providerMeta?.color ?? '#22c55e'}10; color: {providerMeta?.color ?? '#22c55e'}"
+							style="border-color: {providerMeta?.color ??
+								'#22c55e'}40; background: {providerMeta?.color ??
+								'#22c55e'}10; color: {providerMeta?.color ?? '#22c55e'}"
 						>
 							<p class="break-all font-medium">
-								Connected — {providerMeta?.display_name ?? testResult.server_type} server
-								detected
+								Connected — {providerMeta?.display_name ?? testResult.server_type} server detected
 							</p>
 							{#if testResult.server_name}
 								<p class="mt-0.5 break-all text-xs text-cr-text-muted">
-									{testResult.server_name}{testResult.version
-										? ` (v${testResult.version})`
-										: ''}
+									{testResult.server_name}{testResult.version ? ` (v${testResult.version})` : ''}
 								</p>
 							{/if}
 						</div>
@@ -456,11 +467,11 @@ async function handleSubmit(event: Event) {
 							class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
 						></span>
 						Adding server...
-						{:else}
-							Add Server & Finish
-						{/if}
-					</Button>
-				</div>
+					{:else}
+						Add Server & Finish
+					{/if}
+				</Button>
+			</div>
 		</form>
 	</Card.Content>
 </Card.Root>

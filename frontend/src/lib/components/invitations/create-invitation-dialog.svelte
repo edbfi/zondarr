@@ -185,8 +185,8 @@ function handleCancel() {
 <Dialog.Root bind:open>
 	<Dialog.Trigger>
 		{#snippet child({
-	props
-})}
+			props
+		})}
 			<Button {...props} class="bg-cr-accent text-cr-bg hover:bg-cr-accent-hover">
 				<Plus class="size-4" />
 				Create Invitation

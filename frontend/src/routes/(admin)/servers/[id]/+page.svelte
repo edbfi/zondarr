@@ -488,8 +488,8 @@ async function handleDelete() {
 					<div class="grid gap-3 md:grid-cols-2">
 						<div
 							class="rounded-lg border p-4 space-y-2 {librariesStatus?.circuit_state === 'open'
-	? 'border-rose-500/50 bg-rose-500/5'
-	: 'border-cr-border bg-cr-bg'}"
+								? 'border-rose-500/50 bg-rose-500/5'
+								: 'border-cr-border bg-cr-bg'}"
 							data-sync-channel="libraries"
 						>
 							<div class="flex items-center justify-between gap-3">
@@ -534,12 +534,14 @@ async function handleDelete() {
 							<div class="text-xs text-cr-text-muted">
 								Last completed: {formatDate(librariesStatus?.last_completed_at)}
 							</div>
-							{#if librariesStatus?.circuit_state === 'open' && librariesStatus.consecutive_failures}
+							{#if librariesStatus?.circuit_state === 'open' &&
+								librariesStatus.consecutive_failures}
 								<div class="text-xs text-rose-400">
 									{librariesStatus.consecutive_failures}
 									consecutive failure{librariesStatus.consecutive_failures === 1 ? '' : 's'}
 								</div>
-							{:else if (librariesStatus?.consecutive_failures ?? 0) > 0 && librariesStatus?.circuit_state !== 'open'}
+							{:else if (librariesStatus?.consecutive_failures ?? 0) > 0 &&
+								librariesStatus?.circuit_state !== 'open'}
 								<div class="text-xs text-cr-text-muted">
 									{librariesStatus?.consecutive_failures}
 									recent failure{librariesStatus?.consecutive_failures === 1 ? '' : 's'}
@@ -549,8 +551,8 @@ async function handleDelete() {
 
 						<div
 							class="rounded-lg border p-4 space-y-2 {usersStatus?.circuit_state === 'open'
-	? 'border-rose-500/50 bg-rose-500/5'
-	: 'border-cr-border bg-cr-bg'}"
+								? 'border-rose-500/50 bg-rose-500/5'
+								: 'border-cr-border bg-cr-bg'}"
 							data-sync-channel="users"
 						>
 							<div class="flex items-center justify-between gap-3">
@@ -600,7 +602,8 @@ async function handleDelete() {
 									{usersStatus.consecutive_failures}
 									consecutive failure{usersStatus.consecutive_failures === 1 ? '' : 's'}
 								</div>
-							{:else if (usersStatus?.consecutive_failures ?? 0) > 0 && usersStatus?.circuit_state !== 'open'}
+							{:else if (usersStatus?.consecutive_failures ?? 0) > 0 &&
+								usersStatus?.circuit_state !== 'open'}
 								<div class="text-xs text-cr-text-muted">
 									{usersStatus?.consecutive_failures}
 									recent failure{usersStatus?.consecutive_failures === 1 ? '' : 's'}

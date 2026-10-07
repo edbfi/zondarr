@@ -165,9 +165,9 @@ function handlePageChange(newPage: number) {
 									size="icon"
 									class="size-8 text-rose-400 hover:bg-rose-400/10 hover:text-rose-400"
 									onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	handleDeleteRequest(wizard.id);
-}}
+										e.stopPropagation();
+										handleDeleteRequest(wizard.id);
+									}}
 								>
 									<Trash2 class="size-4" />
 								</Button>
@@ -208,7 +208,7 @@ function handlePageChange(newPage: number) {
 	loading={deleting}
 	onConfirm={handleDeleteConfirm}
 	onCancel={() => {
-	showDeleteDialog = false;
-	deleteTarget = null;
-}}
+		showDeleteDialog = false;
+		deleteTarget = null;
+	}}
 />

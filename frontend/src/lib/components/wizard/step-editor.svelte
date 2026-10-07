@@ -8,25 +8,21 @@
  * @module $lib/components/wizard/step-editor
  */
 
-import { Globe, X } from "@lucide/svelte";
-import { onDestroy } from "svelte";
-import { slide } from "svelte/transition";
-import { toast } from "svelte-sonner";
-import type { StepInteractionResponse, TranslationData, WizardStepResponse } from "$lib/api/client";
-import {
-	addStepInteraction,
-	removeStepInteraction,
-	updateStepInteraction,
-} from "$lib/api/client";
-import ConfirmDialog from "$lib/components/confirm-dialog.svelte";
-import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import { Switch } from "$lib/components/ui/switch";
-import { getAllInteractionTypes, type InteractionTypeRegistration } from "./interactions";
-import { getCachedLanguages, getLanguageLabel, loadLanguages } from "./language-cache";
-import LanguagePicker from "./language-picker.svelte";
-import MarkdownEditor from "./markdown-editor.svelte";
+import { Globe, X } from '@lucide/svelte';
+import { onDestroy } from 'svelte';
+import { slide } from 'svelte/transition';
+import { toast } from 'svelte-sonner';
+import type { StepInteractionResponse, TranslationData, WizardStepResponse } from '$lib/api/client';
+import { addStepInteraction, removeStepInteraction, updateStepInteraction } from '$lib/api/client';
+import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+import { Button } from '$lib/components/ui/button';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import { Switch } from '$lib/components/ui/switch';
+import { getAllInteractionTypes, type InteractionTypeRegistration } from './interactions';
+import { getCachedLanguages, getLanguageLabel, loadLanguages } from './language-cache';
+import LanguagePicker from './language-picker.svelte';
+import MarkdownEditor from './markdown-editor.svelte';
 
 interface Props {
 	step: WizardStepResponse;
@@ -40,7 +36,9 @@ const { step, wizardId, onSave, onCancel, onInteractionsChange }: Props = $props
 
 // Language data fetched from API (shared cache)
 let allLanguages = $state(getCachedLanguages());
-loadLanguages().then((langs) => { allLanguages = langs; });
+loadLanguages().then((langs) => {
+	allLanguages = langs;
+});
 
 // Form state (local copies — intentionally captures initial prop values)
 // svelte-ignore state_referenced_locally
@@ -51,18 +49,18 @@ let isSaving = $state(false);
 
 // Translation state
 // svelte-ignore state_referenced_locally
-let primaryLanguage = $state(step.primary_language ?? "en");
+let primaryLanguage = $state(step.primary_language ?? 'en');
 // svelte-ignore state_referenced_locally
 let translations = $state<TranslationData[]>(
 	(step.translations ?? []).map((t) => ({
 		language_code: t.language_code,
 		title: t.title,
-		content_markdown: t.content_markdown,
-	})),
+		content_markdown: t.content_markdown
+	}))
 );
 // svelte-ignore state_referenced_locally
 let activeTranslationTab = $state<string | null>(
-	translations.length > 0 ? translations[0]!.language_code : null,
+	translations.length > 0 ? translations[0]!.language_code : null
 );
 let showRemoveTranslationDialog = $state(false);
 let removeTranslationTarget = $state<string | null>(null);
@@ -70,15 +68,13 @@ let removeTranslationTarget = $state<string | null>(null);
 // Available languages (not yet added as translations and not the primary language)
 const availableLanguages = $derived(
 	allLanguages.filter(
-		(l) =>
-			l.code !== primaryLanguage &&
-			!translations.some((t) => t.language_code === l.code),
-	),
+		(l) => l.code !== primaryLanguage && !translations.some((t) => t.language_code === l.code)
+	)
 );
 
 // Active translation data for the current tab
 const activeTranslation = $derived(
-	translations.find((t) => t.language_code === activeTranslationTab),
+	translations.find((t) => t.language_code === activeTranslationTab)
 );
 
 // Track active interactions locally
@@ -123,11 +119,14 @@ async function handleToggle(registration: InteractionTypeRegistration, checked: 
 			// Add interaction
 			const result = await addStepInteraction(wizardId, step.id, {
 				interaction_type: type,
-				config: registration.defaultConfig() as Record<string, string | number | boolean | string[] | null>,
+				config: registration.defaultConfig() as Record<
+					string,
+					string | number | boolean | string[] | null
+				>
 			});
 
 			if (result.error) {
-				throw new Error(result.error.detail ?? "Failed to add interaction");
+				throw new Error(result.error.detail ?? 'Failed to add interaction');
 			}
 
 			if (result.data) {
@@ -141,7 +140,7 @@ async function handleToggle(registration: InteractionTypeRegistration, checked: 
 				const result = await removeStepInteraction(wizardId, step.id, existing.id);
 
 				if (result.error) {
-					throw new Error(result.error.detail ?? "Failed to remove interaction");
+					throw new Error(result.error.detail ?? 'Failed to remove interaction');
 				}
 
 				activeInteractions = activeInteractions.filter((i) => i.id !== existing.id);
@@ -153,7 +152,7 @@ async function handleToggle(registration: InteractionTypeRegistration, checked: 
 			}
 		}
 	} catch (error) {
-		toast.error(error instanceof Error ? error.message : "Failed to toggle interaction");
+		toast.error(error instanceof Error ? error.message : 'Failed to toggle interaction');
 	} finally {
 		loadingTypes = new Set([...loadingTypes].filter((t) => t !== type));
 	}
@@ -165,22 +164,20 @@ async function handleToggle(registration: InteractionTypeRegistration, checked: 
 async function persistConfig(interactionId: string, newConfig: Record<string, unknown>) {
 	try {
 		const result = await updateStepInteraction(wizardId, step.id, interactionId, {
-			config: newConfig as Record<string, string | number | boolean | string[] | null>,
+			config: newConfig as Record<string, string | number | boolean | string[] | null>
 		});
 
 		if (result.error) {
-			throw new Error(result.error.detail ?? "Failed to update interaction config");
+			throw new Error(result.error.detail ?? 'Failed to update interaction config');
 		}
 
 		if (result.data) {
 			const updated = result.data;
-			activeInteractions = activeInteractions.map((i) =>
-				i.id === interactionId ? updated : i,
-			);
+			activeInteractions = activeInteractions.map((i) => (i.id === interactionId ? updated : i));
 			onInteractionsChange(activeInteractions);
 		}
 	} catch (error) {
-		toast.error(error instanceof Error ? error.message : "Failed to save config");
+		toast.error(error instanceof Error ? error.message : 'Failed to save config');
 	}
 }
 
@@ -199,7 +196,7 @@ function handleConfigChange(type: string, newConfig: Record<string, unknown>) {
 		if (!result.success) {
 			const fieldErrors: Record<string, string[]> = {};
 			for (const issue of result.error.issues) {
-				const path = issue.path.join(".");
+				const path = issue.path.join('.');
 				if (!fieldErrors[path]) {
 					fieldErrors[path] = [];
 				}
@@ -208,7 +205,7 @@ function handleConfigChange(type: string, newConfig: Record<string, unknown>) {
 			configErrors = { ...configErrors, [type]: fieldErrors };
 			// Still update locally for UI responsiveness
 			activeInteractions = activeInteractions.map((i) =>
-				i.id === existing.id ? { ...i, config: newConfig as typeof i.config } : i,
+				i.id === existing.id ? { ...i, config: newConfig as typeof i.config } : i
 			);
 			return;
 		}
@@ -220,7 +217,7 @@ function handleConfigChange(type: string, newConfig: Record<string, unknown>) {
 
 	// Optimistically update local state
 	activeInteractions = activeInteractions.map((i) =>
-		i.id === existing.id ? { ...i, config: newConfig as typeof i.config } : i,
+		i.id === existing.id ? { ...i, config: newConfig as typeof i.config } : i
 	);
 
 	// Debounce backend persist (300ms)
@@ -233,7 +230,7 @@ function handleConfigChange(type: string, newConfig: Record<string, unknown>) {
 		setTimeout(() => {
 			persistTimers.delete(type);
 			persistConfig(interactionId, newConfig);
-		}, 300),
+		}, 300)
 	);
 }
 
@@ -243,7 +240,7 @@ function handleConfigChange(type: string, newConfig: Record<string, unknown>) {
 function handleAddTranslation(languageCode: string) {
 	translations = [
 		...translations,
-		{ language_code: languageCode, title: "", content_markdown: "" },
+		{ language_code: languageCode, title: '', content_markdown: '' }
 	];
 	activeTranslationTab = languageCode;
 }
@@ -272,9 +269,13 @@ function handleRemoveTranslationConfirm() {
 /**
  * Update a translation field.
  */
-function handleTranslationChange(languageCode: string, field: "title" | "content_markdown", value: string) {
+function handleTranslationChange(
+	languageCode: string,
+	field: 'title' | 'content_markdown',
+	value: string
+) {
 	translations = translations.map((t) =>
-		t.language_code === languageCode ? { ...t, [field]: value } : t,
+		t.language_code === languageCode ? { ...t, [field]: value } : t
 	);
 }
 
@@ -288,12 +289,12 @@ function handleSetPrimaryLanguage(languageCode: string) {
 
 	// Add current primary as a translation (preserving its content)
 	const newTranslations = translations.filter(
-		(t) => t.language_code !== languageCode && t.language_code !== oldPrimary,
+		(t) => t.language_code !== languageCode && t.language_code !== oldPrimary
 	);
 	newTranslations.push({
 		language_code: oldPrimary,
 		title,
-		content_markdown: contentMarkdown,
+		content_markdown: contentMarkdown
 	});
 
 	// Set new primary content from the translation
@@ -317,7 +318,7 @@ async function handleSave() {
 			title,
 			content_markdown: contentMarkdown,
 			primary_language: primaryLanguage,
-			translations: translations as unknown as WizardStepResponse["translations"],
+			translations: translations as unknown as WizardStepResponse['translations']
 		});
 	} finally {
 		isSaving = false;
@@ -355,9 +356,7 @@ async function handleSave() {
 	<div class="translations-section">
 		<div class="section-header">
 			<h4 class="section-title">Translations</h4>
-			<p class="section-description">
-				Add translations for this step in other languages.
-			</p>
+			<p class="section-description">Add translations for this step in other languages.</p>
 		</div>
 
 		<!-- Translation tab bar -->
@@ -380,10 +379,7 @@ async function handleSave() {
 			</div>
 
 			{#if availableLanguages.length > 0}
-				<LanguagePicker
-					languages={availableLanguages}
-					onSelect={handleAddTranslation}
-				/>
+				<LanguagePicker languages={availableLanguages} onSelect={handleAddTranslation} />
 			{/if}
 		</div>
 
@@ -421,8 +417,8 @@ async function handleSave() {
 						oninput={(e: Event) =>
 							handleTranslationChange(
 								activeTranslationTab!,
-								"title",
-								(e.target as HTMLInputElement).value,
+								'title',
+								(e.target as HTMLInputElement).value
 							)}
 						placeholder="Translated title"
 						class="border-cr-border bg-cr-bg text-cr-text"
@@ -436,8 +432,8 @@ async function handleSave() {
 						oninput={(e: Event) =>
 							handleTranslationChange(
 								activeTranslationTab!,
-								"content_markdown",
-								(e.target as HTMLTextAreaElement).value,
+								'content_markdown',
+								(e.target as HTMLTextAreaElement).value
 							)}
 						placeholder="Translated markdown content..."
 						rows="6"
@@ -508,9 +504,7 @@ async function handleSave() {
 
 	<!-- Actions -->
 	<div class="actions">
-		<Button variant="ghost" onclick={onCancel} class="text-cr-text-muted">
-			Cancel
-		</Button>
+		<Button variant="ghost" onclick={onCancel} class="text-cr-text-muted"> Cancel </Button>
 		<Button
 			onclick={handleSave}
 			disabled={isSaving}
@@ -524,276 +518,285 @@ async function handleSave() {
 <ConfirmDialog
 	open={showRemoveTranslationDialog}
 	title="Remove Translation"
-	description="Are you sure you want to remove the {removeTranslationTarget ? getLanguageLabel(removeTranslationTarget) : ''} translation? This cannot be undone."
+	description="Are you sure you want to remove the {removeTranslationTarget
+		? getLanguageLabel(removeTranslationTarget)
+		: ''} translation? This cannot be undone."
 	confirmLabel="Remove"
 	variant="destructive"
 	onConfirm={handleRemoveTranslationConfirm}
-	onCancel={() => { showRemoveTranslationDialog = false; removeTranslationTarget = null; }}
+	onCancel={() => {
+		showRemoveTranslationDialog = false;
+		removeTranslationTarget = null;
+	}}
 />
 
 <style>
-	.step-editor {
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-	}
+.step-editor {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
 
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
 
-	/* Interactions section */
-	.interactions-section {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		padding-top: 1rem;
-		border-top: 1px solid var(--cr-border);
-	}
+/* Interactions section */
+.interactions-section {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--cr-border);
+}
 
-	.section-header {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
+.section-header {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
 
-	.section-title {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--cr-text);
-		margin: 0;
-	}
+.section-title {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--cr-text);
+	margin: 0;
+}
 
-	.section-description {
-		font-size: 0.75rem;
-		color: var(--cr-text-muted);
-		margin: 0;
-	}
+.section-description {
+	font-size: 0.75rem;
+	color: var(--cr-text-muted);
+	margin: 0;
+}
 
-	/* Module stack */
-	.module-stack {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
+/* Module stack */
+.module-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
 
-	/* Module card */
-	.module-card {
-		position: relative;
-		border: 1px solid var(--cr-module-border);
-		border-radius: 0.625rem;
-		background: var(--cr-module-bg);
-		overflow: hidden;
-		transition: border-color 0.2s ease;
-	}
+/* Module card */
+.module-card {
+	position: relative;
+	border: 1px solid var(--cr-module-border);
+	border-radius: 0.625rem;
+	background: var(--cr-module-bg);
+	overflow: hidden;
+	transition: border-color 0.2s ease;
+}
 
-	.module-card.active {
-		border-color: var(--cr-module-active-border);
-	}
+.module-card.active {
+	border-color: var(--cr-module-active-border);
+}
 
-	/* Gold left accent bar */
-	.active-bar {
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 3px;
-		background: linear-gradient(to bottom, var(--cr-module-active-accent), var(--cr-module-active-accent-dim));
-		border-radius: 3px 0 0 3px;
-	}
+/* Gold left accent bar */
+.active-bar {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background: linear-gradient(
+		to bottom,
+		var(--cr-module-active-accent),
+		var(--cr-module-active-accent-dim)
+	);
+	border-radius: 3px 0 0 3px;
+}
 
-	/* Module header */
-	.module-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-	}
+/* Module header */
+.module-header {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+}
 
-	.module-card.active .module-header {
-		padding-left: calc(1rem + 3px);
-	}
+.module-card.active .module-header {
+	padding-left: calc(1rem + 3px);
+}
 
-	.module-icon {
-		width: 2rem;
-		height: 2rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 0.5rem;
-		background: var(--cr-module-icon-bg);
-		color: var(--cr-module-icon-color);
-		flex-shrink: 0;
-		transition: all 0.2s ease;
-	}
+.module-icon {
+	width: 2rem;
+	height: 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.5rem;
+	background: var(--cr-module-icon-bg);
+	color: var(--cr-module-icon-color);
+	flex-shrink: 0;
+	transition: all 0.2s ease;
+}
 
-	.module-icon.active {
-		background: var(--cr-module-active-icon-bg);
-		color: var(--cr-module-active-icon-color);
-	}
+.module-icon.active {
+	background: var(--cr-module-active-icon-bg);
+	color: var(--cr-module-active-icon-color);
+}
 
-	.module-info {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 0.125rem;
-		min-width: 0;
-	}
+.module-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+	min-width: 0;
+}
 
-	.module-label {
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--cr-text);
-		transition: color 0.2s ease;
-	}
+.module-label {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--cr-text);
+	transition: color 0.2s ease;
+}
 
-	.module-label.active {
-		color: var(--cr-module-active-label);
-	}
+.module-label.active {
+	color: var(--cr-module-active-label);
+}
 
-	.module-description {
-		font-size: 0.6875rem;
-		color: var(--cr-text-muted);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
+.module-description {
+	font-size: 0.6875rem;
+	color: var(--cr-text-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
 
-	/* Module config section */
-	.module-config {
-		padding: 0.75rem 1rem 1rem;
-		padding-left: calc(1rem + 3px);
-		border-top: 1px solid var(--cr-module-config-border);
-	}
+/* Module config section */
+.module-config {
+	padding: 0.75rem 1rem 1rem;
+	padding-left: calc(1rem + 3px);
+	border-top: 1px solid var(--cr-module-config-border);
+}
 
-	/* Primary language info */
-	.primary-language-info {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-	}
+/* Primary language info */
+.primary-language-info {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
 
-	/* Translations section */
-	.translations-section {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		padding-top: 1rem;
-		border-top: 1px solid var(--cr-border);
-	}
+/* Translations section */
+.translations-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--cr-border);
+}
 
-	.translation-tabs {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
+.translation-tabs {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
 
-	.tab-list {
-		display: flex;
-		gap: 0.25rem;
-		flex-wrap: wrap;
-	}
+.tab-list {
+	display: flex;
+	gap: 0.25rem;
+	flex-wrap: wrap;
+}
 
-	.tab-button {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		font-size: 0.75rem;
-		font-weight: 500;
-		color: var(--cr-text-muted);
-		background: transparent;
-		border: 1px solid var(--cr-border);
-		border-radius: 0.375rem;
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
+.tab-button {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--cr-text-muted);
+	background: transparent;
+	border: 1px solid var(--cr-border);
+	border-radius: 0.375rem;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
 
-	.tab-button:hover {
-		color: var(--cr-text);
-		border-color: var(--cr-text-muted);
-	}
+.tab-button:hover {
+	color: var(--cr-text);
+	border-color: var(--cr-text-muted);
+}
 
-	.tab-button.active {
-		color: var(--cr-accent);
-		border-color: var(--cr-accent);
-		background: var(--cr-accent-highlight);
-	}
+.tab-button.active {
+	color: var(--cr-accent);
+	border-color: var(--cr-accent);
+	background: var(--cr-accent-highlight);
+}
 
-	.tab-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		border: 1.5px solid var(--cr-text-muted);
-		flex-shrink: 0;
-	}
+.tab-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	border: 1.5px solid var(--cr-text-muted);
+	flex-shrink: 0;
+}
 
-	.tab-dot.filled {
-		background: var(--cr-accent);
-		border-color: var(--cr-accent);
-	}
+.tab-dot.filled {
+	background: var(--cr-accent);
+	border-color: var(--cr-accent);
+}
 
-	/* Translation editor */
-	.translation-editor {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		padding: 0.75rem;
-		background: var(--cr-module-bg);
-		border: 1px solid var(--cr-module-border);
-		border-radius: 0.5rem;
-	}
+/* Translation editor */
+.translation-editor {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	background: var(--cr-module-bg);
+	border: 1px solid var(--cr-module-border);
+	border-radius: 0.5rem;
+}
 
-	.translation-editor-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
+.translation-editor-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
 
-	.translation-lang-label {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: var(--cr-text);
-	}
+.translation-lang-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--cr-text);
+}
 
-	.translation-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
+.translation-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
 
-	.translation-textarea {
-		width: 100%;
-		padding: 0.75rem;
-		font-family: 'JetBrains Mono', 'Fira Code', monospace;
-		font-size: 0.875rem;
-		line-height: 1.6;
-		color: var(--cr-text);
-		background: var(--cr-bg);
-		border: 1px solid var(--cr-border);
-		border-radius: 0.5rem;
-		resize: vertical;
-		outline: none;
-		transition: border-color 0.15s ease;
-	}
+.translation-textarea {
+	width: 100%;
+	padding: 0.75rem;
+	font-family: "JetBrains Mono", "Fira Code", monospace;
+	font-size: 0.875rem;
+	line-height: 1.6;
+	color: var(--cr-text);
+	background: var(--cr-bg);
+	border: 1px solid var(--cr-border);
+	border-radius: 0.5rem;
+	resize: vertical;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
 
-	.translation-textarea:focus {
-		border-color: var(--cr-accent);
-	}
+.translation-textarea:focus {
+	border-color: var(--cr-accent);
+}
 
-	.translation-textarea::placeholder {
-		color: var(--cr-text-muted);
-	}
+.translation-textarea::placeholder {
+	color: var(--cr-text-muted);
+}
 
-	/* Actions */
-	.actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 0.5rem;
-		padding-top: 1rem;
-		border-top: 1px solid var(--cr-border);
-	}
+/* Actions */
+.actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--cr-border);
+}
 </style>

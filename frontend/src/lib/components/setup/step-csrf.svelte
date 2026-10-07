@@ -319,12 +319,12 @@ async function handleSubmit() {
 	confirmLabel="Save Anyway"
 	variant="warning"
 	onConfirm={() => {
-	showSaveConfirm = false;
-	handleSubmit();
-}}
+		showSaveConfirm = false;
+		handleSubmit();
+	}}
 	onCancel={() => {
-	showSaveConfirm = false;
-}}
+		showSaveConfirm = false;
+	}}
 />
 
 <ConfirmDialog
@@ -334,10 +334,10 @@ async function handleSubmit() {
 	confirmLabel="Skip Anyway"
 	variant="warning"
 	onConfirm={() => {
-	showSkipConfirm = false;
-	onSkip();
-}}
+		showSkipConfirm = false;
+		onSkip();
+	}}
 	onCancel={() => {
-	showSkipConfirm = false;
-}}
+		showSkipConfirm = false;
+	}}
 />

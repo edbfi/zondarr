@@ -181,7 +181,11 @@ function getFieldErrors(field: string): string[] {
 		</Label>
 		<!-- biome-ignore lint/a11y/useSemanticElements: This ARIA group labels existing controls without introducing native fieldset layout. -->
 		<div
-			class="mt-2 grid gap-2 sm:grid-cols-2 rounded-lg transition-shadow {getFieldErrors('server_ids').length > 0 ? 'ring-2 ring-rose-500/50 p-1' : ''}"
+			class="mt-2 grid gap-2 sm:grid-cols-2 rounded-lg transition-shadow {getFieldErrors(
+				'server_ids'
+			).length > 0
+				? 'ring-2 ring-rose-500/50 p-1'
+				: ''}"
 			role="group"
 			aria-label="Select target servers"
 		>
@@ -189,14 +193,20 @@ function getFieldErrors(field: string): string[] {
 				<button
 					type="button"
 					onclick={() => toggleServer(server.id)}
-					class="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors {isServerSelected(server.id)
-	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-	: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
+					class="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors {isServerSelected(
+						server.id
+					)
+						? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+						: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
 					aria-pressed={isServerSelected(server.id)}
 					data-server-option={server.id}
 				>
 					<div
-						class="flex size-5 items-center justify-center rounded border {isServerSelected(server.id) ? 'border-cr-accent bg-cr-accent' : 'border-cr-border'}"
+						class="flex size-5 items-center justify-center rounded border {isServerSelected(
+							server.id
+						)
+							? 'border-cr-accent bg-cr-accent'
+							: 'border-cr-border'}"
 					>
 						{#if isServerSelected(server.id)}
 							<svg
@@ -264,9 +274,11 @@ function getFieldErrors(field: string): string[] {
 					<button
 						type="button"
 						onclick={() => toggleLibrary(library.id)}
-						class="rounded-full border px-3 py-1 text-sm transition-colors {isLibrarySelected(library.id)
-	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-	: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
+						class="rounded-full border px-3 py-1 text-sm transition-colors {isLibrarySelected(
+							library.id
+						)
+							? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+							: 'border-cr-border bg-cr-surface text-cr-text-muted hover:border-cr-accent/50'}"
 						aria-pressed={isLibrarySelected(library.id)}
 						data-library-option={library.id}
 					>
@@ -315,11 +327,11 @@ function getFieldErrors(field: string): string[] {
 			type="datetime-local"
 			bind:value={expiresAtLocal}
 			oninput={(e) => {
-	normalizeExpiration(e.currentTarget.value);
-}}
+				normalizeExpiration(e.currentTarget.value);
+			}}
 			onchange={(e) => {
-	normalizeExpiration(e.currentTarget.value);
-}}
+				normalizeExpiration(e.currentTarget.value);
+			}}
 			min={minDateTime}
 			class="border-cr-border bg-cr-surface text-cr-text"
 			data-field-expires-at
@@ -462,14 +474,22 @@ function getFieldErrors(field: string): string[] {
 					aria-checked={(formData as UpdateInvitationInput).enabled ?? true}
 					aria-label="Toggle invitation enabled status"
 					onclick={() => {
-	const current = (formData as UpdateInvitationInput).enabled ?? true;
-	(formData as UpdateInvitationInput).enabled = !current;
-}}
-					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {((formData as UpdateInvitationInput).enabled ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+						const current = (formData as UpdateInvitationInput).enabled ?? true;
+						(formData as UpdateInvitationInput).enabled = !current;
+					}}
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {((
+						formData as UpdateInvitationInput
+					).enabled ?? true)
+						? 'bg-cr-accent'
+						: 'bg-cr-border'}"
 					data-field-enabled
 				>
 					<span
-						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {((formData as UpdateInvitationInput).enabled ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+						class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {((
+							formData as UpdateInvitationInput
+						).enabled ?? true)
+							? 'translate-x-5'
+							: 'translate-x-0'}"
 					></span>
 				</button>
 				<Label class="text-cr-text cursor-pointer">

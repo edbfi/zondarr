@@ -232,9 +232,9 @@ function handleDelete() {
 				variant="ghost"
 				size="icon-sm"
 				onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	copyInviteLink();
-}}
+					e.stopPropagation();
+					copyInviteLink();
+				}}
 				aria-label="Copy invite link"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -248,9 +248,9 @@ function handleDelete() {
 				variant="ghost"
 				size="icon-sm"
 				onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	viewInvitation();
-}}
+					e.stopPropagation();
+					viewInvitation();
+				}}
 				aria-label="View invitation"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -260,9 +260,9 @@ function handleDelete() {
 				variant="ghost"
 				size="icon-sm"
 				onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	handleEdit();
-}}
+					e.stopPropagation();
+					handleEdit();
+				}}
 				aria-label="Edit invitation"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -272,9 +272,9 @@ function handleDelete() {
 				variant="ghost"
 				size="icon-sm"
 				onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	handleDelete();
-}}
+					e.stopPropagation();
+					handleDelete();
+				}}
 				aria-label="Delete invitation"
 				class="text-cr-text-muted hover:text-rose-400 hover:bg-rose-400/10"
 			>

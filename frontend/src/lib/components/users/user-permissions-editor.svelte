@@ -199,7 +199,10 @@ const anyLoading = $derived(
 					aria-label="Toggle streaming permission"
 					disabled={disabled || anyLoading}
 					onclick={toggleStream}
-					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canStream ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canStream ??
+					true)
+						? 'bg-cr-accent'
+						: 'bg-cr-border'}"
 					data-permission="can_stream"
 				>
 					{#if loadingStream}
@@ -210,7 +213,10 @@ const anyLoading = $derived(
 						</span>
 					{:else}
 						<span
-							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canStream ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canStream ??
+							true)
+								? 'translate-x-5'
+								: 'translate-x-0'}"
 						></span>
 					{/if}
 				</button>
@@ -233,7 +239,10 @@ const anyLoading = $derived(
 					aria-label="Toggle download permission"
 					disabled={disabled || anyLoading}
 					onclick={toggleDownload}
-					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canDownload ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canDownload ??
+					true)
+						? 'bg-cr-accent'
+						: 'bg-cr-border'}"
 					data-permission="can_download"
 				>
 					{#if loadingDownload}
@@ -244,7 +253,10 @@ const anyLoading = $derived(
 						</span>
 					{:else}
 						<span
-							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canDownload ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canDownload ??
+							true)
+								? 'translate-x-5'
+								: 'translate-x-0'}"
 						></span>
 					{/if}
 				</button>
@@ -267,7 +279,10 @@ const anyLoading = $derived(
 					aria-label="Toggle sync permission"
 					disabled={disabled || anyLoading}
 					onclick={toggleSync}
-					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canSync ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canSync ??
+					true)
+						? 'bg-cr-accent'
+						: 'bg-cr-border'}"
 					data-permission="can_sync"
 				>
 					{#if loadingSync}
@@ -278,7 +293,10 @@ const anyLoading = $derived(
 						</span>
 					{:else}
 						<span
-							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canSync ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canSync ??
+							true)
+								? 'translate-x-5'
+								: 'translate-x-0'}"
 						></span>
 					{/if}
 				</button>
@@ -301,7 +319,10 @@ const anyLoading = $derived(
 					aria-label="Toggle transcoding permission"
 					disabled={disabled || anyLoading}
 					onclick={toggleTranscode}
-					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canTranscode ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+					class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 {(canTranscode ??
+					true)
+						? 'bg-cr-accent'
+						: 'bg-cr-border'}"
 					data-permission="can_transcode"
 				>
 					{#if loadingTranscode}
@@ -312,7 +333,10 @@ const anyLoading = $derived(
 						</span>
 					{:else}
 						<span
-							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canTranscode ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+							class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(canTranscode ??
+							true)
+								? 'translate-x-5'
+								: 'translate-x-0'}"
 						></span>
 					{/if}
 				</button>

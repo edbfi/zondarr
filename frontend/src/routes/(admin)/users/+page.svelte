@@ -220,7 +220,7 @@ async function handleDeleteConfirm() {
 	onRemoveShares={handleRemoveShares}
 	onDelete={handleDeleteConfirm}
 	onCancel={() => {
-	showDeleteDialog = false;
-	deleteTarget = null;
-}}
+		showDeleteDialog = false;
+		deleteTarget = null;
+	}}
 />

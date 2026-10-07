@@ -9,30 +9,30 @@
  * @module $lib/components/wizard/wizard-builder
  */
 
-import { GripVertical, Plus, Trash2, Wand2 } from "@lucide/svelte";
-import { toast } from "svelte-sonner";
+import { GripVertical, Plus, Trash2, Wand2 } from '@lucide/svelte';
+import { toast } from 'svelte-sonner';
 import type {
 	StepInteractionResponse,
 	WizardDetailResponse,
-	WizardStepResponse,
-} from "$lib/api/client";
+	WizardStepResponse
+} from '$lib/api/client';
 import {
 	createStep,
 	createWizard,
 	deleteStep,
 	reorderStep,
 	updateStep,
-	updateWizard,
-} from "$lib/api/client";
-import ConfirmDialog from "$lib/components/confirm-dialog.svelte";
-import { Button } from "$lib/components/ui/button";
-import * as Card from "$lib/components/ui/card";
-import { Input } from "$lib/components/ui/input";
-import { Label } from "$lib/components/ui/label";
-import { Switch } from "$lib/components/ui/switch";
-import { wizardSchema } from "$lib/schemas/wizard";
-import { getInteractionType } from "./interactions";
-import StepEditor from "./step-editor.svelte";
+	updateWizard
+} from '$lib/api/client';
+import ConfirmDialog from '$lib/components/confirm-dialog.svelte';
+import { Button } from '$lib/components/ui/button';
+import * as Card from '$lib/components/ui/card';
+import { Input } from '$lib/components/ui/input';
+import { Label } from '$lib/components/ui/label';
+import { Switch } from '$lib/components/ui/switch';
+import { wizardSchema } from '$lib/schemas/wizard';
+import { getInteractionType } from './interactions';
+import StepEditor from './step-editor.svelte';
 
 interface Props {
 	wizard?: WizardDetailResponse;
@@ -45,9 +45,9 @@ const { wizard, onSave, onCancel, onPreview }: Props = $props();
 
 // Form state (local copies for editing — intentionally captures initial prop values)
 // svelte-ignore state_referenced_locally
-let name = $state(wizard?.name ?? "");
+let name = $state(wizard?.name ?? '');
 // svelte-ignore state_referenced_locally
-let description = $state(wizard?.description ?? "");
+let description = $state(wizard?.description ?? '');
 // svelte-ignore state_referenced_locally
 let enabled = $state(wizard?.enabled ?? true);
 // svelte-ignore state_referenced_locally
@@ -71,9 +71,9 @@ let dragOverStepId = $state<string | null>(null);
 const isEditing = $derived(!!wizard?.id);
 const editingStep = $derived(steps.find((s) => s.id === editingStepId));
 const hasChanges = $derived(
-	name !== (wizard?.name ?? "") ||
-		description !== (wizard?.description ?? "") ||
-		enabled !== (wizard?.enabled ?? true),
+	name !== (wizard?.name ?? '') ||
+		description !== (wizard?.description ?? '') ||
+		enabled !== (wizard?.enabled ?? true)
 );
 
 /**
@@ -84,7 +84,7 @@ function validateForm(): boolean {
 	if (!result.success) {
 		const fieldErrors: Record<string, string[]> = {};
 		for (const issue of result.error.issues) {
-			const path = issue.path.join(".");
+			const path = issue.path.join('.');
 			if (!fieldErrors[path]) {
 				fieldErrors[path] = [];
 			}
@@ -112,14 +112,14 @@ async function handleSave() {
 			const result = await updateWizard(wizard.id, {
 				name: name !== wizard.name ? name : null,
 				description: description !== wizard.description ? description : null,
-				enabled: enabled !== wizard.enabled ? enabled : null,
+				enabled: enabled !== wizard.enabled ? enabled : null
 			});
 
 			if (result.error) {
-				throw new Error(result.error.detail ?? "Failed to update wizard");
+				throw new Error(result.error.detail ?? 'Failed to update wizard');
 			}
 
-			toast.success("Wizard updated successfully");
+			toast.success('Wizard updated successfully');
 
 			// Notify parent with updated wizard
 			if (result.data) {
@@ -130,10 +130,10 @@ async function handleSave() {
 			const result = await createWizard({ name, description, enabled });
 
 			if (result.error) {
-				throw new Error(result.error.detail ?? "Failed to create wizard");
+				throw new Error(result.error.detail ?? 'Failed to create wizard');
 			}
 
-			toast.success("Wizard created successfully");
+			toast.success('Wizard created successfully');
 
 			// Notify parent with new wizard
 			if (result.data) {
@@ -141,9 +141,7 @@ async function handleSave() {
 			}
 		}
 	} catch (error) {
-		toast.error(
-			error instanceof Error ? error.message : "Failed to save wizard",
-		);
+		toast.error(error instanceof Error ? error.message : 'Failed to save wizard');
 	} finally {
 		isSaving = false;
 	}
@@ -154,27 +152,27 @@ async function handleSave() {
  */
 async function handleAddStep() {
 	if (!wizard?.id) {
-		toast.error("Please save the wizard first before adding steps");
+		toast.error('Please save the wizard first before adding steps');
 		return;
 	}
 
 	try {
 		const result = await createStep(wizard.id, {
-			title: "New Step",
-			content_markdown: "Enter your content here...",
+			title: 'New Step',
+			content_markdown: 'Enter your content here...'
 		});
 
 		if (result.error) {
-			throw new Error(result.error.detail ?? "Failed to create step");
+			throw new Error(result.error.detail ?? 'Failed to create step');
 		}
 
 		if (result.data) {
 			steps = [...steps, result.data];
 			editingStepId = result.data.id;
-			toast.success("Step added successfully");
+			toast.success('Step added successfully');
 		}
 	} catch (error) {
-		toast.error(error instanceof Error ? error.message : "Failed to add step");
+		toast.error(error instanceof Error ? error.message : 'Failed to add step');
 	}
 }
 
@@ -197,18 +195,16 @@ async function handleDeleteStepConfirm() {
 		const result = await deleteStep(wizard.id, deleteTargetStepId);
 
 		if (result.error) {
-			throw new Error(result.error.detail ?? "Failed to delete step");
+			throw new Error(result.error.detail ?? 'Failed to delete step');
 		}
 
 		steps = steps.filter((s) => s.id !== deleteTargetStepId);
 		if (editingStepId === deleteTargetStepId) {
 			editingStepId = null;
 		}
-		toast.success("Step deleted successfully");
+		toast.success('Step deleted successfully');
 	} catch (error) {
-		toast.error(
-			error instanceof Error ? error.message : "Failed to delete step",
-		);
+		toast.error(error instanceof Error ? error.message : 'Failed to delete step');
 	} finally {
 		deletingStep = false;
 		showDeleteStepDialog = false;
@@ -219,10 +215,7 @@ async function handleDeleteStepConfirm() {
 /**
  * Update a step (title + content + translations).
  */
-async function handleUpdateStep(
-	stepId: string,
-	updates: Partial<WizardStepResponse>,
-) {
+async function handleUpdateStep(stepId: string, updates: Partial<WizardStepResponse>) {
 	if (!wizard?.id) return;
 
 	try {
@@ -230,26 +223,25 @@ async function handleUpdateStep(
 			title: updates.title ?? null,
 			content_markdown: updates.content_markdown ?? null,
 			primary_language: updates.primary_language ?? null,
-			translations: updates.translations?.map((t) => ({
-				language_code: t.language_code,
-				title: t.title,
-				content_markdown: t.content_markdown,
-			})) ?? null,
+			translations:
+				updates.translations?.map((t) => ({
+					language_code: t.language_code,
+					title: t.title,
+					content_markdown: t.content_markdown
+				})) ?? null
 		});
 
 		if (result.error) {
-			throw new Error(result.error.detail ?? "Failed to update step");
+			throw new Error(result.error.detail ?? 'Failed to update step');
 		}
 
 		if (result.data) {
 			const updatedStep = result.data;
 			steps = steps.map((s) => (s.id === stepId ? updatedStep : s));
-			toast.success("Step updated successfully");
+			toast.success('Step updated successfully');
 		}
 	} catch (error) {
-		toast.error(
-			error instanceof Error ? error.message : "Failed to update step",
-		);
+		toast.error(error instanceof Error ? error.message : 'Failed to update step');
 	}
 }
 
@@ -257,9 +249,7 @@ async function handleUpdateStep(
  * Handle interaction changes from step editor.
  */
 function handleInteractionsChange(stepId: string, interactions: StepInteractionResponse[]) {
-	steps = steps.map((s) =>
-		s.id === stepId ? { ...s, interactions } : s,
-	);
+	steps = steps.map((s) => (s.id === stepId ? { ...s, interactions } : s));
 }
 
 /**
@@ -268,8 +258,8 @@ function handleInteractionsChange(stepId: string, interactions: StepInteractionR
 function handleDragStart(event: DragEvent, stepId: string) {
 	draggedStepId = stepId;
 	if (event.dataTransfer) {
-		event.dataTransfer.effectAllowed = "move";
-		event.dataTransfer.setData("text/plain", stepId);
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', stepId);
 	}
 }
 
@@ -314,7 +304,7 @@ async function handleDrop(event: DragEvent, targetStepId: string) {
 		const result = await reorderStep(wizard.id, draggedStepId, targetIndex);
 
 		if (result.error) {
-			throw new Error(result.error.detail ?? "Failed to reorder step");
+			throw new Error(result.error.detail ?? 'Failed to reorder step');
 		}
 
 		// Reorder locally
@@ -326,11 +316,9 @@ async function handleDrop(event: DragEvent, targetStepId: string) {
 
 		// Update step_order values
 		steps = newSteps.map((s, i) => ({ ...s, step_order: i }));
-		toast.success("Step reordered successfully");
+		toast.success('Step reordered successfully');
 	} catch (error) {
-		toast.error(
-			error instanceof Error ? error.message : "Failed to reorder step",
-		);
+		toast.error(error instanceof Error ? error.message : 'Failed to reorder step');
 	} finally {
 		draggedStepId = null;
 	}
@@ -354,13 +342,15 @@ function handleDragEnd() {
 		</div>
 		<div class="header-actions">
 			{#if isEditing && steps.length > 0}
-				<Button variant="outline" onclick={() => onPreview?.(steps)} class="border-cr-border text-cr-text-muted">
+				<Button
+					variant="outline"
+					onclick={() => onPreview?.(steps)}
+					class="border-cr-border text-cr-text-muted"
+				>
 					Preview
 				</Button>
 			{/if}
-			<Button variant="ghost" onclick={onCancel} class="text-cr-text-muted">
-				Cancel
-			</Button>
+			<Button variant="ghost" onclick={onCancel} class="text-cr-text-muted"> Cancel </Button>
 			<Button
 				onclick={handleSave}
 				disabled={isSaving || (!hasChanges && isEditing)}
@@ -493,8 +483,7 @@ function handleDragEnd() {
 										<Button
 											variant="ghost"
 											size="sm"
-											onclick={() =>
-												(editingStepId = editingStepId === step.id ? null : step.id)}
+											onclick={() => (editingStepId = editingStepId === step.id ? null : step.id)}
 											class="text-cr-text-muted hover:text-cr-accent"
 										>
 											{editingStepId === step.id ? 'Close' : 'Edit'}
@@ -542,158 +531,161 @@ function handleDragEnd() {
 	open={showDeleteStepDialog}
 	title="Delete Step"
 	description="Are you sure you want to delete this step? The step and all its interactions will be permanently removed."
-	confirmLabel={deletingStep ? "Deleting..." : "Delete"}
+	confirmLabel={deletingStep ? 'Deleting...' : 'Delete'}
 	variant="destructive"
 	loading={deletingStep}
 	onConfirm={handleDeleteStepConfirm}
-	onCancel={() => { showDeleteStepDialog = false; deleteTargetStepId = null; }}
+	onCancel={() => {
+		showDeleteStepDialog = false;
+		deleteTargetStepId = null;
+	}}
 />
 
 <style>
-	.wizard-builder {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
+.wizard-builder {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
 
-	.builder-header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-	}
+.builder-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
 
-	.header-title {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
+.header-title {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
 
-	.header-title h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: var(--cr-text);
-		margin: 0;
-	}
+.header-title h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: var(--cr-text);
+	margin: 0;
+}
 
-	.header-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
+.header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
 
-	.builder-content {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
+.builder-content {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
 
-	/* Step item styles */
-	.step-item {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		background: var(--cr-bg);
-		border: 1px solid var(--cr-border);
-		border-radius: 0.5rem;
-		cursor: grab;
-		transition: all 0.2s ease;
-	}
+/* Step item styles */
+.step-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+	background: var(--cr-bg);
+	border: 1px solid var(--cr-border);
+	border-radius: 0.5rem;
+	cursor: grab;
+	transition: all 0.2s ease;
+}
 
-	.step-item:hover {
-		border-color: var(--cr-accent);
-	}
+.step-item:hover {
+	border-color: var(--cr-accent);
+}
 
-	.step-item.dragging {
-		opacity: 0.5;
-		cursor: grabbing;
-	}
+.step-item.dragging {
+	opacity: 0.5;
+	cursor: grabbing;
+}
 
-	.step-item.drag-over {
-		border-color: var(--cr-accent);
-		background: var(--cr-accent-highlight);
-	}
+.step-item.drag-over {
+	border-color: var(--cr-accent);
+	background: var(--cr-accent-highlight);
+}
 
-	.step-item.editing {
-		border-color: var(--cr-accent);
-		background: var(--cr-accent-highlight);
-	}
+.step-item.editing {
+	border-color: var(--cr-accent);
+	background: var(--cr-accent-highlight);
+}
 
-	.step-drag-handle {
-		cursor: grab;
-		padding: 0.25rem;
-	}
+.step-drag-handle {
+	cursor: grab;
+	padding: 0.25rem;
+}
 
-	.step-info {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		min-width: 0;
-	}
+.step-info {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	min-width: 0;
+}
 
-	.step-order {
-		flex-shrink: 0;
-		width: 1.5rem;
-		height: 1.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--cr-bg);
-		background: var(--cr-accent);
-		border-radius: 50%;
-	}
+.step-order {
+	flex-shrink: 0;
+	width: 1.5rem;
+	height: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--cr-bg);
+	background: var(--cr-accent);
+	border-radius: 50%;
+}
 
-	.step-badges {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem;
-		flex-shrink: 0;
-	}
+.step-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	flex-shrink: 0;
+}
 
-	.interaction-badge {
-		font-size: 0.6875rem;
-		font-weight: 500;
-		padding: 0.125rem 0.5rem;
-		border-radius: 9999px;
-		color: var(--cr-badge-text);
-		background: var(--cr-badge-bg);
-		border: 1px solid var(--cr-badge-border);
-		white-space: nowrap;
-	}
+.interaction-badge {
+	font-size: 0.6875rem;
+	font-weight: 500;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	color: var(--cr-badge-text);
+	background: var(--cr-badge-bg);
+	border: 1px solid var(--cr-badge-border);
+	white-space: nowrap;
+}
 
-	.interaction-badge.empty {
-		font-style: italic;
-		color: var(--cr-badge-muted-text);
-		background: var(--cr-badge-muted-bg);
-		border-color: var(--cr-badge-muted-border);
-	}
+.interaction-badge.empty {
+	font-style: italic;
+	color: var(--cr-badge-muted-text);
+	background: var(--cr-badge-muted-bg);
+	border-color: var(--cr-badge-muted-border);
+}
 
-	.step-title {
-		flex: 1;
-		font-size: 0.875rem;
-		color: var(--cr-text);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
+.step-title {
+	flex: 1;
+	font-size: 0.875rem;
+	color: var(--cr-text);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
 
-	.step-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
+.step-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
 
-	.step-editor-container {
-		margin-top: 0.5rem;
-		margin-bottom: 0.5rem;
-		padding: 1rem;
-		background: var(--cr-bg);
-		border: 1px solid var(--cr-border);
-		border-radius: 0.5rem;
-	}
+.step-editor-container {
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
+	padding: 1rem;
+	background: var(--cr-bg);
+	border: 1px solid var(--cr-border);
+	border-radius: 0.5rem;
+}
 </style>

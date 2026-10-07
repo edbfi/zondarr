@@ -23,9 +23,9 @@ const { title, description, action, icon, class: className }: Props = $props();
 <div
 	data-empty-state
 	class={cn(
-	'flex flex-col items-center justify-center rounded-lg border border-dashed border-cr-border bg-cr-surface/50 px-6 py-12 text-center',
-	className
-)}
+		'flex flex-col items-center justify-center rounded-lg border border-dashed border-cr-border bg-cr-surface/50 px-6 py-12 text-center',
+		className
+	)}
 	role="status"
 	aria-label={title}
 >

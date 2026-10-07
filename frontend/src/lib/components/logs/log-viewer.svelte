@@ -306,10 +306,10 @@ function handleKeydown(e: KeyboardEvent) {
 							{entry}
 							selected={selectedId === entry.seq}
 							onSelect={(seq) => {
-	const isDeselect = selectedId === seq;
-	selectedId = isDeselect ? null : seq;
-	onSelectionChange?.(isDeselect ? null : entry);
-}}
+								const isDeselect = selectedId === seq;
+								selectedId = isDeselect ? null : seq;
+								onSelectionChange?.(isDeselect ? null : entry);
+							}}
 						/>
 					{/each}
 					<div style="height:{bottomSpacerHeight}px" aria-hidden="true"></div>
@@ -335,9 +335,9 @@ function handleKeydown(e: KeyboardEvent) {
 				<LogDetailPanel
 					entry={selectedEntry}
 					onclose={() => {
-	selectedId = null;
-	onSelectionChange?.(null);
-}}
+						selectedId = null;
+						onSelectionChange?.(null);
+					}}
 				/>
 			</div>
 		{/if}

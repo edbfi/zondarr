@@ -164,7 +164,7 @@ async function handleDeleteConfirm() {
 	loading={deleting}
 	onConfirm={handleDeleteConfirm}
 	onCancel={() => {
-	showDeleteDialog = false;
-	deleteTarget = null;
-}}
+		showDeleteDialog = false;
+		deleteTarget = null;
+	}}
 />

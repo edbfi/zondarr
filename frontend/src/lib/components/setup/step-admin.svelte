@@ -126,7 +126,9 @@ async function handleSubmit(e: SubmitEvent) {
 						<div class="flex flex-1 gap-1">
 							{#each [1, 2, 3, 4] as level}
 								<div
-									class="h-1 flex-1 rounded-full transition-colors {passwordStrength >= level ? strengthColor : 'bg-cr-border'}"
+									class="h-1 flex-1 rounded-full transition-colors {passwordStrength >= level
+										? strengthColor
+										: 'bg-cr-border'}"
 								></div>
 							{/each}
 						</div>

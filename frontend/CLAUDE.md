@@ -49,8 +49,6 @@ Wrappers take the client as their last parameter, defaulting to the browser clie
 
 ## Biome configuration
 
-Biome is pinned to 2.5.13 in the root `package.json` (2.5.14's `check --write` rewrites embedded Svelte expressions, biomejs/biome#11836). The configuration uses Git ignores, the recommended lint and assist presets, and experimental full Svelte support. Keep type checking separate from Biome. Project quote, comma and indentation conventions remain explicit in the configuration.
-
-The exact-file formatter overrides protect components containing `{@const ...}`: Biome 2.5.14 inserts parentheses that Svelte rejects with `expected_pattern`. These files still receive lint and import checks. Recheck them with the Svelte compiler when upgrading Biome before removing the exceptions. Do not run a formatter with these overrides bypassed.
+Biome is pinned to an exact version in the root `package.json`. The configuration uses Git ignores, the recommended lint and assist presets, and experimental full Svelte support, and formats every component, `{@const ...}` blocks included. Keep type checking separate from Biome. Project quote, comma and indentation conventions remain explicit in the configuration.
 
 The frontend extends the root configuration with `"extends": "//"`. The root limits Biome to the frontend and its own configuration. The three generic form components remain excluded because of parser limitations. Generated API types remain formatted under the existing generation contract.
