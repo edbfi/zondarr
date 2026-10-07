@@ -293,7 +293,7 @@ export async function serve(
 		if (signal === 'SIGHUP' && publicDrain) return;
 		startDrain();
 		if (loaded) {
-			if (signal === 'SIGHUP') process.kill(process.pid, adapterSignal(signal));
+			if (signal === 'SIGHUP') process.kill(process.pid, 'SIGTERM');
 			return;
 		}
 		if (earlySignal) process.exit(1);
