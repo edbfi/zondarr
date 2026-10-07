@@ -285,7 +285,8 @@ export async function serve(
 	// it reaches the adapter as SIGTERM, once, after loading if necessary. Only the first SIGHUP
 	// counts and it never counts as a second signal: under `bun run start` the hangup arrives twice
 	// (from the terminal and forwarded by `bun run`), which would otherwise exit at once without
-	// the drain. A SIGTERM or SIGINT after it still exits with status 1.
+	// the drain. Under the production command, `NODE_ENV=production bun scripts/serve.ts` (from
+	// frontend/), it arrives once. A SIGTERM or SIGINT after it still exits with status 1.
 	let loaded = false;
 	let earlySignal: NodeJS.Signals | undefined;
 	const adapterSignal = (signal: NodeJS.Signals) => (signal === 'SIGHUP' ? 'SIGTERM' : signal);
