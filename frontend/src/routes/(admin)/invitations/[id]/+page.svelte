@@ -461,7 +461,8 @@ function getFieldErrors(field: string): string[] {
 							{#if data.invitation.max_uses}
 								<span class="text-cr-text-muted">/ {data.invitation.max_uses}</span>
 							{/if}
-							{#if data.invitation.remaining_uses !== null && data.invitation.remaining_uses !== undefined}
+							{#if data.invitation.remaining_uses !== null &&
+								data.invitation.remaining_uses !== undefined}
 								<span class="text-cr-text-muted text-sm ml-2"
 									>({data.invitation.remaining_uses}
 									remaining)</span
@@ -625,9 +626,9 @@ function getFieldErrors(field: string): string[] {
 				<Card.Content>
 					<form
 						onsubmit={(e) => {
-	e.preventDefault();
-	handleSave();
-}}
+							e.preventDefault();
+							handleSave();
+						}}
 						class="space-y-6"
 					>
 						<!-- Enabled Toggle -->
@@ -639,13 +640,19 @@ function getFieldErrors(field: string): string[] {
 									aria-checked={formData.enabled ?? true}
 									aria-label="Toggle invitation enabled status"
 									onclick={() => {
-	formData.enabled = !(formData.enabled ?? true);
-}}
-									class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {(formData.enabled ?? true) ? 'bg-cr-accent' : 'bg-cr-border'}"
+										formData.enabled = !(formData.enabled ?? true);
+									}}
+									class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cr-accent focus-visible:ring-offset-2 {(formData.enabled ??
+									true)
+										? 'bg-cr-accent'
+										: 'bg-cr-border'}"
 									data-field-enabled
 								>
 									<span
-										class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(formData.enabled ?? true) ? 'translate-x-5' : 'translate-x-0'}"
+										class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform {(formData.enabled ??
+										true)
+											? 'translate-x-5'
+											: 'translate-x-0'}"
 									></span>
 								</button>
 								<Label class="text-cr-text cursor-pointer">
@@ -666,9 +673,9 @@ function getFieldErrors(field: string): string[] {
 									type="datetime-local"
 									bind:value={expiresAtLocal}
 									oninput={(e) => {
-	const value = e.currentTarget.value;
-	formData.expires_at = value ? toISOString(value) : '';
-}}
+										const value = e.currentTarget.value;
+										formData.expires_at = value ? toISOString(value) : '';
+									}}
 									min={minDateTime}
 									class="border-cr-border bg-cr-bg text-cr-text"
 									data-field-expires-at
@@ -692,8 +699,8 @@ function getFieldErrors(field: string): string[] {
 									type="number"
 									bind:value={formData.max_uses}
 									oninput={(e) => {
-	if (e.currentTarget.value === '') formData.max_uses = '';
-}}
+										if (e.currentTarget.value === '') formData.max_uses = '';
+									}}
 									placeholder="Unlimited"
 									class="border-cr-border bg-cr-bg text-cr-text placeholder:text-cr-text-muted"
 									min={1}
@@ -718,8 +725,8 @@ function getFieldErrors(field: string): string[] {
 									type="number"
 									bind:value={formData.duration_days}
 									oninput={(e) => {
-	if (e.currentTarget.value === '') formData.duration_days = '';
-}}
+										if (e.currentTarget.value === '') formData.duration_days = '';
+									}}
 									placeholder="Permanent"
 									class="border-cr-border bg-cr-bg text-cr-text placeholder:text-cr-text-muted"
 									min={1}
@@ -746,7 +753,11 @@ function getFieldErrors(field: string): string[] {
 							</Label>
 							<!-- biome-ignore lint/a11y/useSemanticElements: This ARIA group labels existing controls without introducing native fieldset layout. -->
 							<div
-								class="grid gap-2 sm:grid-cols-2 rounded-lg transition-shadow {getFieldErrors('server_ids').length > 0 ? 'ring-2 ring-rose-500/50 p-1' : ''}"
+								class="grid gap-2 sm:grid-cols-2 rounded-lg transition-shadow {getFieldErrors(
+									'server_ids'
+								).length > 0
+									? 'ring-2 ring-rose-500/50 p-1'
+									: ''}"
 								role="group"
 								aria-label="Select target servers"
 							>
@@ -754,13 +765,19 @@ function getFieldErrors(field: string): string[] {
 									<button
 										type="button"
 										onclick={() => toggleServer(server.id)}
-										class="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors {isServerSelected(server.id)
-	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-	: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
+										class="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors {isServerSelected(
+											server.id
+										)
+											? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+											: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
 										aria-pressed={isServerSelected(server.id)}
 									>
 										<div
-											class="flex size-5 items-center justify-center rounded border {isServerSelected(server.id) ? 'border-cr-accent bg-cr-accent' : 'border-cr-border'}"
+											class="flex size-5 items-center justify-center rounded border {isServerSelected(
+												server.id
+											)
+												? 'border-cr-accent bg-cr-accent'
+												: 'border-cr-border'}"
 										>
 											{#if isServerSelected(server.id)}
 												<svg
@@ -809,9 +826,11 @@ function getFieldErrors(field: string): string[] {
 										<button
 											type="button"
 											onclick={() => toggleLibrary(library.id)}
-											class="rounded-full border px-3 py-1 text-sm transition-colors {isLibrarySelected(library.id)
-	? 'border-cr-accent bg-cr-accent/10 text-cr-text'
-	: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
+											class="rounded-full border px-3 py-1 text-sm transition-colors {isLibrarySelected(
+												library.id
+											)
+												? 'border-cr-accent bg-cr-accent/10 text-cr-text'
+												: 'border-cr-border bg-cr-bg text-cr-text-muted hover:border-cr-accent/50'}"
 											aria-pressed={isLibrarySelected(library.id)}
 										>
 											{library.name}

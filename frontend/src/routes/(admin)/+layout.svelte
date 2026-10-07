@@ -127,9 +127,9 @@ $effect(() => {
 	<!-- Mobile Sidebar -->
 	<aside
 		class={[
-	'fixed inset-y-0 left-0 z-50 w-64 transform bg-cr-bg border-r border-cr-border transition-transform duration-200 ease-in-out md:hidden',
-	mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-].join(' ')}
+			'fixed inset-y-0 left-0 z-50 w-64 transform bg-cr-bg border-r border-cr-border transition-transform duration-200 ease-in-out md:hidden',
+			mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+		].join(' ')}
 	>
 		<div class="flex h-14 items-center gap-2.5 px-4">
 			<img src="/zondarr-logo.svg" alt="" class="size-7" aria-hidden="true">

@@ -1,35 +1,35 @@
 <script lang="ts">
-	import { Activity, RefreshCw, Server, Ticket, UserPlus } from '@lucide/svelte';
-	import type { RecentActivityItem } from '$lib/api/client';
-	import * as Card from '$lib/components/ui/card';
+import { Activity, RefreshCw, Server, Ticket, UserPlus } from '@lucide/svelte';
+import type { RecentActivityItem } from '$lib/api/client';
+import * as Card from '$lib/components/ui/card';
 
-	interface Props {
-		activities: RecentActivityItem[];
-	}
+interface Props {
+	activities: RecentActivityItem[];
+}
 
-	const { activities }: Props = $props();
+const { activities }: Props = $props();
 
-	const activityConfig: Record<string, { icon: typeof UserPlus; colorClass: string }> = {
-		user_created: { icon: UserPlus, colorClass: 'text-cr-active' },
-		invitation_created: { icon: Ticket, colorClass: 'text-cr-accent' },
-		sync_completed: { icon: RefreshCw, colorClass: 'text-violet-400' },
-		server_added: { icon: Server, colorClass: 'text-cr-pending' }
-	};
+const activityConfig: Record<string, { icon: typeof UserPlus; colorClass: string }> = {
+	user_created: { icon: UserPlus, colorClass: 'text-cr-active' },
+	invitation_created: { icon: Ticket, colorClass: 'text-cr-accent' },
+	sync_completed: { icon: RefreshCw, colorClass: 'text-violet-400' },
+	server_added: { icon: Server, colorClass: 'text-cr-pending' }
+};
 
-	function formatRelativeTime(date: string | Date): string {
-		const now = Date.now();
-		const then = new Date(date).getTime();
-		const diff = now - then;
-		const seconds = Math.floor(diff / 1000);
-		if (seconds < 60) return 'just now';
-		const minutes = Math.floor(seconds / 60);
-		if (minutes < 60) return `${minutes}m ago`;
-		const hours = Math.floor(minutes / 60);
-		if (hours < 24) return `${hours}h ago`;
-		const days = Math.floor(hours / 24);
-		if (days < 30) return `${days}d ago`;
-		return new Date(date).toLocaleDateString();
-	}
+function formatRelativeTime(date: string | Date): string {
+	const now = Date.now();
+	const then = new Date(date).getTime();
+	const diff = now - then;
+	const seconds = Math.floor(diff / 1000);
+	if (seconds < 60) return 'just now';
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes}m ago`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours}h ago`;
+	const days = Math.floor(hours / 24);
+	if (days < 30) return `${days}d ago`;
+	return new Date(date).toLocaleDateString();
+}
 </script>
 
 <Card.Root class="border-cr-border bg-cr-surface">

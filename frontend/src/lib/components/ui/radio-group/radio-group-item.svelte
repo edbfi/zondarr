@@ -13,14 +13,14 @@ let {
 	bind:ref
 	data-slot="radio-group-item"
 	class={cn(
-	'border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-checked:border-primary aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
-	className
-)}
+		'border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-checked:border-primary aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+		className
+	)}
 	{...restProps}
 >
 	{#snippet children({
-	checked
-})}
+		checked
+	})}
 		{#if checked}
 			<span class="flex items-center justify-center">
 				<span class="size-2 rounded-full bg-primary"></span>

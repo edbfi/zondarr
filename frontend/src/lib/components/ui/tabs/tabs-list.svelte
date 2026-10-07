@@ -8,8 +8,8 @@ let { ref = $bindable(null), class: className, ...restProps }: TabsPrimitive.Lis
 <TabsPrimitive.List
 	bind:ref
 	class={cn(
-	'bg-muted text-muted-foreground inline-flex h-9 w-full items-center justify-start rounded-lg p-1',
-	className
-)}
+		'bg-muted text-muted-foreground inline-flex h-9 w-full items-center justify-start rounded-lg p-1',
+		className
+	)}
 	{...restProps}
 />

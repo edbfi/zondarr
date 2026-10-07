@@ -160,8 +160,8 @@ $effect(() => {
 		type="single"
 		value={levelFilter}
 		onValueChange={(v) => {
-	if (v) onLevelChange(v);
-}}
+			if (v) onLevelChange(v);
+		}}
 	>
 		<Select.Trigger size="sm" class="w-36">
 			<span class="flex items-center gap-2">
@@ -173,9 +173,9 @@ $effect(() => {
 			{#each levelOptions as opt (opt.value)}
 				<Select.Item value={opt.value}>
 					{#snippet children({
-	selected: _s,
-	highlighted: _h
-})}
+						selected: _s,
+						highlighted: _h
+					})}
 						<span class="absolute end-2 flex size-3.5 items-center justify-center">
 							{#if _s}
 								<svg
@@ -204,7 +204,10 @@ $effect(() => {
 	{#if errorCount > 0}
 		<button
 			type="button"
-			class="inline-flex items-center gap-1 rounded-full border border-transparent bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-500/25 dark:text-red-400 {levelFilter === 'ERROR' ? 'ring-1 ring-red-500/50' : ''}"
+			class="inline-flex items-center gap-1 rounded-full border border-transparent bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-500/25 dark:text-red-400 {levelFilter ===
+			'ERROR'
+				? 'ring-1 ring-red-500/50'
+				: ''}"
 			onclick={() => onLevelChange(levelFilter === 'ERROR' ? 'ALL' : 'ERROR')}
 			title="Toggle error filter"
 		>
@@ -215,7 +218,10 @@ $effect(() => {
 	{#if warningCount > 0}
 		<button
 			type="button"
-			class="inline-flex items-center gap-1 rounded-full border border-transparent bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-400 {levelFilter === 'WARNING' ? 'ring-1 ring-amber-500/50' : ''}"
+			class="inline-flex items-center gap-1 rounded-full border border-transparent bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-400 {levelFilter ===
+			'WARNING'
+				? 'ring-1 ring-amber-500/50'
+				: ''}"
 			onclick={() => onLevelChange(levelFilter === 'WARNING' ? 'ALL' : 'WARNING')}
 			title="Toggle warning filter"
 		>
@@ -231,12 +237,12 @@ $effect(() => {
 		type="single"
 		value={sourceFilter || 'ALL_SOURCES'}
 		onValueChange={(v) => {
-	if (v === 'ALL_SOURCES') {
-		onSourceChange('');
-	} else if (v) {
-		onSourceChange(v);
-	}
-}}
+			if (v === 'ALL_SOURCES') {
+				onSourceChange('');
+			} else if (v) {
+				onSourceChange(v);
+			}
+		}}
 	>
 		<Select.Trigger size="sm" class="w-40">
 			<span class="truncate">{selectedSourceLabel}</span>

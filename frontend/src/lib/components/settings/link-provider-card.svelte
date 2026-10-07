@@ -107,10 +107,7 @@ async function handleOAuthLink(method: string) {
 
 		pollIntervalId = setInterval(async () => {
 			try {
-				const { data: checkData, error: checkError } = await checkOAuthPin(
-					method,
-					pinData.handle
-				);
+				const { data: checkData, error: checkError } = await checkOAuthPin(method, pinData.handle);
 
 				if (checkError || !checkData) return;
 
@@ -215,12 +212,7 @@ function getInputType(fieldType: string): string {
 			{@const iconSvg = getProviderIconSvg(displayMethod)}
 			<div class="flex items-center gap-3">
 				{#if iconSvg}
-					<svg
-						class="size-5"
-						viewBox="0 0 24 24"
-						fill={color}
-						aria-hidden="true"
-					>
+					<svg class="size-5" viewBox="0 0 24 24" fill={color} aria-hidden="true">
 						<path d={iconSvg} />
 					</svg>
 				{/if}
@@ -261,12 +253,7 @@ function getInputType(fieldType: string): string {
 							style="--provider-color: {color}"
 						>
 							{#if iconSvg}
-								<svg
-									class="mr-2 size-4"
-									viewBox="0 0 24 24"
-									fill="currentColor"
-									aria-hidden="true"
-								>
+								<svg class="mr-2 size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 									<path d={iconSvg} />
 								</svg>
 							{/if}
@@ -283,12 +270,7 @@ function getInputType(fieldType: string): string {
 				<div class="space-y-3">
 					<div class="flex items-center gap-2 text-sm font-medium">
 						{#if iconSvg}
-							<svg
-								class="size-4"
-								viewBox="0 0 24 24"
-								fill={color}
-								aria-hidden="true"
-							>
+							<svg class="size-4" viewBox="0 0 24 24" fill={color} aria-hidden="true">
 								<path d={iconSvg} />
 							</svg>
 						{/if}
@@ -336,7 +318,9 @@ function getInputType(fieldType: string): string {
 
 		{#if linking && !selectedMethod}
 			<div class="mt-3 flex items-center gap-2 text-sm text-cr-text-muted">
-				<span class="inline-block size-4 animate-spin rounded-full border-2 border-cr-accent border-t-transparent"></span>
+				<span
+					class="inline-block size-4 animate-spin rounded-full border-2 border-cr-accent border-t-transparent"
+				></span>
 				Waiting for authentication...
 			</div>
 		{/if}
@@ -348,9 +332,9 @@ function getInputType(fieldType: string): string {
 </Card.Root>
 
 <style>
-	:global(button[style*='--provider-color']:hover) {
-		background: color-mix(in srgb, var(--provider-color) 10%, transparent);
-		color: var(--provider-color);
-		border-color: color-mix(in srgb, var(--provider-color) 30%, transparent);
-	}
+:global(button[style*="--provider-color"]:hover) {
+	background: color-mix(in srgb, var(--provider-color) 10%, transparent);
+	color: var(--provider-color);
+	border-color: color-mix(in srgb, var(--provider-color) 30%, transparent);
+}
 </style>

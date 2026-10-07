@@ -574,7 +574,7 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-	<!-- Error state (network/validation error) -->
+		<!-- Error state (network/validation error) -->
 	{:else if data.error}
 		<div class="mx-auto w-full max-w-lg">
 			<ErrorState
@@ -583,7 +583,7 @@ function handleRegistrationRetry() {
 				onRetry={handleRetry}
 			/>
 		</div>
-	<!-- Invalid code state -->
+		<!-- Invalid code state -->
 	{:else if data.validation && !data.validation.valid}
 		<div class="mx-auto w-full max-w-lg">
 			<Card class="border-rose-500/30 bg-rose-500/5">
@@ -607,7 +607,7 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-	<!-- Pre-wizard state -->
+		<!-- Pre-wizard state -->
 	{:else if currentStep === 'pre_wizard' && data.validation?.pre_wizard}
 		<WizardShell
 			wizard={data.validation.pre_wizard}
@@ -615,7 +615,7 @@ function handleRegistrationRetry() {
 			onCancel={handlePreWizardCancel}
 			storageScope={data.code}
 		/>
-	<!-- Post-wizard state -->
+		<!-- Post-wizard state -->
 	{:else if currentStep === 'post_wizard' && data.validation?.post_wizard}
 		<WizardShell
 			wizard={data.validation.post_wizard}
@@ -623,17 +623,17 @@ function handleRegistrationRetry() {
 			onCancel={handlePostWizardCancel}
 			storageScope={data.code}
 		/>
-	<!-- Success state -->
+		<!-- Success state -->
 	{:else if currentStep === 'success' && redemptionResponse}
 		<div class="mx-auto w-full max-w-lg">
 			<SuccessPage response={redemptionResponse} {hasPlexServer} />
 		</div>
-	<!-- Registration error state -->
+		<!-- Registration error state -->
 	{:else if currentStep === 'error' && redemptionError}
 		<div class="mx-auto w-full max-w-lg">
 			<RegistrationError error={redemptionError} onRetry={handleRegistrationRetry} />
 		</div>
-	<!-- Registration form state -->
+		<!-- Registration form state -->
 	{:else if currentStep === 'registration' && data.validation?.valid}
 		<div class="mx-auto w-full max-w-lg">
 			<Card class="border-cr-border bg-cr-surface">
@@ -670,7 +670,7 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-	<!-- OAuth flow state -->
+		<!-- OAuth flow state -->
 	{:else if currentStep === 'oauth' && data.validation?.valid}
 		<div class="mx-auto w-full max-w-lg">
 			<Card class="border-cr-border bg-cr-surface">
@@ -704,7 +704,7 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-	<!-- OAuth redeeming state -->
+		<!-- OAuth redeeming state -->
 	{:else if currentStep === 'oauth_redeeming'}
 		<div class="mx-auto w-full max-w-lg">
 			<Card class="border-cr-border bg-cr-surface">
@@ -726,7 +726,7 @@ function handleRegistrationRetry() {
 				</CardContent>
 			</Card>
 		</div>
-	<!-- Valid code state (validation step) -->
+		<!-- Valid code state (validation step) -->
 	{:else if data.validation?.valid}
 		<div class="mx-auto w-full max-w-lg">
 			<Card class="border-emerald-500/30 bg-emerald-500/5">
@@ -887,7 +887,9 @@ function handleRegistrationRetry() {
 								<Loader2 class="size-4 mr-2 animate-spin" />
 								Checking servers...
 							{:else}
-								{hasPreWizard && !preWizardCompleted ? 'Continue to Required Steps' : 'Continue to Registration'}
+								{hasPreWizard && !preWizardCompleted
+									? 'Continue to Required Steps'
+									: 'Continue to Registration'}
 							{/if}
 						</Button>
 					{/if}

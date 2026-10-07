@@ -49,7 +49,7 @@ function getFailureMessage(reason: string | null | undefined): string {
 	<!-- Error state -->
 	{#if error}
 		<div data-error-state class="text-rose-400">Error: {error.message}</div>
-	<!-- Invalid code state -->
+		<!-- Invalid code state -->
 	{:else if validation && !validation.valid}
 		<Card data-invalid-code class="border-rose-500/30 bg-rose-500/5">
 			<CardHeader>
@@ -71,7 +71,7 @@ function getFailureMessage(reason: string | null | undefined): string {
 				</p>
 			</CardContent>
 		</Card>
-	<!-- Valid code state -->
+		<!-- Valid code state -->
 	{:else if validation?.valid}
 		<Card data-valid-code class="border-emerald-500/30 bg-emerald-500/5">
 			<CardHeader>

@@ -268,7 +268,7 @@ function openAuthUrl() {
 				Sign in with {providerLabel}
 			</Button>
 		</div>
-	<!-- Creating PIN state -->
+		<!-- Creating PIN state -->
 	{:else if currentStep === 'creating_pin'}
 		<div class="text-center space-y-4">
 			<div class="flex justify-center">
@@ -276,7 +276,7 @@ function openAuthUrl() {
 			</div>
 			<p class="text-cr-text-muted">Preparing {providerLabel} authentication...</p>
 		</div>
-	<!-- Waiting for authentication -->
+		<!-- Waiting for authentication -->
 	{:else if currentStep === 'waiting' && pinData}
 		<Card class="border-cr-border bg-cr-surface">
 			<CardHeader>
@@ -320,7 +320,7 @@ function openAuthUrl() {
 				</div>
 			</CardContent>
 		</Card>
-	<!-- Authenticated state -->
+		<!-- Authenticated state -->
 	{:else if currentStep === 'authenticated' && authenticatedEmail}
 		<Card class="border-emerald-500/30 bg-emerald-500/5">
 			<CardHeader>
@@ -338,7 +338,7 @@ function openAuthUrl() {
 				</div>
 			</CardHeader>
 		</Card>
-	<!-- Expired state -->
+		<!-- Expired state -->
 	{:else if currentStep === 'expired'}
 		<Card class="border-amber-500/30 bg-amber-500/5">
 			<CardHeader>
@@ -364,7 +364,7 @@ function openAuthUrl() {
 				</Button>
 			</CardContent>
 		</Card>
-	<!-- Error state -->
+		<!-- Error state -->
 	{:else if currentStep === 'error'}
 		<Card class="border-rose-500/30 bg-rose-500/5">
 			<CardHeader>

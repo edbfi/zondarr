@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
 	"root": false,
 	"extends": "//",
 	"files": {
@@ -44,22 +44,5 @@
 		"formatter": {
 			"enabled": true
 		}
-	},
-	"overrides": [
-		{
-			"includes": [
-				"src/lib/components/dashboard/recent-activity.svelte",
-				"src/lib/components/servers/create-server-dialog.svelte",
-				"src/lib/components/settings/link-provider-card.svelte",
-				"src/lib/components/setup/step-indicator.svelte",
-				"src/lib/components/setup/step-server.svelte",
-				"src/lib/components/wizard/step-editor.svelte",
-				"src/lib/components/wizard/wizard-builder.svelte",
-				"src/lib/components/wizard/wizard-shell.svelte"
-			],
-			"formatter": {
-				"enabled": false
-			}
-		}
-	]
+	}
 }

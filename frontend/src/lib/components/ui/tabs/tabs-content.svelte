@@ -12,8 +12,8 @@ let {
 <TabsPrimitive.Content
 	bind:ref
 	class={cn(
-	'mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-	className
-)}
+		'mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+		className
+	)}
 	{...restProps}
 />

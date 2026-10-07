@@ -31,7 +31,9 @@ const { currentStep, totalSteps, stepLabels }: Props = $props();
 					<span class="font-mono text-xs font-semibold">{stepNum}</span>
 				{/if}
 				{#if isCurrent}
-					<span class="absolute inset-0 animate-ping rounded-full border border-cr-accent/30"></span>
+					<span
+						class="absolute inset-0 animate-ping rounded-full border border-cr-accent/30"
+					></span>
 				{/if}
 			</div>
 			<span

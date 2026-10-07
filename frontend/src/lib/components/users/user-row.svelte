@@ -233,9 +233,9 @@ function handleDelete() {
 				variant="ghost"
 				size="icon-sm"
 				onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	viewUser();
-}}
+					e.stopPropagation();
+					viewUser();
+				}}
 				aria-label="View user"
 				class="text-cr-text-muted hover:text-cr-accent hover:bg-cr-accent/10"
 			>
@@ -246,9 +246,9 @@ function handleDelete() {
 					variant="ghost"
 					size="icon-sm"
 					onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	handleDisable();
-}}
+						e.stopPropagation();
+						handleDisable();
+					}}
 					aria-label="Disable user"
 					class="text-cr-text-muted hover:text-amber-400 hover:bg-amber-400/10"
 				>
@@ -259,9 +259,9 @@ function handleDelete() {
 					variant="ghost"
 					size="icon-sm"
 					onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	handleEnable();
-}}
+						e.stopPropagation();
+						handleEnable();
+					}}
 					aria-label="Enable user"
 					class="text-cr-text-muted hover:text-emerald-400 hover:bg-emerald-400/10"
 				>
@@ -272,9 +272,9 @@ function handleDelete() {
 				variant="ghost"
 				size="icon-sm"
 				onclick={(e: MouseEvent) => {
-	e.stopPropagation();
-	handleDelete();
-}}
+					e.stopPropagation();
+					handleDelete();
+				}}
 				aria-label="Delete user"
 				class="text-cr-text-muted hover:text-rose-400 hover:bg-rose-400/10"
 			>
