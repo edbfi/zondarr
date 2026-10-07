@@ -22,7 +22,7 @@ repository root.
 | Development server | `bun run dev` |
 | Production build | `bun run build` |
 | Preview the build | `bun run preview` |
-| Start the built server | `bun run start` |
+| Start the built server | `NODE_ENV=production bun scripts/serve.ts` (from `frontend/`) |
 | Type check | `bun run check` |
 | Lint and format check | `bun run check:biome` |
 | Tests | `bun run test` |
@@ -30,6 +30,10 @@ repository root.
 
 Use `bun run test`, not `bun test`: the latter is Bun's own runner and does not
 compile Svelte.
+
+Start the server directly, as above; the `start` script runs the same command. With
+Bun 1.4.2's default shell, `bun run start` and `bun start` deliver one Ctrl+C twice,
+which skips the `SHUTDOWN_TIMEOUT` drain and stops at once with exit status 1.
 
 ## Running with the backend
 
