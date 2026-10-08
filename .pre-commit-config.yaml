@@ -1,0 +1,137 @@
+# .pre-commit-config.yaml — pre-commit hooks configuration (prek)
+# Docs: https://prek.j178.dev/configuration/
+# The manual stage is the CI set: CI runs `prek run --all-files --hook-stage manual`.
+
+minimum_prek_version: "0.3.2"
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+default_stages: [pre-commit, manual]
+
+repos:
+  # Builtin hooks — fast, offline, Rust-native
+  - repo: builtin
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      - id: detect-private-key
+      - id: check-json
+        exclude: ^frontend/.*tsconfig.*\.json$
+      - id: check-toml
+      - id: check-yaml
+      - id: no-commit-to-branch
+        args: [--branch, main]
+        stages: [pre-commit]
+
+  # Conventional Commits — enforce Conventional Commit message format
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: 91ab4bf57e58b32adf1a122681f6ebe164d081c8  # frozen: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  # Secret / credential leak guard — fixtures and dotfiles must never carry tokens.
+  # Local only: it scans --staged, so it finds nothing under --all-files.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e  # frozen: v8.30.1
+    hooks:
+      - id: gitleaks
+        stages: [pre-commit]
+
+  # Workflow linters
+  - repo: https://github.com/rhysd/actionlint
+    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca  # frozen: v1.7.12
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: fa412071e4f5d44d44f9e365f4676f9df92456a2  # frozen: v1.30.1
+    hooks:
+      - id: zizmor
+
+  # Shared edbfi CI policy hooks
+  - repo: https://github.com/edbfi/edbfi-ci
+    rev: d07ccc13141d4aee4fa28546f4328f4e48d5363b  # frozen: v0.1.0
+    hooks:
+      - id: privileged-jobs
+      # check-peers (args [".", frontend]) waits until main has no required-peer
+      # mismatch (design/prek.md rule 12): openapi-typescript 7.13.0 requires
+      # typescript ^5.x, and the frontend has 6.0.3.
+
+  # Local hooks — project-specific quality gates
+  - repo: local
+    hooks:
+      - id: biome
+        name: Format and lint with Biome
+        entry: ./node_modules/.bin/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched
+        language: system
+        types_or: [javascript, ts, svelte, json, css]
+        files: ^(frontend/|\.github/scripts/)
+        exclude: ^frontend/(build|\.svelte-kit|node_modules)/
+      - id: typecheck-ts
+        name: TypeScript Check
+        entry: bun run --cwd frontend check
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        stages: [pre-push, manual]
+      - id: typecheck-py
+        name: Python Type Check (basedpyright)
+        entry: bash -c 'uv run --project backend --frozen basedpyright --project backend/pyproject.toml && uv run --project backend --frozen basedpyright --project dev_cli/pyproject.toml'
+        language: system
+        files: ^(backend/|dev_cli/)
+        pass_filenames: false
+        stages: [pre-push, manual]
+      - id: tests-py
+        name: Python Tests
+        entry: bash -c '(cd backend && uv run --frozen pytest -n 4) && backend/.venv/bin/pytest -q dev_cli/tests'
+        language: system
+        files: ^(backend/|dev_cli/)
+        pass_filenames: false
+        stages: [pre-push, manual]
+      - id: tests-ts
+        name: Frontend Tests
+        entry: bun run --cwd frontend test
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        stages: [pre-push, manual]
+      - id: ruff-check
+        name: Locked Python lint
+        entry: uv run --project backend --frozen ruff check --fix
+        language: system
+        types: [python]
+        files: ^(backend/|dev_cli/|\.github/scripts/).*\.py$
+      - id: ruff-format
+        name: Locked Python format
+        entry: uv run --project backend --frozen ruff format
+        language: system
+        types: [python]
+        files: ^(backend/|dev_cli/|\.github/scripts/).*\.py$
+      # Coverage gaps (edbfi-ci design/prek.md rule 5, design/repos.md zondarr row)
+      - id: uv-lock
+        name: Check locked dependencies
+        entry: uv lock --check --project backend
+        language: system
+        pass_filenames: false
+        always_run: true
+      # The committed frontend API types must match the backend's OpenAPI schema.
+      # Needs backend/.venv and frontend/node_modules.
+      - id: api-types
+        name: Generated API types match the backend
+        entry: bun .github/scripts/check-api.ts
+        language: system
+        pass_filenames: false
+        files: ^(backend/|frontend/src/lib/api/|frontend/package\.json$|\.github/scripts/check-api\.ts$)
+        stages: [pre-push, manual]
+      - id: biome-migrate
+        name: Migrate Biome configuration
+        entry: ./node_modules/.bin/biome migrate --write
+        language: system
+        stages: [manual]
+        pass_filenames: false
+        always_run: true
