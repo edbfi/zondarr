@@ -11,8 +11,12 @@ import sys
 
 
 def _run(code: str, *args: str) -> subprocess.CompletedProcess[str]:
+    # Plain output whatever the caller sets: prek's --color=always passes FORCE_COLOR to hooks,
+    # and Rich then styles the help text.
+    forced = {"FORCE_COLOR", "CLICOLOR_FORCE", "PY_COLORS"}
     env = {
-        **os.environ,
+        **{k: v for k, v in os.environ.items() if k not in forced},
+        "NO_COLOR": "1",
         "SECRET_KEY": "a" * 32,
         "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
     }
