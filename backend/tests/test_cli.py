@@ -6,17 +6,14 @@ must not import it.
 """
 
 import os
+import re
 import subprocess
 import sys
 
 
 def _run(code: str, *args: str) -> subprocess.CompletedProcess[str]:
-    # Plain output whatever the caller sets: prek's --color=always passes FORCE_COLOR to hooks,
-    # and Rich then styles the help text.
-    forced = {"FORCE_COLOR", "CLICOLOR_FORCE", "PY_COLORS"}
     env = {
-        **{k: v for k, v in os.environ.items() if k not in forced},
-        "NO_COLOR": "1",
+        **os.environ,
         "SECRET_KEY": "a" * 32,
         "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
     }
@@ -45,6 +42,8 @@ def test_app_registers_granian_plugin() -> None:
 def test_cli_help() -> None:
     result = _run("from zondarr.cli import main; main()", "--help")
     assert result.returncode == 0, result.stderr
-    assert "Usage: zondarr" in result.stdout
+    # rich-click styles the help when it sees a terminal or CI (FORCE_COLOR, GITHUB_ACTIONS).
+    stdout = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
+    assert "Usage: zondarr" in stdout
     # Only litestar-granian's `run` has this; bare granian spells it --log-level.
-    assert "--granian-log-level" in result.stdout
+    assert "--granian-log-level" in stdout
