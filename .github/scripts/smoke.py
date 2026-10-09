@@ -40,19 +40,27 @@ LEAKS = re.compile(
 )
 
 
-def port(name: str) -> int:
+def port(name: str, other: int | None = None) -> int:
     """A free loopback port, or the one `name` sets, which must be free too.
 
     Granian binds with SO_REUSEPORT, so it would share a port with another
     SO_REUSEPORT listener instead of failing; this plain bind fails for any
-    listener.
+    listener. Each reservation is released before the next, so `other` (the
+    port already chosen for the other server) is rejected explicitly.
     """
-    with socket.socket() as reservation:
-        try:
-            reservation.bind(("127.0.0.1", int(os.environ.get(name) or 0)))
-        except OSError as error:
-            raise SystemExit(f"smoke: {name}: {error}") from None
-        return int(reservation.getsockname()[1])
+    requested = int(os.environ.get(name) or 0)
+    for _ in range(20):
+        with socket.socket() as reservation:
+            try:
+                reservation.bind(("127.0.0.1", requested))
+            except OSError as error:
+                raise SystemExit(f"smoke: {name}: {error}") from None
+            chosen = int(reservation.getsockname()[1])
+        if chosen != other:
+            return chosen
+        if requested:
+            raise SystemExit(f"smoke: {name}: port {chosen} is the other server's")
+    raise SystemExit(f"smoke: {name}: no free port distinct from {other}")
 
 
 def read(url: str) -> bytes:
@@ -98,7 +106,8 @@ class Server:
                 return read(url)
             except urllib.error.HTTPError:
                 raise  # an answer, just the wrong one
-            except ConnectionError, urllib.error.URLError:
+            # TimeoutError: Granian logs before its worker answers, so a request can time out.
+            except ConnectionError, TimeoutError, urllib.error.URLError:
                 if time.monotonic() >= deadline:
                     raise
                 time.sleep(0.2)
@@ -120,7 +129,7 @@ class Server:
 
 def main() -> int:
     backend_port = port("SMOKE_BACKEND_PORT")
-    frontend_port = port("SMOKE_FRONTEND_PORT")
+    frontend_port = port("SMOKE_FRONTEND_PORT", other=backend_port)
     backend_url = f"http://127.0.0.1:{backend_port}"
     frontend_url = f"http://127.0.0.1:{frontend_port}"
     servers: list[Server] = []
