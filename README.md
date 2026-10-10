@@ -45,7 +45,10 @@ skips the `SHUTDOWN_TIMEOUT` drain and stops at once with exit status 1. The Pyt
 backend runs separately; configure `INTERNAL_API_URL` for the frontend's server-side
 API proxy. Leave `PUBLIC_API_URL` empty for same-origin browser requests. See
 [.env.example](.env.example) for backend security, database and bootstrap settings.
-The container keeps both services under s6 and runs the same entry point.
+The container keeps both services under s6 and runs the same entry point. With the
+container's VPN on (`VPN_ENABLED=true`), only port 3000 is reachable from the LAN: if
+you set `PUBLIC_API_URL` so browsers call the backend directly, also set
+`VPN_EXPOSE_PORTS_ON_LAN=8000/tcp` (alongside `CORS_ORIGINS`).
 
 ### Public origin and proxies
 
