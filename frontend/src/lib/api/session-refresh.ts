@@ -31,8 +31,18 @@ export type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Re
 /** Auth endpoints whose 401 is not about the session, so it never triggers a refresh. */
 const NO_REFRESH_ENDPOINTS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/setup'];
 
-/** Pages without a session to refresh; a 401 there must not loop back to the login page. */
-const NO_REFRESH_PAGES = ['/login', '/join', '/setup'];
+/**
+ * Pages that work without a session, or before one exists: a refused session there must not send
+ * the browser to the login page (a loop on `/login`; a dead end before setup). Refreshing still
+ * runs there, since onboarding on `/setup` makes authenticated calls.
+ */
+const NO_LOGIN_REDIRECT_PAGES = ['/login', '/join', '/setup'];
+
+function toLogin(): void {
+	const page = window.location.pathname;
+	if (NO_LOGIN_REDIRECT_PAGES.some((prefix) => page.startsWith(prefix))) return;
+	window.location.href = '/login';
+}
 
 // One refresh at a time for the page. Browser only: the wrapper never refreshes on the server, so
 // this module state is never shared between server requests.
@@ -101,16 +111,11 @@ export function withSessionRefresh(baseFetch?: Fetch): Fetch {
 			input instanceof Request ? [input.clone(), init] : [input, init];
 		const response = await send(input, init);
 
-		if (
-			response.status !== 401 ||
-			NO_REFRESH_PAGES.some((page) => window.location.pathname.startsWith(page))
-		) {
-			return response;
-		}
+		if (response.status !== 401) return response;
 
 		const path = pathOf(input);
 		if (NO_REFRESH_ENDPOINTS.some((ep) => path === ep || path.startsWith(`${ep}/`))) {
-			window.location.href = '/login';
+			toLogin();
 			return response;
 		}
 		if (!(await isSessionFailure(response))) return response;
@@ -119,7 +124,7 @@ export function withSessionRefresh(baseFetch?: Fetch): Fetch {
 		// The 401's body was read from a copy; the unread original is dropped without awaiting a
 		// cancel, which can hang once the copy has been read.
 		if (outcome === 'ok') return send(...retry);
-		if (outcome === 'rejected') window.location.href = '/login';
+		if (outcome === 'rejected') toLogin();
 		return response;
 	};
 }

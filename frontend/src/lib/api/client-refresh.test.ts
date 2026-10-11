@@ -6,7 +6,7 @@
  * @module $lib/api/client-refresh.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env/public', () => ({ PUBLIC_API_URL: 'http://backend.test' }));
 
@@ -46,6 +46,12 @@ async function loadClient(fetchMock: ReturnType<typeof backend>) {
 	vi.resetModules();
 	return (await import('./client')).api;
 }
+
+// The first import of the client transforms its whole module graph (about 5 s on a slow machine);
+// do it once here so no test spends its own timeout on it.
+beforeAll(async () => {
+	await import('./client');
+}, 60_000);
 
 describe('refresh after a 401', () => {
 	let location: { pathname: string; href: string; origin: string };
@@ -286,5 +292,56 @@ describe('refresh after a 401', () => {
 
 		expect(response.status).toBe(401);
 		expect(location.href).toBe('/login');
+	});
+
+	it('refreshes during onboarding on /setup', async () => {
+		location.pathname = '/setup';
+		location.href = 'http://frontend.test/setup';
+		const fetchMock = backend(
+			[unauthorized(), Response.json({ username: 'admin' })],
+			[new Response('{}', { status: 200 })]
+		);
+		const api = await loadClient(fetchMock);
+
+		const { response } = await api.GET('/api/auth/me');
+
+		expect(response.status).toBe(200);
+		expect(fetchMock.mock.calls.map(([input]) => urlOf(input))).toEqual([ME, REFRESH, ME]);
+		expect(location.href).toBe('http://frontend.test/setup');
+	});
+
+	it.each(['/login', '/join/abc', '/setup'])(
+		'stays on %s when the backend refuses the refresh',
+		async (page) => {
+			location.pathname = page;
+			location.href = `http://frontend.test${page}`;
+			const api = await loadClient(
+				backend([unauthorized()], [new Response('{}', { status: 401 })])
+			);
+
+			const { response } = await api.GET('/api/auth/me');
+
+			expect(response.status).toBe(401);
+			expect(location.href).toBe(`http://frontend.test${page}`);
+		}
+	);
+
+	it('keeps a failed sign-in on the login page', async () => {
+		location.pathname = '/login';
+		location.href = 'http://frontend.test/login';
+		const fetchMock = backend(
+			[Response.json({ error_code: 'INVALID_CREDENTIALS' }, { status: 401 })],
+			[],
+			'http://backend.test/api/auth/login'
+		);
+		const api = await loadClient(fetchMock);
+
+		const { response } = await api.POST('/api/auth/login', {
+			body: { username: 'admin', password: 'wrong' }
+		});
+
+		expect(response.status).toBe(401);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(location.href).toBe('http://frontend.test/login');
 	});
 });
