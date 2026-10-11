@@ -16,7 +16,7 @@ from uuid import UUID
 
 import pytest
 from litestar.datastructures import State
-from sqlalchemy import select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tests.auth_db import BACKENDS, production_engine
@@ -576,3 +576,83 @@ class TestCleanup:
         assert remaining == {live_id, recent_id}
         assert token_sessions == {live_id, recent_id}
         assert idle_id not in remaining
+
+    async def test_cleanup_racing_a_rotation_keeps_the_rotated_session(
+        self, factory: Factory, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Cleanup that waited on a rotation's session lock re-checks it afterwards.
+
+        On PostgreSQL the test waits until cleanup is blocked on the lock
+        (``pg_stat_activity``), so the interleaving is the same on every run.
+
+        The rotation holds the session lock while cleanup decides; at cleanup's
+        ``now`` the only token it can see (R0, not yet consumed for it) has
+        expired, so the session looks stale. Once the rotation commits R1, the
+        session has a live token again and must survive.
+        """
+        async with factory() as probe:
+            postgres = probe.get_bind().dialect.name == "postgresql"
+        admin_id = await _create_admin(factory)
+        session_id, r0 = await _start(factory, admin_id)
+        r0_expiry = datetime.now(UTC) + timedelta(hours=1)
+        await _set_token_expiry(factory, r0, r0_expiry)
+        cleanup_now = r0_expiry + timedelta(seconds=1)
+
+        locked = asyncio.Event()
+        release = asyncio.Event()
+        issue = AuthService._issue_token  # pyright: ignore[reportPrivateUsage]
+
+        async def paused_issue(
+            self: AuthService,
+            auth_session: AuthSession,
+            *,
+            generation: int,
+            now: datetime,
+        ) -> str:
+            locked.set()
+            _ = await release.wait()
+            return await issue(self, auth_session, generation=generation, now=now)
+
+        monkeypatch.setattr(AuthService, "_issue_token", paused_issue)
+
+        async def cleanup() -> int:
+            async with factory() as session:
+                deleted = await AuthSessionRepository(session).delete_stale(
+                    cleanup_now, revoked_before=cleanup_now - timedelta(days=7)
+                )
+                await session.commit()
+                return deleted
+
+        async def waiting_on_locks() -> int:
+            async with factory() as session:
+                result = await session.execute(
+                    select(func.count())
+                    .select_from(text("pg_stat_activity"))
+                    .where(
+                        text(
+                            "datname = current_database() AND wait_event_type = 'Lock'"
+                        )
+                    )
+                )
+                return result.scalar_one()
+
+        rotation_task = asyncio.create_task(_rotate(factory, r0))
+        _ = await asyncio.wait_for(locked.wait(), timeout=10)
+        cleanup_task = asyncio.create_task(cleanup())
+        if postgres:
+            async with asyncio.timeout(10):
+                while await waiting_on_locks() == 0:
+                    await asyncio.sleep(0.02)
+        else:
+            # SQLite has no lock view; cleanup still running while the rotation
+            # holds the write lock means its DELETE is waiting for it.
+            await asyncio.sleep(0.5)
+        assert not cleanup_task.done()
+        release.set()
+
+        rotation = await rotation_task
+        assert await cleanup_task == 0
+        assert (await _session(factory, session_id)).revoked_at is None
+        assert _live(await _tokens(factory, session_id))[0].token_hash == _hash(
+            rotation.raw_token
+        )

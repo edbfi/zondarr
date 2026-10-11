@@ -338,8 +338,17 @@ class AuthSessionRepository(Repository[AuthSession]):
         revoked before ``revoked_before``, or when it is not revoked but has
         no live refresh token left that has not expired. Its refresh tokens
         go with it; they are deleted explicitly as well, since SQLite only
-        cascades with ``PRAGMA foreign_keys=ON``. Sessions are deleted
-        before tokens, the lock order rotation uses.
+        cascades with ``PRAGMA foreign_keys=ON``.
+
+        A concurrent rotation can give a stale-looking session a new live
+        token, so the candidates are locked first (``FOR UPDATE``, after any
+        rotation holding them commits) and checked again by the DELETE, a new
+        statement and so, under PostgreSQL's Read Committed, a new snapshot.
+        A single DELETE would re-check only the session row after waiting,
+        not its tokens. Sessions are locked before tokens are touched, the
+        order rotation uses. On SQLite ``FOR UPDATE`` is not rendered: the
+        candidate SELECT opens no transaction, and the DELETE takes the
+        database write lock before it reads, so it sees committed rotations.
 
         Args:
             now: Current UTC datetime.
@@ -359,19 +368,30 @@ class AuthSessionRepository(Repository[AuthSession]):
                 )
                 .exists()
             )
-            sessions_stmt = (
-                delete(AuthSession)
-                .where(
-                    or_(
-                        AuthSession.absolute_expires_at < now,
-                        AuthSession.revoked_at < revoked_before,
-                        and_(AuthSession.revoked_at.is_(None), ~has_live_token),
-                    )
-                )
-                .execution_options(synchronize_session=False)
+            stale = or_(
+                AuthSession.absolute_expires_at < now,
+                AuthSession.revoked_at < revoked_before,
+                and_(AuthSession.revoked_at.is_(None), ~has_live_token),
             )
-            result = await self.session.execute(sessions_stmt)
-            deleted = _rowcount(result)
+            candidates = list(
+                (
+                    await self.session.scalars(
+                        select(AuthSession.id)
+                        .where(stale)
+                        .order_by(AuthSession.id)
+                        .with_for_update()
+                    )
+                ).all()
+            )
+            deleted = 0
+            if candidates:
+                sessions_stmt = (
+                    delete(AuthSession)
+                    .where(AuthSession.id.in_(candidates), stale)
+                    .execution_options(synchronize_session=False)
+                )
+                result = await self.session.execute(sessions_stmt)
+                deleted = _rowcount(result)
             orphans_stmt = (
                 delete(RefreshToken)
                 .where(
