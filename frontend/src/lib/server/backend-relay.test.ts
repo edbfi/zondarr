@@ -7,6 +7,7 @@ import {
 import {
 	backendRequestHeaders,
 	FRONT_HEADERS,
+	relayDeadline,
 	relayedCookieOptions,
 	relayResponseHeaders,
 	relaySetCookie
@@ -142,5 +143,26 @@ describe('backendRequestHeaders', () => {
 	it('drops extra headers a caller names', () => {
 		const source = new Headers({ 'content-length': '12', 'content-type': 'application/json' });
 		expect([...backendRequestHeaders(source, ['Content-Length']).keys()]).toEqual(['content-type']);
+	});
+});
+
+describe('relayDeadline', () => {
+	it.each([
+		['GET', 'v1/servers', 'whole'],
+		['POST', 'v1/servers', 'body'],
+		['POST', 'v1/servers/', 'body'],
+		['POST', 'v1/servers/abc/sync', 'body'],
+		['POST', 'v1/servers/abc/sync-libraries/', 'body'],
+		['POST', 'v1/servers/abc/sync/extra', 'whole'],
+		['POST', 'v1/servers/test-connection', 'whole'],
+		['POST', 'v1/servers/abc/reset-circuit', 'whole'],
+		['POST', 'v1/join/ABC123', 'body'],
+		['GET', 'v1/join/ABC123', 'whole'],
+		['POST', 'auth/refresh', 'none'],
+		['POST', 'auth/refresh/', 'none'],
+		['POST', 'auth/login', 'whole'],
+		['DELETE', 'v1/servers/abc', 'whole']
+	])('%s %s -> %s', (method, path, expected) => {
+		expect(relayDeadline(method, path)).toBe(expected);
 	});
 });

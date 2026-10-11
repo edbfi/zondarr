@@ -11,6 +11,9 @@
  * backend only knows its own `SECURE_COOKIES` setting, and browsers refuse `Secure` cookies over
  * plain HTTP outside loopback.
  *
+ * Every backend call carries the incoming request's abort signal, and most also a deadline
+ * (`relayDeadline`), so neither a client that went away nor a stalled backend holds a request.
+ *
  * @module $lib/server/backend-relay
  */
 import type { Cookies } from '@sveltejs/kit';
@@ -81,4 +84,60 @@ export function relayedCookieOptions(attributes: SetCookieAttributes, url: URL) 
 		sameSite: attributes.sameSite ?? false,
 		secure: isSecureRequest(url)
 	};
+}
+
+/**
+ * How long a relayed backend call may take, in ms: above the backend's own upstream timeouts
+ * (10-35 s each) with room for an endpoint that chains several.
+ */
+export const BACKEND_DEADLINE_MS = 120_000;
+
+/** The answer to a backend call that passed its deadline (other failures stay 502). */
+export function backendTimeoutResponse(): Response {
+	return new Response(JSON.stringify({ detail: 'Backend timed out' }), {
+		status: 504,
+		headers: { 'content-type': 'application/json' }
+	});
+}
+
+/**
+ * The cancellation signal for one backend call. It aborts when the incoming request is cancelled
+ * (the client went away, or the adapter force-closed it at the drain deadline) and, once `arm`
+ * has been called, when the deadline passes; `timedOut` tells the two apart.
+ */
+export function backendCall(incoming: AbortSignal) {
+	const deadline = new AbortController();
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	return {
+		signal: AbortSignal.any([incoming, deadline.signal]),
+		arm(ms: number) {
+			clearTimeout(timer);
+			timer = setTimeout(() => deadline.abort(), ms);
+		},
+		clear() {
+			clearTimeout(timer);
+			timer = undefined;
+		},
+		timedOut: () => deadline.signal.aborted
+	};
+}
+
+/** Backend calls that take as long as the media servers need: server creation, syncs, redemption. */
+const LONG_OPERATIONS = [
+	/^v1\/servers\/?$/,
+	/^v1\/servers\/[^/]+\/(?:sync|sync-libraries)\/?$/,
+	/^v1\/join\/[^/]+\/?$/
+];
+
+/**
+ * Which part of a relayed call (`path` without the leading `/api/`) the deadline covers:
+ * `whole` from the request through the buffered answer; `body` only the answer, for the long
+ * operations; `none` for a token refresh. Dropping a refresh answer after the backend has rotated
+ * the token would leave the browser with the consumed token, whose next use counts as a replay
+ * and revokes every session of that admin.
+ */
+export function relayDeadline(method: string, path: string): 'whole' | 'body' | 'none' {
+	if (method !== 'POST') return 'whole';
+	if (/^auth\/refresh\/?$/.test(path)) return 'none';
+	return LONG_OPERATIONS.some((pattern) => pattern.test(path)) ? 'body' : 'whole';
 }

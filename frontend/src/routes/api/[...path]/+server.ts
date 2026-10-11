@@ -1,6 +1,13 @@
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
-import { backendRequestHeaders, relayResponseHeaders } from '$lib/server/backend-relay';
+import {
+	BACKEND_DEADLINE_MS,
+	backendCall,
+	backendRequestHeaders,
+	backendTimeoutResponse,
+	relayDeadline,
+	relayResponseHeaders
+} from '$lib/server/backend-relay';
 import type { RequestHandler } from './$types';
 
 const INTERNAL_API_URL =
@@ -15,6 +22,9 @@ const handler: RequestHandler = async ({ request, url, params }) => {
 	const headers = backendRequestHeaders(request.headers);
 
 	const hasBody = !['GET', 'HEAD'].includes(request.method);
+	const deadline = relayDeadline(request.method, path);
+	const call = backendCall(request.signal);
+	if (deadline === 'whole') call.arm(BACKEND_DEADLINE_MS);
 
 	try {
 		const response = await fetch(upstream, {
@@ -23,7 +33,8 @@ const handler: RequestHandler = async ({ request, url, params }) => {
 			body: hasBody ? request.body : undefined,
 			// @ts-expect-error -- Bun supports duplex streaming
 			duplex: hasBody ? 'half' : undefined,
-			redirect: 'manual'
+			redirect: 'manual',
+			signal: call.signal
 		});
 
 		// SSE responses must stream; buffer everything else to avoid
@@ -33,6 +44,8 @@ const handler: RequestHandler = async ({ request, url, params }) => {
 		const responseHeaders = relayResponseHeaders(response.headers, url);
 
 		if (isEventStream) {
+			// An established stream has no deadline; the request's own signal still ends it.
+			call.clear();
 			return new Response(response.body, {
 				status: response.status,
 				statusText: response.statusText,
@@ -40,6 +53,7 @@ const handler: RequestHandler = async ({ request, url, params }) => {
 			});
 		}
 
+		if (deadline === 'body') call.arm(BACKEND_DEADLINE_MS);
 		const body = await response.arrayBuffer();
 		return new Response(body, {
 			status: response.status,
@@ -47,10 +61,13 @@ const handler: RequestHandler = async ({ request, url, params }) => {
 			headers: responseHeaders
 		});
 	} catch {
+		if (call.timedOut()) return backendTimeoutResponse();
 		return new Response(JSON.stringify({ detail: 'Backend unavailable' }), {
 			status: 502,
 			headers: { 'content-type': 'application/json' }
 		});
+	} finally {
+		call.clear();
 	}
 };
 

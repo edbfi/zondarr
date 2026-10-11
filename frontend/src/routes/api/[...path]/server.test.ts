@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { POST } from './+server';
+import { BACKEND_DEADLINE_MS } from '$lib/server/backend-relay';
+import { GET, POST } from './+server';
 
 type PostHandlerEvent = Parameters<typeof POST>[0];
 
@@ -145,4 +146,150 @@ describe('API proxy route', () => {
 			]);
 		}
 	);
+});
+
+describe('API proxy deadlines and cancellation', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	function relayEvent(method: string, path: string, client = new AbortController()) {
+		const request = new Request(`http://frontend.local/api/${path}`, {
+			method,
+			signal: client.signal,
+			...(method === 'GET' ? {} : { body: '{}', headers: { 'content-type': 'application/json' } })
+		});
+		return makeEvent(request, path);
+	}
+
+	/** A backend that never sends headers: the fetch settles only when its signal aborts. */
+	function stalledBackend() {
+		return vi.spyOn(globalThis, 'fetch').mockImplementation(
+			(_input, init) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener('abort', () =>
+						reject(new DOMException('aborted', 'AbortError'))
+					);
+				})
+		);
+	}
+
+	/** A backend that sends headers, then a body that ends only when the call's signal aborts. */
+	function stalledBody(contentType = 'application/json') {
+		return vi.spyOn(globalThis, 'fetch').mockImplementation(
+			async (_input, init) =>
+				new Response(
+					new ReadableStream({
+						start(controller) {
+							init?.signal?.addEventListener('abort', () =>
+								controller.error(new DOMException('aborted', 'AbortError'))
+							);
+						}
+					}),
+					{ status: 200, headers: { 'content-type': contentType } }
+				)
+		);
+	}
+
+	const signalOf = (spy: ReturnType<typeof stalledBackend>) => spy.mock.calls[0]?.[1]?.signal;
+
+	it('answers 504 when the backend sends no headers within the deadline', async () => {
+		vi.useFakeTimers();
+		stalledBackend();
+		const pending = GET(relayEvent('GET', 'v1/servers'));
+		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS);
+		const response = await pending;
+		expect(response.status).toBe(504);
+		expect(await response.json()).toEqual({ detail: 'Backend timed out' });
+	});
+
+	it('keeps the same deadline, not a new one, while it reads a buffered answer', async () => {
+		vi.useFakeTimers();
+		const headersAfter = 90_000;
+		const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+			(_input, init) =>
+				new Promise<Response>((done) =>
+					setTimeout(
+						() =>
+							done(
+								new Response(
+									new ReadableStream({
+										start(controller) {
+											init?.signal?.addEventListener('abort', () =>
+												controller.error(new DOMException('aborted', 'AbortError'))
+											);
+										}
+									}),
+									{ status: 200, headers: { 'content-type': 'application/json' } }
+								)
+							),
+						headersAfter
+					)
+				)
+		);
+		const pending = GET(relayEvent('GET', 'v1/users'));
+		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS - 1);
+		expect(signalOf(spy)?.aborted).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+		expect((await pending).status).toBe(504);
+	});
+
+	it('cancels the backend call and answers 502, not 504, when the client goes away', async () => {
+		const client = new AbortController();
+		const spy = stalledBackend();
+		const pending = GET(relayEvent('GET', 'v1/users', client));
+		client.abort();
+		expect((await pending).status).toBe(502);
+		expect(signalOf(spy)?.aborted).toBe(true);
+	});
+
+	it('gives an established event stream no deadline, and ends it with the request', async () => {
+		vi.useFakeTimers();
+		const client = new AbortController();
+		const spy = stalledBody('text/event-stream');
+		const response = await GET(relayEvent('GET', 'v1/logs/stream', client));
+		expect(response.status).toBe(200);
+		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS * 2);
+		expect(signalOf(spy)?.aborted).toBe(false);
+		client.abort();
+		expect(signalOf(spy)?.aborted).toBe(true);
+	});
+
+	it.each([
+		'v1/servers',
+		'v1/servers/4b6f0c8e-0000-4000-8000-000000000001/sync',
+		'v1/servers/4b6f0c8e-0000-4000-8000-000000000001/sync-libraries/',
+		'v1/join/ABC123'
+	])('waits for the answer to POST %s without a deadline', async (path) => {
+		vi.useFakeTimers();
+		const client = new AbortController();
+		const spy = stalledBackend();
+		const pending = POST(relayEvent('POST', path, client));
+		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS * 2);
+		expect(signalOf(spy)?.aborted).toBe(false);
+		client.abort();
+		expect((await pending).status).toBe(502);
+	});
+
+	it('gives the buffered answer of a long operation the deadline', async () => {
+		vi.useFakeTimers();
+		stalledBody();
+		const pending = POST(relayEvent('POST', 'v1/servers/4b6f0c8e/sync'));
+		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS);
+		expect((await pending).status).toBe(504);
+	});
+
+	// Dropping a refresh answer after the backend rotated the token would leave the browser with the
+	// consumed token, whose next use the backend treats as a replay (it revokes every session).
+	it('never times out a token refresh, answer included', async () => {
+		vi.useFakeTimers();
+		const client = new AbortController();
+		const spy = stalledBody();
+		const pending = POST(relayEvent('POST', 'auth/refresh', client));
+		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS * 2);
+		expect(signalOf(spy)?.aborted).toBe(false);
+		client.abort();
+		expect((await pending).status).toBe(502);
+	});
 });
