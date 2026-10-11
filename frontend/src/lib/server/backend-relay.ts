@@ -132,12 +132,10 @@ const LONG_OPERATIONS = [
 /**
  * Which part of a relayed call (`path` without the leading `/api/`) the deadline covers:
  * `whole` from the request through the buffered answer; `body` only the answer, for the long
- * operations; `none` for a token refresh. Dropping a refresh answer after the backend has rotated
- * the token would leave the browser with the consumed token, whose next use counts as a replay
- * and revokes every session of that admin.
+ * operations. A token refresh is an ordinary call: when its answer is lost after the backend
+ * rotated the token, the backend recovers the session on the next refresh with the old token.
  */
-export function relayDeadline(method: string, path: string): 'whole' | 'body' | 'none' {
+export function relayDeadline(method: string, path: string): 'whole' | 'body' {
 	if (method !== 'POST') return 'whole';
-	if (/^auth\/refresh\/?$/.test(path)) return 'none';
 	return LONG_OPERATIONS.some((pattern) => pattern.test(path)) ? 'body' : 'whole';
 }

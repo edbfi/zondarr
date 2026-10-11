@@ -158,8 +158,8 @@ describe('relayDeadline', () => {
 		['POST', 'v1/servers/abc/reset-circuit', 'whole'],
 		['POST', 'v1/join/ABC123', 'body'],
 		['GET', 'v1/join/ABC123', 'whole'],
-		['POST', 'auth/refresh', 'none'],
-		['POST', 'auth/refresh/', 'none'],
+		['POST', 'auth/refresh', 'whole'],
+		['POST', 'auth/refresh/', 'whole'],
 		['POST', 'auth/login', 'whole'],
 		['DELETE', 'v1/servers/abc', 'whole']
 	])('%s %s -> %s', (method, path, expected) => {

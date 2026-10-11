@@ -30,18 +30,27 @@ export const api = createClient<paths>({
 // Auth endpoints that should not trigger a refresh attempt
 const AUTH_ENDPOINTS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/setup'];
 
-// Module-level promise to serialize concurrent refresh attempts
-let refreshPromise: Promise<boolean> | null = null;
+/**
+ * What a token refresh came to: `ok` (new session cookies are set), `rejected` (the backend
+ * refused the session with a 401/403: sign in again) or `transient` (no answer, or another
+ * failure: the session may still be valid, so keep it and let the caller retry later).
+ */
+type RefreshOutcome = 'ok' | 'rejected' | 'transient';
 
-async function attemptTokenRefresh(): Promise<boolean> {
+// Module-level promise to serialize concurrent refresh attempts
+let refreshPromise: Promise<RefreshOutcome> | null = null;
+
+async function attemptTokenRefresh(): Promise<RefreshOutcome> {
 	try {
 		const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
 			method: 'POST',
 			credentials: 'include'
 		});
-		return response.ok;
+		await response.body?.cancel();
+		if (response.ok) return 'ok';
+		return response.status === 401 || response.status === 403 ? 'rejected' : 'transient';
 	} catch {
-		return false;
+		return 'transient';
 	}
 }
 
@@ -84,14 +93,16 @@ api.use({
 			});
 		}
 
-		const refreshed = await refreshPromise;
+		const outcome = await refreshPromise;
 
-		if (refreshed && requestClone) {
+		if (outcome === 'ok' && requestClone) {
 			// Retry with the cloned request (body stream is still unconsumed)
 			return fetch(requestClone);
 		}
 
-		window.location.href = '/login';
+		// Only a refused session leads to the login page; after a transient failure the caller
+		// gets the original 401 and the session cookies stay for the next attempt.
+		if (outcome === 'rejected') window.location.href = '/login';
 		return response;
 	}
 });

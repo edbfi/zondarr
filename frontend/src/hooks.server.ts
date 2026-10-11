@@ -3,7 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
-import { backendCall, relayedCookieOptions } from '$lib/server/backend-relay';
+import { BACKEND_DEADLINE_MS, backendCall, relayedCookieOptions } from '$lib/server/backend-relay';
 import { foreignWriteResponse, isForeignWrite, isSecureRequest } from '$lib/server/request-origin';
 
 const SSR_API_URL = env.INTERNAL_API_URL ?? publicEnv.PUBLIC_API_URL ?? 'http://localhost:8000';
@@ -14,22 +14,35 @@ function isPublicPath(pathname: string): boolean {
 	return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+/**
+ * Paths whose route talks to the backend itself (`/api/*`, `/health`). The session check does not
+ * run for them: the relay forwards the browser's own cookies and passes the backend's Set-Cookie
+ * back, so a refresh here as well would rotate the refresh token a second time within one request.
+ * Nothing under these routes reads `locals.user`.
+ */
+function isRelayedPath(pathname: string): boolean {
+	return ['/api', '/health'].some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
 /** The budget, in ms, that the two `/api/auth/me` calls share; the refresh between them is not counted. */
 const AUTH_ME_BUDGET_MS = 5_000;
 
 type AuthOutcome = 'authenticated' | 'rejected' | 'transient';
 
 /**
- * Reads the signed-in admin from the backend: `/api/auth/me`, and on a 401/403 a token refresh
- * and a second `/api/auth/me`. Only a 401/403 from the backend means the session is invalid
- * (`rejected`); a timeout, a cancelled request, a transport error or any other failure is
+ * Reads the signed-in admin from the backend: `/api/auth/me` with the access token, and when the
+ * backend refuses it with a 401/403 or there is none, a token refresh and a second `/api/auth/me`.
+ * Only a 401/403 from the backend, or no refresh token to fall back on, means the session is
+ * invalid (`rejected`); a timeout, a cancelled request, a transport error or any other failure is
  * `transient`, and keeps the session cookies, including ones the refresh has just rotated.
  *
- * The refresh has no deadline: dropping its answer after the backend has rotated the token would
- * leave the browser with the consumed token, whose next use counts as a replay and revokes every
- * session of that admin (see `relayDeadline`). It still ends when the request is cancelled.
+ * The refresh has the relay's deadline (`BACKEND_DEADLINE_MS`). If its answer is lost after the
+ * backend rotated the token, the next refresh with the old token recovers the session.
  */
-async function authenticate(event: RequestEvent, accessToken: string): Promise<AuthOutcome> {
+async function authenticate(
+	event: RequestEvent,
+	accessToken: string | undefined
+): Promise<AuthOutcome> {
 	const started = Date.now();
 	const me = async (token: string, budget: number) => {
 		const call = backendCall(event.request.signal);
@@ -52,22 +65,31 @@ async function authenticate(event: RequestEvent, accessToken: string): Promise<A
 	const rejection = (status: number) => status === 401 || status === 403;
 
 	try {
-		const first = await me(accessToken, AUTH_ME_BUDGET_MS);
-		if (first.user) {
-			event.locals.user = first.user;
-			return 'authenticated';
+		if (accessToken) {
+			const first = await me(accessToken, AUTH_ME_BUDGET_MS);
+			if (first.user) {
+				event.locals.user = first.user;
+				return 'authenticated';
+			}
+			if (!rejection(first.status)) return 'transient';
 		}
-		if (!rejection(first.status)) return 'transient';
 
-		// Access token expired — try refreshing via refresh token cookie
+		// No access token, or the backend refused it: refresh with the refresh token cookie
 		const refreshToken = event.cookies.get('zondarr_refresh_token');
 		if (!refreshToken) return 'rejected';
 		const remaining = Math.max(0, AUTH_ME_BUDGET_MS - (Date.now() - started));
-		const refreshResponse = await fetch(`${SSR_API_URL}/api/auth/refresh`, {
-			method: 'POST',
-			headers: { Cookie: `zondarr_refresh_token=${refreshToken}` },
-			signal: event.request.signal
-		});
+		const refreshCall = backendCall(event.request.signal);
+		refreshCall.arm(BACKEND_DEADLINE_MS);
+		let refreshResponse: Response;
+		try {
+			refreshResponse = await fetch(`${SSR_API_URL}/api/auth/refresh`, {
+				method: 'POST',
+				headers: { Cookie: `zondarr_refresh_token=${refreshToken}` },
+				signal: refreshCall.signal
+			});
+		} finally {
+			refreshCall.clear();
+		}
 		if (!refreshResponse.ok) {
 			await refreshResponse.body?.cancel();
 			return rejection(refreshResponse.status) ? 'rejected' : 'transient';
@@ -106,8 +128,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return foreignWriteResponse();
 	}
 
-	// Try to get user info from the access token cookie
+	const { pathname } = event.url;
+	if (isRelayedPath(pathname)) {
+		event.locals.user = null;
+		return resolve(event);
+	}
+
+	// Try to get user info from the session cookies
 	const accessToken = event.cookies.get('zondarr_access_token');
+	const refreshToken = event.cookies.get('zondarr_refresh_token');
 	const skipAuth = ['true', '1', 'yes'].includes((env.DEV_SKIP_AUTH ?? '').toLowerCase());
 	// The backend could not say whether the session is valid (slow or failing), as opposed to
 	// rejecting it.
@@ -123,7 +152,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			onboarding_required: false,
 			onboarding_step: 'complete'
 		};
-	} else if (accessToken) {
+	} else if (accessToken || refreshToken) {
 		const outcome = await authenticate(event, accessToken);
 		if (outcome !== 'authenticated') event.locals.user = null;
 		if (outcome === 'rejected') {
@@ -136,12 +165,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.user = null;
 	}
 
-	const { pathname } = event.url;
-	const isOnboardingBypassPath =
-		pathname.startsWith('/api') || pathname === '/health' || pathname.startsWith('/health/');
-
 	// Enforce onboarding flow before allowing access to normal app routes.
-	if (event.locals.user?.onboarding_required && pathname !== '/setup' && !isOnboardingBypassPath) {
+	if (event.locals.user?.onboarding_required && pathname !== '/setup') {
 		redirect(302, '/setup');
 	}
 
