@@ -10,10 +10,13 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID
 
+import msgspec
 import pytest
+from httpx import Response
 from litestar import Litestar
 from litestar.datastructures import State
 from litestar.di import Provide
+from litestar.exceptions import HTTPException as LitestarHTTPException
 from litestar.security.jwt import Token
 from litestar.testing import AsyncTestClient
 from sqlalchemy import update
@@ -21,7 +24,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from tests.auth_db import production_engine
 from zondarr.api.auth import AuthController
-from zondarr.api.errors import authentication_error_handler
+from zondarr.api.errors import (
+    authentication_error_handler,
+    internal_error_handler,
+    litestar_http_exception_handler,
+)
 from zondarr.api.session_cookies import ACCESS_COOKIE, REFRESH_COOKIE
 from zondarr.config import Settings
 from zondarr.core.auth import create_jwt_auth
@@ -57,7 +64,13 @@ async def client(factory: Factory) -> AsyncGenerator[Client]:
             "session": Provide(provide_db_session),
             "settings": Provide(_provide_settings, sync_to_thread=False),
         },
-        exception_handlers={AuthenticationError: authentication_error_handler},
+        # As in the app: the frontend tells the access-token check's 401
+        # (HTTP_ERROR) from an endpoint's own 401 by these handlers.
+        exception_handlers={
+            AuthenticationError: authentication_error_handler,
+            LitestarHTTPException: litestar_http_exception_handler,
+            Exception: internal_error_handler,
+        },
         on_app_init=[create_jwt_auth(settings).on_app_init],
     )
     async with AsyncTestClient(app=app) as test_client:
@@ -266,3 +279,92 @@ class TestRefreshAndLogout:
         for name, value in first_cookies.items():
             client.cookies.set(name, value)
         assert (await client.get("/api/auth/me")).status_code == 200
+
+
+class _ErrorBody(msgspec.Struct):
+    error_code: str
+
+
+class TestUnauthorizedContract:
+    """Which 401s the frontend refreshes on: only the access-token check's.
+
+    The browser refreshes the session and retries only for a 401 whose
+    ``error_code`` is ``HTTP_ERROR`` (Litestar's NotAuthorizedException from
+    the JWT check); an endpoint's own 401 carries a specific code.
+    """
+
+    @staticmethod
+    def _error_code(response: Response) -> str:
+        return msgspec.json.decode(response.content, type=_ErrorBody).error_code
+
+    async def test_missing_access_token(self, client: Client, factory: Factory) -> None:
+        _ = await _create_admin(factory)
+
+        response = await client.get("/api/auth/me")
+
+        assert response.status_code == 401
+        assert self._error_code(response) == "HTTP_ERROR"
+
+    @pytest.mark.parametrize("kind", ["expired", "bad-signature", "garbage"])
+    async def test_invalid_access_token(
+        self, client: Client, factory: Factory, kind: str
+    ) -> None:
+        admin_id = await _create_admin(factory)
+        await _login(client)
+        token = Token(
+            sub=str(admin_id),
+            exp=datetime.now(UTC) + timedelta(minutes=15),
+            iss="zondarr",
+            extras={"sid": str(_sid(client))},
+        )
+        if kind == "expired":
+            token.exp = datetime.now(UTC) - timedelta(minutes=1)
+            encoded = token.encode(secret=SECRET_KEY, algorithm="HS256")
+        elif kind == "bad-signature":
+            encoded = token.encode(
+                secret="another-secret-key-of-at-least-32-chars", algorithm="HS256"
+            )
+        else:
+            encoded = "not.a.jwt"
+        client.cookies.set(ACCESS_COOKIE, encoded)
+
+        response = await client.get("/api/auth/me")
+
+        assert response.status_code == 401
+        assert self._error_code(response) == "HTTP_ERROR"
+
+    async def test_revoked_session(self, client: Client, factory: Factory) -> None:
+        _ = await _create_admin(factory)
+        await _login(client)
+        async with factory() as session:
+            _ = await session.execute(
+                update(AuthSession)
+                .where(AuthSession.id == _sid(client))
+                .values(revoked_at=datetime.now(UTC), revoked_reason="replay")
+            )
+            await session.commit()
+
+        response = await client.post(
+            "/api/auth/me/change-password",
+            json={
+                "current_password": PASSWORD,
+                "new_password": "another long password",
+            },
+        )
+
+        assert response.status_code == 401
+        assert self._error_code(response) == "HTTP_ERROR"
+
+    async def test_wrong_current_password_is_not_a_session_failure(
+        self, client: Client, factory: Factory
+    ) -> None:
+        _ = await _create_admin(factory)
+        await _login(client)
+
+        response = await client.post(
+            "/api/auth/me/change-password",
+            json={"current_password": "wrong", "new_password": "another long password"},
+        )
+
+        assert response.status_code == 401
+        assert self._error_code(response) == "INVALID_CREDENTIALS"

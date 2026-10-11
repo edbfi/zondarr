@@ -1,7 +1,7 @@
 /**
- * Session refresh on a 401 in the browser, for the default client, scoped clients (load
- * functions) and the raw-fetch wrappers: only a session the backend refuses leads to the login
- * page, and on the server nothing refreshes.
+ * Session refresh on a 401 from the access-token check in the browser, for the default client,
+ * scoped clients (load functions) and the raw-fetch wrappers: other 401s pass through untouched,
+ * only a session the backend refuses leads to the login page, and on the server nothing refreshes.
  *
  * @module $lib/api/client-refresh.test
  */
@@ -36,7 +36,9 @@ function backend(me: Answer[], refresh: Answer[], url = ME) {
 /** A fetch mock as the `typeof fetch` that load functions pass (Bun's type adds members). */
 const asFetch = (mock: ReturnType<typeof backend>) => mock as unknown as typeof fetch;
 
-const unauthorized = () => new Response('{}', { status: 401 });
+/** The 401 of the backend's access-token check (Litestar's NotAuthorizedException). */
+const unauthorized = () =>
+	Response.json({ detail: 'Invalid or expired token', error_code: 'HTTP_ERROR' }, { status: 401 });
 
 /** Load a fresh client module (its refresh promise is module state) on top of `fetchMock`. */
 async function loadClient(fetchMock: ReturnType<typeof backend>) {
@@ -189,18 +191,16 @@ describe('refresh after a 401', () => {
 	});
 
 	it('keeps the page and returns the error when a raw wrapper hits a transient refresh failure', async () => {
-		const fetchMock = backend(
-			[new Response('{"detail":"expired"}', { status: 401 })],
-			[new Response('{}', { status: 503 })],
-			PASSWORD
-		);
+		const fetchMock = backend([unauthorized()], [new Response('{}', { status: 503 })], PASSWORD);
 		vi.stubGlobal('fetch', fetchMock);
 		vi.resetModules();
 		const { changePassword } = await import('./auth');
 
 		const result = await changePassword({ current_password: 'a', new_password: 'b' });
 
-		expect(result).toEqual({ error: { detail: 'expired' } });
+		expect(result).toEqual({
+			error: { detail: 'Invalid or expired token', error_code: 'HTTP_ERROR' }
+		});
 		expect(location.href).toBe('http://frontend.test/dashboard');
 	});
 
@@ -217,5 +217,74 @@ describe('refresh after a 401', () => {
 		expect(response.status).toBe(401);
 		expect(loadFetch).toHaveBeenCalledOnce();
 		expect(globalFetch).not.toHaveBeenCalled();
+	});
+
+	it('returns a wrong-input 401 as it is, without a refresh', async () => {
+		const wrongPassword = {
+			detail: 'Current password is incorrect',
+			error_code: 'INVALID_CREDENTIALS'
+		};
+		const fetchMock = backend([Response.json(wrongPassword, { status: 401 })], [], PASSWORD);
+		vi.stubGlobal('fetch', fetchMock);
+		vi.resetModules();
+		const { changePassword } = await import('./auth');
+
+		const result = await changePassword({ current_password: 'wrong', new_password: 'b' });
+
+		expect(result).toEqual({ error: wrongPassword });
+		expect(fetchMock.mock.calls.map(([input]) => urlOf(input))).toEqual([PASSWORD]);
+		expect(location.href).toBe('http://frontend.test/dashboard');
+	});
+
+	it('refreshes and retries the same call for an access-token 401', async () => {
+		const changed = { success: true, message: 'Password changed successfully' };
+		const fetchMock = backend(
+			[unauthorized(), Response.json(changed)],
+			[new Response('{}', { status: 200 })],
+			PASSWORD
+		);
+		vi.stubGlobal('fetch', fetchMock);
+		vi.resetModules();
+		const { changePassword } = await import('./auth');
+
+		const result = await changePassword({ current_password: 'right', new_password: 'b' });
+
+		expect(result).toEqual({ data: changed });
+		expect(fetchMock.mock.calls.map(([input]) => urlOf(input))).toEqual([
+			PASSWORD,
+			REFRESH,
+			PASSWORD
+		]);
+	});
+
+	it.each([
+		['a plain-text 401', new Response('Unauthorized', { status: 401 })],
+		['an empty 401', new Response(null, { status: 401 })],
+		['a JSON 401 without an error code', new Response('{}', { status: 401 })]
+	])('does not refresh for %s', async (_label, answer) => {
+		const fetchMock = backend([answer], [], ME);
+		const api = await loadClient(fetchMock);
+
+		const { response } = await api.GET('/api/auth/me');
+
+		expect(response.status).toBe(401);
+		expect(fetchMock.mock.calls.map(([input]) => urlOf(input))).toEqual([ME]);
+		expect(location.href).toBe('http://frontend.test/dashboard');
+	});
+
+	it('still sends a 401 from the login endpoint to the login page', async () => {
+		const fetchMock = backend(
+			[Response.json({ error_code: 'INVALID_CREDENTIALS' }, { status: 401 })],
+			[],
+			'http://backend.test/api/auth/login'
+		);
+		const api = await loadClient(fetchMock);
+
+		const { response } = await api.POST('/api/auth/login', {
+			body: { username: 'admin', password: 'wrong' }
+		});
+
+		expect(response.status).toBe(401);
+		expect(location.href).toBe('/login');
 	});
 });

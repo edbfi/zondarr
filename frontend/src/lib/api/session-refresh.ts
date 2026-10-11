@@ -1,8 +1,8 @@
 /**
  * Session refresh for backend calls made in the browser.
  *
- * `withSessionRefresh(fetch)` wraps a fetch function: when a call answers 401, it refreshes the
- * session once for the whole page (concurrent 401s share one refresh) and retries the call once.
+ * `withSessionRefresh(fetch)` wraps a fetch function: when the backend's access-token check
+ * answers a call with 401, it refreshes the session once for the whole page (concurrent 401s share one refresh) and retries the call once.
  * The default API client, every scoped client (load functions) and the raw-fetch wrappers of
  * authenticated endpoints use it, since the server hook leaves `/api/*` to the relay.
  *
@@ -60,15 +60,36 @@ export function refreshSession(): Promise<RefreshOutcome> {
 	return refreshPromise;
 }
 
+/**
+ * Whether a 401 comes from the backend's access-token check (missing, invalid or expired token,
+ * revoked session), which answers `error_code: "HTTP_ERROR"`. An endpoint's own 401 for wrong
+ * input (a wrong current password, a wrong TOTP code) has a specific code and is no reason to
+ * refresh. The body is read from a copy, so the caller can still read the response.
+ */
+async function isSessionFailure(response: Response): Promise<boolean> {
+	try {
+		const body: unknown = await response.clone().json();
+		return (
+			typeof body === 'object' &&
+			body !== null &&
+			'error_code' in body &&
+			body.error_code === 'HTTP_ERROR'
+		);
+	} catch {
+		return false;
+	}
+}
+
 function pathOf(input: RequestInfo | URL): string {
 	const href = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
 	return new URL(href, window.location.origin).pathname;
 }
 
 /**
- * Wrap `baseFetch` (default: the global `fetch`, looked up per call) so that a 401 in the browser
- * refreshes the session and retries the call once. Only a session the backend refuses leads to the
- * login page; after a transient failure the caller gets the original 401 and keeps its cookies.
+ * Wrap `baseFetch` (default: the global `fetch`, looked up per call) so that a 401 from the
+ * access-token check in the browser refreshes the session and retries the call once. Any other 401
+ * is returned as it is. Only a session the backend refuses leads to the login page; after a
+ * transient failure the caller gets the original 401 and keeps its cookies.
  */
 export function withSessionRefresh(baseFetch?: Fetch): Fetch {
 	const send: Fetch = baseFetch ?? ((input, init) => globalThis.fetch(input, init));
@@ -92,12 +113,12 @@ export function withSessionRefresh(baseFetch?: Fetch): Fetch {
 			window.location.href = '/login';
 			return response;
 		}
+		if (!(await isSessionFailure(response))) return response;
 
 		const outcome = await refreshSession();
-		if (outcome === 'ok') {
-			await response.body?.cancel();
-			return send(...retry);
-		}
+		// The 401's body was read from a copy; the unread original is dropped without awaiting a
+		// cancel, which can hang once the copy has been read.
+		if (outcome === 'ok') return send(...retry);
 		if (outcome === 'rejected') window.location.href = '/login';
 		return response;
 	};
