@@ -280,16 +280,12 @@ describe('API proxy deadlines and cancellation', () => {
 		expect((await pending).status).toBe(504);
 	});
 
-	// Dropping a refresh answer after the backend rotated the token would leave the browser with the
-	// consumed token, whose next use the backend treats as a replay (it revokes every session).
-	it('never times out a token refresh, answer included', async () => {
+	// A lost refresh answer is recovered by the backend, so a refresh gets the ordinary deadline.
+	it('times out a token refresh like any other call', async () => {
 		vi.useFakeTimers();
-		const client = new AbortController();
-		const spy = stalledBody();
-		const pending = POST(relayEvent('POST', 'auth/refresh', client));
-		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS * 2);
-		expect(signalOf(spy)?.aborted).toBe(false);
-		client.abort();
-		expect((await pending).status).toBe(502);
+		stalledBody();
+		const pending = POST(relayEvent('POST', 'auth/refresh'));
+		await vi.advanceTimersByTimeAsync(BACKEND_DEADLINE_MS);
+		expect((await pending).status).toBe(504);
 	});
 });

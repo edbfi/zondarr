@@ -1,6 +1,6 @@
 """Database models - SQLAlchemy 2.0 async models."""
 
-from zondarr.models.admin import AdminAccount, RefreshToken
+from zondarr.models.admin import AdminAccount, AuthSession, RefreshToken
 from zondarr.models.app_setting import AppSetting
 from zondarr.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from zondarr.models.identity import Identity, User
@@ -23,6 +23,7 @@ from zondarr.models.wizard import (
 __all__ = [
     "AdminAccount",
     "AppSetting",
+    "AuthSession",
     "Base",
     "Identity",
     "InteractionType",

@@ -1,7 +1,8 @@
 """Authentication service for admin account management.
 
 Orchestrates admin account creation, credential verification,
-external auth (via provider registry), and refresh token lifecycle.
+external auth (via provider registry), and the auth session lifecycle:
+one session per sign-in, rotating refresh tokens within it.
 """
 
 import asyncio
@@ -10,14 +11,19 @@ import secrets
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
-from uuid import UUID
+from uuid import UUID, uuid4
 
+import msgspec
 import structlog
 
 from zondarr.core.exceptions import AuthenticationError
 from zondarr.media.registry import registry
-from zondarr.models.admin import AdminAccount, RefreshToken
-from zondarr.repositories.admin import AdminAccountRepository, RefreshTokenRepository
+from zondarr.models.admin import AdminAccount, AuthSession, RefreshToken
+from zondarr.repositories.admin import (
+    AdminAccountRepository,
+    AuthSessionRepository,
+    RefreshTokenRepository,
+)
 from zondarr.repositories.app_setting import AppSettingRepository
 from zondarr.services.onboarding import OnboardingService, OnboardingStep
 from zondarr.services.password import hash_password, needs_rehash, verify_password
@@ -28,9 +34,16 @@ if TYPE_CHECKING:
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)  # pyright: ignore[reportAny]
 
-# Refresh token defaults
+# Refresh token defaults: each token expires after this much inactivity...
 REFRESH_TOKEN_EXPIRY_DAYS = 7
 REFRESH_TOKEN_BYTES = 32
+# ...and no session outlives this, however often it refreshes.
+SESSION_ABSOLUTE_DAYS = 14
+# Live refresh tokens one session may hold (a successor plus the siblings
+# issued when answers to the rotation were lost).
+MAX_LIVE_TOKENS_PER_SESSION = 3
+# Revoked sessions are kept this long for audit before cleanup deletes them.
+REVOKED_SESSION_RETENTION_DAYS = 7
 
 # Serializes concurrent setup attempts within a single process
 _setup_lock = asyncio.Lock()
@@ -41,16 +54,32 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+class Rotation(msgspec.Struct, frozen=True, kw_only=True):
+    """Result of a successful refresh.
+
+    Attributes:
+        admin: The session's admin account (the caller checks ``enabled``).
+        session_id: The session id, for the new access token's ``sid``.
+        raw_token: The new raw refresh token (only returned once).
+    """
+
+    admin: AdminAccount
+    session_id: UUID
+    raw_token: str
+
+
 class AuthService:
     """Service for authentication operations.
 
     Attributes:
         admin_repo: Repository for admin accounts.
+        session_repo: Repository for auth sessions.
         token_repo: Repository for refresh tokens.
         app_setting_repo: Repository for app-level key/value settings.
     """
 
     admin_repo: AdminAccountRepository
+    session_repo: AuthSessionRepository
     token_repo: RefreshTokenRepository
     app_setting_repo: AppSettingRepository
     onboarding_service: OnboardingService
@@ -58,10 +87,12 @@ class AuthService:
     def __init__(
         self,
         admin_repo: AdminAccountRepository,
+        session_repo: AuthSessionRepository,
         token_repo: RefreshTokenRepository,
         app_setting_repo: AppSettingRepository,
     ) -> None:
         self.admin_repo = admin_repo
+        self.session_repo = session_repo
         self.token_repo = token_repo
         self.app_setting_repo = app_setting_repo
         self.onboarding_service = OnboardingService(admin_repo, app_setting_repo)
@@ -328,141 +359,214 @@ class AuthService:
         )
         return admin
 
-    async def create_refresh_token(
+    async def start_session(
         self,
         admin: AdminAccount,
         *,
-        user_agent: str | None = None,
-        ip_address: str | None = None,
-    ) -> str:
-        """Create a new refresh token for an admin.
+        user_agent: str | None,
+        ip: str | None,
+    ) -> tuple[UUID, str]:
+        """Start a new auth session for a successful sign-in.
+
+        Every sign-in (local, external, setup, TOTP completion) gets its own
+        session, so replay detection and logout never touch the admin's
+        other sessions.
 
         Args:
-            admin: The admin account.
-            user_agent: Client user-agent for audit.
-            ip_address: Client IP for audit.
+            admin: The signed-in admin account.
+            user_agent: Client user-agent, for audit.
+            ip: Client IP address, for audit.
 
         Returns:
-            The raw refresh token string (only returned once).
+            The session id (the access token's ``sid``) and the raw first
+            refresh token (only returned once).
         """
-        raw_token = secrets.token_urlsafe(REFRESH_TOKEN_BYTES)
-        token_hash = _hash_token(raw_token)
-
-        refresh_token = RefreshToken(
-            admin_account_id=admin.id,
-            token_hash=token_hash,
-            expires_at=datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRY_DAYS),
-            user_agent=user_agent,
-            ip_address=ip_address,
-        )
-        _ = await self.token_repo.create(refresh_token)
-
-        return raw_token
-
-    async def consume_refresh_token(self, raw_token: str) -> AdminAccount:
-        """Atomically consume a refresh token and return the associated admin.
-
-        Uses an atomic UPDATE to mark the token as revoked in a single
-        operation, preventing race conditions where the same token could
-        be used concurrently. If the atomic consume fails, the token is
-        looked up to determine the reason (replay, expired, or invalid).
-
-        On replay detection, all tokens for the admin are revoked as a
-        security precaution (the token family may be compromised).
-
-        Args:
-            raw_token: The raw refresh token string.
-
-        Returns:
-            The associated AdminAccount.
-
-        Raises:
-            AuthenticationError: If the token is invalid, expired, revoked,
-                or the account is disabled.
-        """
-        token_hash = _hash_token(raw_token)
         now = datetime.now(UTC)
-        consumed = await self.token_repo.consume_token(token_hash, now)
+        auth_session = AuthSession(
+            id=uuid4(),
+            admin_account_id=admin.id,
+            absolute_expires_at=now + timedelta(days=SESSION_ABSOLUTE_DAYS),
+            current_generation=0,
+            user_agent=user_agent[:512] if user_agent else None,
+            ip_address=ip[:45] if ip else None,
+        )
+        _ = await self.session_repo.create(auth_session)
+        raw_token = await self._issue_token(auth_session, generation=0, now=now)
+        return auth_session.id, raw_token
 
-        if consumed is None:
-            # Determine the reason for failure
-            existing = await self.token_repo.get_by_token_hash(token_hash)
-            if existing is not None and existing.revoked:
-                # Replay detected — revoke all tokens for this admin
-                logger.warning(
-                    "refresh_token_replay_detected",
-                    admin_id=str(existing.admin_account_id),
-                )
-                _ = await self.token_repo.revoke_all_for_admin(
-                    existing.admin_account_id
-                )
-                # Commit revocations before raising so they survive the
-                # provide_db_session rollback triggered by the exception.
-                await self.token_repo.session.commit()
-                raise AuthenticationError("Token has been revoked", "TOKEN_REVOKED")
-            if existing is not None and existing.expires_at <= now:
-                raise AuthenticationError("Token has expired", "TOKEN_EXPIRED")
-            raise AuthenticationError("Invalid refresh token", "INVALID_TOKEN")
+    async def rotate(self, raw_token: str) -> Rotation:
+        """Exchange a refresh token for its successor, in one transaction.
 
-        # Token consumed successfully — validate the admin account
-        admin = await self.admin_repo.get_by_id(consumed.admin_account_id)
-        if admin is None or not admin.enabled:
-            raise AuthenticationError(
-                "Account not found or disabled", "ACCOUNT_DISABLED"
-            )
+        The session row is locked first (``AuthSessionRepository.lock``), so
+        every rotation and revocation of a session runs serially on SQLite
+        and PostgreSQL, and the token and session are re-read under the lock.
 
-        return admin
-
-    async def validate_refresh_token(self, raw_token: str) -> AdminAccount:
-        """Validate a refresh token and return the associated admin.
+        - A live token of the current generation is consumed; its live
+          siblings are revoked and a child of the next generation is issued.
+        - A token consumed by the latest rotation whose successors are still
+          unused (the answer to that rotation was lost) gets one more sibling
+          of the current generation, up to MAX_LIVE_TOKENS_PER_SESSION live
+          tokens.
+        - An expired token ends the session (TOKEN_EXPIRED).
+        - Anything else (a revoked token, an older generation, a token whose
+          sibling was used, the sibling cap) is a replay and revokes this
+          session only (TOKEN_REVOKED).
 
         Args:
             raw_token: The raw refresh token string.
 
         Returns:
-            The associated AdminAccount.
+            The rotation: admin, session id and the new raw refresh token. The
+            caller still checks that the admin is enabled.
 
         Raises:
-            AuthenticationError: If the token is invalid, expired, or revoked.
+            AuthenticationError: INVALID_TOKEN, TOKEN_EXPIRED or TOKEN_REVOKED.
         """
         token_hash = _hash_token(raw_token)
-        refresh_token = await self.token_repo.get_by_token_hash(token_hash)
+        found = await self.token_repo.get_by_token_hash(token_hash)
+        if found is None:
+            raise AuthenticationError("Invalid refresh token", "INVALID_TOKEN")
+        # Only the immutable session id of this unlocked read is trusted.
+        session_id = found.session_id
 
-        if refresh_token is None:
+        now = datetime.now(UTC)
+        if not await self.session_repo.lock(session_id, now):
             raise AuthenticationError("Invalid refresh token", "INVALID_TOKEN")
 
-        if refresh_token.revoked:
+        auth_session = await self.session_repo.get_current(session_id)
+        token = await self.token_repo.get_by_token_hash(token_hash, current=True)
+        if auth_session is None or token is None:
+            raise AuthenticationError("Invalid refresh token", "INVALID_TOKEN")
+
+        if (
+            auth_session.revoked_at is not None
+            or auth_session.absolute_expires_at <= now
+        ):
+            # Nothing to revoke: the session is over. The lock's write is
+            # rolled back with the request.
             raise AuthenticationError("Token has been revoked", "TOKEN_REVOKED")
 
-        if refresh_token.expires_at < datetime.now(UTC):
-            raise AuthenticationError("Token has expired", "TOKEN_EXPIRED")
+        generation = auth_session.current_generation
+        live = token.consumed_at is None and token.revoked_at is None
 
-        admin = await self.admin_repo.get_by_id(refresh_token.admin_account_id)
-        if admin is None or not admin.enabled:
-            raise AuthenticationError(
-                "Account not found or disabled", "ACCOUNT_DISABLED"
+        if live and token.generation == generation:
+            if token.expires_at <= now:
+                await self._end_after_failure(auth_session, reason="expired", now=now)
+                raise AuthenticationError("Token has expired", "TOKEN_EXPIRED")
+            token.consumed_at = now
+            _ = await self.token_repo.revoke_live_siblings(
+                session_id, generation, keep=token.id, now=now
             )
+            auth_session.current_generation = generation + 1
+            new_token = await self._issue_token(
+                auth_session, generation=generation + 1, now=now
+            )
+            return await self._rotation(auth_session, new_token)
 
-        return admin
+        if (
+            token.consumed_at is not None
+            and token.revoked_at is None
+            and token.generation == generation - 1
+        ):
+            if token.consumed_at + timedelta(days=REFRESH_TOKEN_EXPIRY_DAYS) <= now:
+                # Its successor would have expired by now as well.
+                await self._end_after_failure(auth_session, reason="expired", now=now)
+                raise AuthenticationError("Token has expired", "TOKEN_EXPIRED")
+            live_count = await self.token_repo.count_live(session_id, generation)
+            if live_count < MAX_LIVE_TOKENS_PER_SESSION:
+                new_token = await self._issue_token(
+                    auth_session, generation=generation, now=now
+                )
+                logger.info(
+                    "refresh_token_recovered",
+                    session_id=str(session_id),
+                    admin_id=str(auth_session.admin_account_id),
+                    generation=generation,
+                    live_tokens=live_count + 1,
+                )
+                return await self._rotation(auth_session, new_token)
 
-    async def revoke_refresh_token(self, raw_token: str) -> None:
-        """Revoke a specific refresh token.
+        logger.warning(
+            "refresh_token_replay_detected",
+            session_id=str(session_id),
+            admin_id=str(auth_session.admin_account_id),
+            token_generation=token.generation,
+            session_generation=generation,
+        )
+        await self._end_after_failure(auth_session, reason="replay", now=now)
+        raise AuthenticationError("Token has been revoked", "TOKEN_REVOKED")
+
+    async def end_session(
+        self,
+        *,
+        raw_refresh: str | None = None,
+        session_id: UUID | None = None,
+        reason: str,
+    ) -> bool:
+        """Revoke one session, found by its refresh token or by its id.
+
+        The refresh token wins when it names a session; ``session_id`` (the
+        access token's ``sid``) is used otherwise. Revoking a session twice
+        changes nothing. The caller's transaction commits the revocation.
 
         Args:
-            raw_token: The raw refresh token string.
-        """
-        token_hash = _hash_token(raw_token)
-        refresh_token = await self.token_repo.get_by_token_hash(token_hash)
-        if refresh_token is not None:
-            refresh_token.revoked = True
+            raw_refresh: A raw refresh token of the session, if known.
+            session_id: The session id, if known.
+            reason: Why (logout, replay, expired, admin).
 
-    async def revoke_all_tokens(self, admin: AdminAccount) -> None:
-        """Revoke all refresh tokens for an admin.
-
-        Args:
-            admin: The admin account.
+        Returns:
+            True if a session was revoked by this call.
         """
-        _ = await self.token_repo.revoke_all_for_admin(admin.id)
+        target = None
+        if raw_refresh:
+            token = await self.token_repo.get_by_token_hash(_hash_token(raw_refresh))
+            if token is not None:
+                target = token.session_id
+        if target is None:
+            target = session_id
+        if target is None:
+            return False
+        revoked = await self.session_repo.revoke(
+            target, reason=reason, now=datetime.now(UTC)
+        )
+        if revoked:
+            logger.info("auth_session_ended", session_id=str(target), reason=reason)
+        return revoked
+
+    async def _issue_token(
+        self, auth_session: AuthSession, *, generation: int, now: datetime
+    ) -> str:
+        """Insert a refresh token of ``auth_session`` and return its raw value."""
+        raw_token = secrets.token_urlsafe(REFRESH_TOKEN_BYTES)
+        refresh_token = RefreshToken(
+            admin_account_id=auth_session.admin_account_id,
+            session_id=auth_session.id,
+            generation=generation,
+            token_hash=_hash_token(raw_token),
+            expires_at=min(
+                now + timedelta(days=REFRESH_TOKEN_EXPIRY_DAYS),
+                auth_session.absolute_expires_at,
+            ),
+        )
+        _ = await self.token_repo.create(refresh_token)
+        return raw_token
+
+    async def _rotation(self, auth_session: AuthSession, raw_token: str) -> Rotation:
+        admin = await self.admin_repo.get_by_id(auth_session.admin_account_id)
+        if admin is None:
+            raise AuthenticationError("Invalid refresh token", "INVALID_TOKEN")
+        return Rotation(admin=admin, session_id=auth_session.id, raw_token=raw_token)
+
+    async def _end_after_failure(
+        self, auth_session: AuthSession, *, reason: str, now: datetime
+    ) -> None:
+        """Revoke the session and commit, ahead of the error the caller raises.
+
+        ``provide_db_session`` rolls back on an exception, so the revocation
+        has to be committed before raising.
+        """
+        _ = await self.session_repo.revoke(auth_session.id, reason=reason, now=now)
+        await self.session_repo.session.commit()
 
     async def update_email(self, admin_id: UUID, email: str | None) -> AdminAccount:
         """Update the email address on an admin account.

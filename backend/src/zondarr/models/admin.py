@@ -2,7 +2,8 @@
 
 Provides:
 - AdminAccount: Admin user account for Zondarr dashboard access
-- RefreshToken: JWT refresh tokens stored in DB for revocation support
+- AuthSession: One sign-in, owning a family of rotating refresh tokens
+- RefreshToken: Rotating refresh tokens of an auth session (stored hashed)
 """
 
 from datetime import datetime
@@ -11,7 +12,13 @@ from uuid import UUID
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from zondarr.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from zondarr.models.base import (
+    Base,
+    TimestampMixin,
+    UTCDateTime,
+    UTCTimestampMixin,
+    UUIDPrimaryKeyMixin,
+)
 
 
 class AdminAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -56,6 +63,10 @@ class AdminAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     totp_last_used_at: Mapped[int | None] = mapped_column(Integer, default=None)
 
     # Relationships
+    auth_sessions: Mapped[list[AuthSession]] = relationship(
+        cascade="all, delete-orphan",
+        lazy="noload",
+    )
     refresh_tokens: Mapped[list[RefreshToken]] = relationship(
         back_populates="admin_account",
         cascade="all, delete-orphan",
@@ -67,20 +78,64 @@ class AdminAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
 
-class RefreshToken(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """JWT refresh token for session management.
+class AuthSession(Base, UUIDPrimaryKeyMixin, UTCTimestampMixin):
+    """One sign-in of an admin: the family of refresh tokens it issues.
 
-    Stored in DB to support revocation. The token itself is hashed
-    with SHA-256 for storage; only the hash is persisted.
+    Created by every successful login (local, external, setup, TOTP
+    completion) and never extended past ``absolute_expires_at``. Refresh
+    rotation, replay detection and logout all act on one session, never on
+    the admin's other sessions. Access tokens carry the session id (``sid``)
+    and stop working once the session is revoked or expired.
+
+    Invariant: every live refresh token of a session has
+    ``generation == current_generation``.
+
+    Attributes:
+        id: UUID primary key (also the ``sid`` claim of its access tokens).
+        admin_account_id: FK to the owning admin account.
+        absolute_expires_at: Hard end of the session; refreshes never extend it.
+        last_refresh_at: When a refresh last touched the session.
+        revoked_at: When the session was revoked, if it was.
+        revoked_reason: Why: logout, replay, expired or admin.
+        current_generation: Generation of the session's live refresh tokens.
+        user_agent: Client user-agent at sign-in, for audit.
+        ip_address: Client IP address at sign-in, for audit.
+    """
+
+    __tablename__: str = "auth_sessions"
+
+    admin_account_id: Mapped[UUID] = mapped_column(
+        ForeignKey("admin_accounts.id", ondelete="CASCADE"),
+        index=True,
+    )
+    absolute_expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    last_refresh_at: Mapped[datetime | None] = mapped_column(
+        UTCDateTime(), default=None
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
+    revoked_reason: Mapped[str | None] = mapped_column(String(32), default=None)
+    current_generation: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0"
+    )
+    user_agent: Mapped[str | None] = mapped_column(String(512), default=None)
+    ip_address: Mapped[str | None] = mapped_column(String(45), default=None)
+
+
+class RefreshToken(Base, UUIDPrimaryKeyMixin, UTCTimestampMixin):
+    """Rotating refresh token of an auth session.
+
+    Stored hashed (SHA-256); only the hash is persisted. A token is live while
+    both ``consumed_at`` and ``revoked_at`` are unset.
 
     Attributes:
         id: UUID primary key.
         admin_account_id: FK to the owning admin account.
-        token_hash: SHA-256 hash of the refresh token value.
-        expires_at: When this token expires.
-        revoked: Whether this token has been explicitly revoked.
-        user_agent: Client user-agent string for audit.
-        ip_address: Client IP address for audit.
+        session_id: FK to the auth session the token belongs to.
+        generation: Rotation generation within the session.
+        token_hash: SHA-256 hash of the refresh token value (unique).
+        expires_at: Sliding inactivity expiry of this token.
+        consumed_at: When a refresh exchanged this token for its successor.
+        revoked_at: When the token was revoked without being exchanged.
     """
 
     __tablename__: str = "refresh_tokens"
@@ -88,11 +143,15 @@ class RefreshToken(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     admin_account_id: Mapped[UUID] = mapped_column(
         ForeignKey("admin_accounts.id", ondelete="CASCADE"),
     )
-    token_hash: Mapped[str] = mapped_column(String(64), index=True)
-    expires_at: Mapped[datetime] = mapped_column()
-    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
-    user_agent: Mapped[str | None] = mapped_column(String(512), default=None)
-    ip_address: Mapped[str | None] = mapped_column(String(45), default=None)
+    session_id: Mapped[UUID] = mapped_column(
+        ForeignKey("auth_sessions.id", ondelete="CASCADE"),
+        index=True,
+    )
+    generation: Mapped[int] = mapped_column(Integer)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    consumed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
+    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
 
     # Relationships
     admin_account: Mapped[AdminAccount] = relationship(

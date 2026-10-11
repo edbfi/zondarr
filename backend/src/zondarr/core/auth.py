@@ -2,10 +2,11 @@
 
 Provides:
 - AdminUser: Lightweight struct stored in request.user after JWT validation
-- retrieve_user_handler: Verifies admin exists and is enabled
+- retrieve_user_handler: Verifies the admin and the token's auth session
 - create_jwt_auth: Factory for configured JWTCookieAuth instance
 """
 
+from datetime import UTC, datetime
 from typing import Any, override
 from uuid import UUID
 
@@ -23,7 +24,7 @@ from litestar.security.jwt.middleware import JWTCookieAuthenticationMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from zondarr.config import Settings
-from zondarr.repositories.admin import AdminAccountRepository
+from zondarr.repositories.admin import AuthSessionRepository
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)  # pyright: ignore[reportAny]
 
@@ -60,12 +61,15 @@ class AdminUser(msgspec.Struct):
         username: Admin username.
         email: Optional admin email.
         auth_method: How this admin authenticated.
+        session_id: The auth session of the access token (None for the dev
+            admin).
     """
 
     id: UUID
     username: str
     email: str | None = None
     auth_method: str = "local"
+    session_id: UUID | None = None
 
 
 DEV_ADMIN = AdminUser(
@@ -86,21 +90,36 @@ class DevSkipAuthMiddleware(AbstractAuthenticationMiddleware):
         return AuthenticationResult(user=DEV_ADMIN, auth=None)
 
 
+def session_id_claim(token: Token) -> UUID | None:
+    """Return the access token's ``sid`` claim as a UUID, or None without one."""
+    sid: object = token.extras.get("sid")
+    if not isinstance(sid, str):
+        return None
+    try:
+        return UUID(sid)
+    except ValueError:
+        return None
+
+
 async def retrieve_user_handler(
     token: Token,
     connection: ASGIConnection[Any, Any, Any, Any],  # pyright: ignore[reportExplicitAny]
 ) -> AdminUser | None:
     """Retrieve and verify admin user from JWT token.
 
-    Called by JWTCookieAuth on every authenticated request.
-    Queries the database to verify the admin still exists and is enabled.
+    Called by JWTCookieAuth on every authenticated request. One query loads
+    the admin and the auth session named by the token's ``sid`` claim; the
+    token is refused when it has no ``sid``, the admin is missing or
+    disabled, or the session is revoked or past its absolute expiry. A
+    revoked session (logout, replay) therefore ends its access tokens at
+    once, not when they expire.
 
     Args:
         token: The decoded JWT token.
         connection: The ASGI connection.
 
     Returns:
-        AdminUser if valid, None if the admin doesn't exist or is disabled.
+        AdminUser if valid, None otherwise.
     """
     # Reject challenge tokens — they must not be accepted as access tokens
     if token.extras.get("purpose") == "totp_challenge":
@@ -111,15 +130,26 @@ async def retrieve_user_handler(
     except ValueError, TypeError:
         return None
 
+    session_id = session_id_claim(token)
+    if session_id is None:
+        return None
+
     try:
         session_factory: async_sessionmaker[AsyncSession] = (  # pyright: ignore[reportAny]
             connection.app.state.session_factory
         )
         async with session_factory() as session:
-            repo = AdminAccountRepository(session)
-            admin = await repo.get_by_id(admin_id)
-
-            if admin is None or not admin.enabled:
+            found = await AuthSessionRepository(session).get_with_admin(
+                admin_id, session_id
+            )
+            if found is None:
+                return None
+            admin, auth_session = found
+            if (
+                not admin.enabled
+                or auth_session.revoked_at is not None
+                or auth_session.absolute_expires_at <= datetime.now(UTC)
+            ):
                 return None
 
             return AdminUser(
@@ -127,6 +157,7 @@ async def retrieve_user_handler(
                 username=admin.username,
                 email=admin.email,
                 auth_method=admin.auth_method,
+                session_id=auth_session.id,
             )
     except Exception:
         logger.exception("Failed to retrieve admin user from token")
