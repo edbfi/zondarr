@@ -22,7 +22,7 @@ from litestar.testing import AsyncTestClient
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from tests.auth_db import production_engine
+from tests.auth_db import BACKENDS, production_engine
 from zondarr.api.auth import AuthController
 from zondarr.api.errors import (
     authentication_error_handler,
@@ -48,9 +48,14 @@ def _provide_settings(state: State) -> Settings:
     return state.settings  # pyright: ignore[reportAny]
 
 
-@pytest.fixture
-async def factory(tmp_path: Path) -> AsyncGenerator[Factory]:
-    async with production_engine("sqlite", tmp_path) as engine:
+@pytest.fixture(params=BACKENDS)
+async def factory(
+    request: pytest.FixtureRequest, tmp_path: Path
+) -> AsyncGenerator[Factory]:
+    backend: str = request.param  # pyright: ignore[reportAny]
+    async with production_engine(
+        backend, tmp_path, served_by_test_client=True
+    ) as engine:
         yield async_sessionmaker(engine, expire_on_commit=False)
 
 

@@ -9,7 +9,6 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import sqlite
 
 # Revision identifiers, used by Alembic.
 revision: str = "bf231ee80bbd"
@@ -31,7 +30,7 @@ def upgrade() -> None:
         sa.Column("enabled", sa.Boolean(), nullable=False),
         sa.Column("last_login_at", sa.DateTime(), nullable=True),
         sa.Column(
-            "totp_enabled", sa.Boolean(), server_default=sa.text("0"), nullable=False
+            "totp_enabled", sa.Boolean(), server_default=sa.false(), nullable=False
         ),
         sa.Column("totp_secret_encrypted", sa.Text(), nullable=True),
         sa.Column("totp_backup_codes", sa.Text(), nullable=True),
@@ -323,7 +322,7 @@ def upgrade() -> None:
         "step_interactions",
         sa.Column("step_id", sa.Uuid(), nullable=False),
         sa.Column("interaction_type", sa.String(length=20), nullable=False),
-        sa.Column("config", sqlite.JSON(), nullable=False),
+        sa.Column("config", sa.JSON(), nullable=False),
         sa.Column("display_order", sa.Integer(), nullable=False),
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(

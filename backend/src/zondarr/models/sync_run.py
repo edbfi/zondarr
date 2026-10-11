@@ -7,7 +7,7 @@ can expose last successful sync times and troubleshooting context.
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from zondarr.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -37,12 +37,8 @@ class SyncRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     sync_type: Mapped[str] = mapped_column(String(32))
     trigger: Mapped[str] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(32))
-    started_at: Mapped[datetime] = mapped_column(
-        DateTime(), default=lambda: datetime.now(UTC)
-    )
-    finished_at: Mapped[datetime] = mapped_column(
-        DateTime(), default=lambda: datetime.now(UTC)
-    )
+    started_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    finished_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
     error_message: Mapped[str | None] = mapped_column(Text, default=None)
 
     __table_args__: tuple[
