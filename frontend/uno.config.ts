@@ -1,3 +1,4 @@
+import extractorSvelte from '@unocss/extractor-svelte';
 import presetIcons from '@unocss/preset-icons';
 import transformerVariantGroup from '@unocss/transformer-variant-group';
 import { defineConfig, presetWind4 } from 'unocss';
@@ -5,6 +6,7 @@ import presetAnimations from 'unocss-preset-animations';
 import { presetShadcn } from 'unocss-preset-shadcn';
 
 export default defineConfig({
+	extractors: [extractorSvelte()],
 	presets: [
 		presetWind4({ preflights: { reset: true } }),
 		presetAnimations(),
@@ -18,10 +20,11 @@ export default defineConfig({
 		}
 	},
 	theme: {
-		fontFamily: {
-			sans: ['IBM Plex Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-			mono: ['JetBrains Mono', 'IBM Plex Mono', 'ui-monospace', 'monospace'],
-			display: ['JetBrains Mono', 'IBM Plex Mono', 'ui-monospace', 'monospace']
+		// presetWind4 reads `font`, not `fontFamily`, and emits each stack as `--font-*`.
+		font: {
+			sans: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif',
+			mono: '"JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace',
+			display: '"JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace'
 		},
 		colors: {
 			// Control Room palette — reference CSS variables for dark/light switching

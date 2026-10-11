@@ -51,11 +51,6 @@
 	--cr-badge-muted-border: hsl(220 10% 18%);
 	--cr-accent-highlight: hsl(45 90% 55% / 0.05);
 
-	/* Typography */
-	--font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-	--font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
-	--font-display: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
-
 	/* Transitions */
 	--transition-fast: 150ms ease;
 	--transition-normal: 200ms ease;
