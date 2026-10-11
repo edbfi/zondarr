@@ -180,6 +180,30 @@ export function prepare(environment: Environment): Plan {
 	return { mode: 'front', origin, hostname, port, idleTimeout, ownPeerHeader, directory, socket };
 }
 
+/**
+ * Without a front the loaded adapter drains on SIGTERM and SIGINT itself. It does not handle
+ * SIGHUP (the terminal was closed), whose default action would end the process without the
+ * drain or sveltekit:shutdown, so the first SIGHUP reaches it as SIGTERM, once; a SIGHUP after
+ * shutdown has begun (`bun run start` forwards the hangup a second time) is ignored rather than
+ * becoming the adapter's second signal, which exits 1 at once. And work the app still has in
+ * flight (a request waiting on the backend) would keep the process alive past the drain
+ * deadline, so it exits at the deadline fixed by the first signal.
+ */
+function handleDirectShutdown(environment: Environment): void {
+	let deadline: number | undefined;
+	const onSignal = (signal: NodeJS.Signals) => {
+		if (deadline !== undefined) return;
+		deadline = Date.now() + shutdownTimeoutSeconds(environment) * 1000;
+		if (signal === 'SIGHUP') process.kill(process.pid, 'SIGTERM');
+	};
+	process.on('SIGTERM', onSignal);
+	process.on('SIGINT', onSignal);
+	process.on('SIGHUP', onSignal);
+	process.once('sveltekit:shutdown', () => {
+		setTimeout(() => process.exit(), Math.max(0, (deadline ?? 0) - Date.now())).unref();
+	});
+}
+
 export async function serve(
 	environment: Environment = process.env,
 	importServer: () => Promise<unknown> = () =>
@@ -189,7 +213,12 @@ export async function serve(
 	const plan = prepare(environment);
 	if (plan.mode === 'direct') {
 		if (plan.warning) log.warn(plan.warning);
+		// Nothing is installed during the load: no request can have been served yet (the adapter
+		// binds and installs its own handlers in one synchronous step at its end), so a signal's
+		// default action (exit at once) loses nothing, and holding it would let a slow load
+		// outlive the deadline.
 		await importServer();
+		handleDirectShutdown(environment);
 		return;
 	}
 

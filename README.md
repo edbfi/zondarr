@@ -86,8 +86,8 @@ Behind a reverse proxy:
 Other frontend settings: `SHUTDOWN_TIMEOUT` (default 30 seconds) is how long a
 stopping frontend waits for open requests, such as the log viewer's stream, before
 closing them; the Docker image sets a shorter default that fits Docker's stop
-timeout. With `ORIGIN` set, the frontend exits at that deadline even if the app
-is still waiting on the backend. `BODY_SIZE_LIMIT` (default `512K`) caps request bodies. See
+timeout. The frontend exits at that deadline even if the app is still waiting on
+the backend. `BODY_SIZE_LIMIT` (default `512K`) caps request bodies. See
 [.env.example](.env.example) for every variable.
 
 ## License
