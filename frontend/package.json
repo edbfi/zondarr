@@ -29,6 +29,7 @@
 		"@types/bun": "1.4.2",
 		"@types/jsdom": "30.0.0",
 		"@typescript/native": "npm:typescript@7.0.2",
+		"@unocss/extractor-svelte": "66.10.5",
 		"@unocss/preset-icons": "66.10.5",
 		"@unocss/transformer-variant-group": "66.10.5",
 		"bits-ui": "2.19.5",
