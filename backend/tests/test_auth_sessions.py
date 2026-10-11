@@ -70,12 +70,6 @@ def _service(session: AsyncSession) -> AuthService:
     )
 
 
-def _naive_now() -> datetime:
-    # AdminAccount's columns are naive DateTime; asyncpg refuses aware values
-    # for them, so the admin rows of these tests are written naive UTC.
-    return datetime.now(UTC).replace(tzinfo=None)
-
-
 async def _create_admin(
     factory: Factory, *, username: str = "admin", enabled: bool = True
 ) -> UUID:
@@ -85,7 +79,6 @@ async def _create_admin(
             password_hash="not-a-real-hash",
             auth_method="local",
             enabled=enabled,
-            created_at=_naive_now(),
         )
         session.add(admin)
         await session.commit()

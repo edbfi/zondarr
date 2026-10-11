@@ -1,11 +1,9 @@
 """The auth-session migration (75f25ededea9) on a database with legacy tokens.
 
 Live legacy refresh tokens become one session each; revoked and expired ones
-are deleted; the downgrade restores the legacy columns. SQLite runs the real
-migration chain up to the previous revision. On PostgreSQL (when
-``ZONDARR_TEST_POSTGRES_URL`` is set) the legacy tables are created directly
-and stamped, because the initial revision does not run there (its boolean
-server defaults are integers).
+are deleted; the downgrade restores the legacy columns. Both backends run the
+real migration chain up to the previous revision (PostgreSQL when
+``ZONDARR_TEST_POSTGRES_URL`` is set).
 """
 
 import asyncio
@@ -27,12 +25,6 @@ PREVIOUS = "a1b2c3d4e5f6"
 REVISION = "75f25ededea9"
 
 _legacy = sa.MetaData()
-_legacy_admins = sa.Table(
-    "admin_accounts",
-    _legacy,
-    sa.Column("id", sa.Uuid(), primary_key=True),
-    sa.Column("username", sa.String(32), nullable=False),
-)
 _legacy_tokens = sa.Table(
     "refresh_tokens",
     _legacy,
@@ -56,11 +48,6 @@ _legacy_tokens = sa.Table(
     ),
     sa.Column("updated_at", sa.DateTime()),
 )
-_alembic_version = sa.Table(
-    "alembic_version",
-    _legacy,
-    sa.Column("version_num", sa.String(32), primary_key=True),
-)
 
 
 def _alembic(url: str, monkeypatch: pytest.MonkeyPatch) -> Config:
@@ -83,7 +70,7 @@ def _rows(url: str, sql: str) -> list[tuple[object, ...]]:
     return asyncio.run(query())
 
 
-def _seed(url: str, *, create_legacy_tables: bool) -> dict[str, UUID]:
+def _seed(url: str) -> dict[str, UUID]:
     """Insert one admin and three legacy tokens: live, revoked and expired."""
     now = datetime.now(UTC).replace(tzinfo=None)
     admin_id = uuid4()
@@ -98,25 +85,19 @@ def _seed(url: str, *, create_legacy_tables: bool) -> dict[str, UUID]:
         engine = create_async_engine(url)
         try:
             async with engine.begin() as conn:
-                if create_legacy_tables:
-                    await conn.run_sync(_legacy.create_all)
-                    _ = await conn.execute(
-                        _alembic_version.insert().values(version_num=PREVIOUS)
-                    )
-                    _ = await conn.execute(
-                        _legacy_admins.insert().values(id=admin_id, username="admin")
-                    )
-                else:
-                    _ = await conn.execute(
-                        sa.text(
-                            """
-                            INSERT INTO admin_accounts (id, username, auth_method,
-                                enabled, totp_enabled, totp_failed_attempts, created_at)
-                            VALUES (:id, 'admin', 'local', 1, 0, 0, :now)
-                            """
-                        ),
-                        {"id": admin_id.hex, "now": now},
-                    )
+                _ = await conn.execute(
+                    sa.text(
+                        """
+                        INSERT INTO admin_accounts (id, username, auth_method,
+                            enabled, totp_enabled, totp_failed_attempts, created_at)
+                        VALUES (:id, 'admin', 'local', TRUE, FALSE, 0, :now)
+                        """
+                    ).bindparams(
+                        sa.bindparam("id", type_=sa.Uuid()),
+                        sa.bindparam("now", type_=sa.DateTime()),
+                    ),
+                    {"id": admin_id, "now": now},
+                )
                 for name, revoked, expires_at in tokens:
                     _ = await conn.execute(
                         _legacy_tokens.insert().values(
@@ -161,11 +142,8 @@ def test_upgrade_moves_live_tokens_into_sessions_and_downgrade_restores_them(
 
 def _migrate(backend: str, url: str, monkeypatch: pytest.MonkeyPatch) -> None:
     config = _alembic(url, monkeypatch)
-    if backend == "sqlite":
-        command.upgrade(config, PREVIOUS)
-        ids = _seed(url, create_legacy_tables=False)
-    else:
-        ids = _seed(url, create_legacy_tables=True)
+    command.upgrade(config, PREVIOUS)
+    ids = _seed(url)
 
     command.upgrade(config, REVISION)
 

@@ -15,8 +15,15 @@ and for interactions when step is deleted.
 from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
-from sqlalchemy.dialects.sqlite import JSON
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from zondarr.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin

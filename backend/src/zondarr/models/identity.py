@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from zondarr.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -48,9 +48,7 @@ class Identity(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     display_name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str | None] = mapped_column(String(255), default=None)
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
+    expires_at: Mapped[datetime | None] = mapped_column(default=None)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Relationships - use selectinload for collections to avoid N+1
@@ -96,9 +94,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     external_user_id: Mapped[str] = mapped_column(String(255))
     username: Mapped[str] = mapped_column(String(255))
     external_user_type: Mapped[str | None] = mapped_column(String(50), default=None)
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
+    expires_at: Mapped[datetime | None] = mapped_column(default=None)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Table-level indexes and constraints

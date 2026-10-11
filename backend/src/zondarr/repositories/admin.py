@@ -11,6 +11,9 @@ from zondarr.core.exceptions import RepositoryError
 from zondarr.models.admin import AdminAccount, AuthSession, RefreshToken
 from zondarr.repositories.base import Repository
 
+# Key of the PostgreSQL advisory lock that serializes first-admin creation.
+_FIRST_ADMIN_LOCK_KEY = 0x7A6F6E6461727231  # "zondarr1"
+
 
 def _rowcount(result: object) -> int:
     """Rows matched by an UPDATE/DELETE (``Result`` does not type ``rowcount``)."""
@@ -133,11 +136,15 @@ class AdminAccountRepository(Repository[AdminAccount]):
     ) -> AdminAccount | None:
         """Create the first admin account if none exists.
 
-        Uses INSERT ... SELECT ... WHERE NOT EXISTS as the primary guard.
-        Falls back to catching IntegrityError from the UNIQUE constraint
-        on ``username`` to handle PostgreSQL races under READ COMMITTED
-        isolation (two transactions can both see "no rows" and attempt
-        to insert). A savepoint keeps the outer transaction clean.
+        Uses INSERT ... SELECT ... WHERE NOT EXISTS. On SQLite the statement
+        runs under the database write lock, so a second attempt sees the
+        first admin. On PostgreSQL under READ COMMITTED, two transactions
+        could both see "no rows" and insert admins with different usernames,
+        so a transaction-scoped advisory lock serializes the attempts across
+        workers: the second one's statement then sees the committed admin.
+        The lock is released when the caller's transaction ends. An
+        IntegrityError (a concurrent insert of the same username) also
+        means another attempt won.
 
         The caller (AuthService.setup_admin) also holds an asyncio.Lock
         to serialize attempts within a single process.
@@ -152,7 +159,12 @@ class AdminAccountRepository(Repository[AdminAccount]):
             The created AdminAccount, or None if an admin already exists.
         """
         try:
+            if self.session.get_bind().dialect.name == "postgresql":
+                _ = await self.session.execute(
+                    select(func.pg_advisory_xact_lock(_FIRST_ADMIN_LOCK_KEY))
+                )
             admin_id = uuid4()
+            table = AdminAccount.__table__
             columns = [
                 AdminAccount.__table__.c.id,
                 AdminAccount.__table__.c.username,
@@ -162,7 +174,7 @@ class AdminAccountRepository(Repository[AdminAccount]):
                 AdminAccount.__table__.c.enabled,
             ]
             values = select(
-                literal(admin_id.hex).label("id"),
+                literal(admin_id, type_=table.c.id.type).label("id"),
                 literal(username).label("username"),
                 literal(password_hash).label("password_hash"),
                 literal(email).label("email"),
@@ -170,7 +182,6 @@ class AdminAccountRepository(Repository[AdminAccount]):
                 literal(True).label("enabled"),
             ).where(~exists(select(AdminAccount.id)))
 
-            table = AdminAccount.__table__
             stmt = insert(table).from_select(columns, values)  # pyright: ignore[reportArgumentType]
             result = await self.session.execute(stmt)
 

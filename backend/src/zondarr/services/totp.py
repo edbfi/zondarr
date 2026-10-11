@@ -143,9 +143,7 @@ class TOTPService:
         # regardless of whether the threshold was reached.
         if (
             admin.totp_last_failed_at is not None
-            and (
-                datetime.now(UTC).replace(tzinfo=None) - admin.totp_last_failed_at
-            ).total_seconds()
+            and (datetime.now(UTC) - admin.totp_last_failed_at).total_seconds()
             >= RATE_LIMIT_WINDOW_SECONDS
         ):
             admin.totp_failed_attempts = 0
@@ -169,7 +167,7 @@ class TOTPService:
             admin: The admin account.
         """
         admin.totp_failed_attempts += 1
-        admin.totp_last_failed_at = datetime.now(UTC).replace(tzinfo=None)
+        admin.totp_last_failed_at = datetime.now(UTC)
 
     def reset_failed_attempts(self, admin: AdminAccount) -> None:
         """Reset failed attempt counter after successful verification.

@@ -12,13 +12,7 @@ from uuid import UUID
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from zondarr.models.base import (
-    Base,
-    TimestampMixin,
-    UTCDateTime,
-    UTCTimestampMixin,
-    UUIDPrimaryKeyMixin,
-)
+from zondarr.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 class AdminAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
@@ -78,7 +72,7 @@ class AdminAccount(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
 
-class AuthSession(Base, UUIDPrimaryKeyMixin, UTCTimestampMixin):
+class AuthSession(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """One sign-in of an admin: the family of refresh tokens it issues.
 
     Created by every successful login (local, external, setup, TOTP
@@ -108,11 +102,9 @@ class AuthSession(Base, UUIDPrimaryKeyMixin, UTCTimestampMixin):
         ForeignKey("admin_accounts.id", ondelete="CASCADE"),
         index=True,
     )
-    absolute_expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
-    last_refresh_at: Mapped[datetime | None] = mapped_column(
-        UTCDateTime(), default=None
-    )
-    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
+    absolute_expires_at: Mapped[datetime] = mapped_column()
+    last_refresh_at: Mapped[datetime | None] = mapped_column(default=None)
+    revoked_at: Mapped[datetime | None] = mapped_column(default=None)
     revoked_reason: Mapped[str | None] = mapped_column(String(32), default=None)
     current_generation: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0"
@@ -121,7 +113,7 @@ class AuthSession(Base, UUIDPrimaryKeyMixin, UTCTimestampMixin):
     ip_address: Mapped[str | None] = mapped_column(String(45), default=None)
 
 
-class RefreshToken(Base, UUIDPrimaryKeyMixin, UTCTimestampMixin):
+class RefreshToken(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Rotating refresh token of an auth session.
 
     Stored hashed (SHA-256); only the hash is persisted. A token is live while
@@ -149,9 +141,9 @@ class RefreshToken(Base, UUIDPrimaryKeyMixin, UTCTimestampMixin):
     )
     generation: Mapped[int] = mapped_column(Integer)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
-    consumed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
-    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), default=None)
+    expires_at: Mapped[datetime] = mapped_column()
+    consumed_at: Mapped[datetime | None] = mapped_column(default=None)
+    revoked_at: Mapped[datetime | None] = mapped_column(default=None)
 
     # Relationships
     admin_account: Mapped[AdminAccount] = relationship(

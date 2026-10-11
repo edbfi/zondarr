@@ -17,7 +17,6 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
-    DateTime,
     ForeignKey,
     Integer,
     String,
@@ -82,9 +81,7 @@ class Invitation(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     code: Mapped[str] = mapped_column(String(20), unique=True, index=True)
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
+    expires_at: Mapped[datetime | None] = mapped_column(default=None)
     max_uses: Mapped[int | None] = mapped_column(Integer, default=None)
     use_count: Mapped[int] = mapped_column(Integer, default=0)
     duration_days: Mapped[int | None] = mapped_column(Integer, default=None)

@@ -18,6 +18,7 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from zondarr.core.database import create_engine_from_url
 from zondarr.models.base import Base
@@ -61,11 +62,20 @@ async def empty_database(backend: str, tmp_path: Path) -> AsyncGenerator[str]:
 
 @asynccontextmanager
 async def production_engine(
-    backend: str, tmp_path: Path
+    backend: str, tmp_path: Path, *, served_by_test_client: bool = False
 ) -> AsyncGenerator[AsyncEngine]:
-    """Yield an engine built by ``create_engine_from_url`` on a fresh schema."""
+    """Yield an engine built by ``create_engine_from_url`` on a fresh schema.
+
+    Litestar's test clients run the app on an event loop of their own, and an
+    asyncpg connection only works on the loop that opened it, so an engine the
+    app uses through a test client must not pool PostgreSQL connections.
+    """
     async with empty_database(backend, tmp_path) as url:
-        engine = create_engine_from_url(url)
+        engine = (
+            create_async_engine(url, poolclass=NullPool)
+            if served_by_test_client and backend == "postgres"
+            else create_engine_from_url(url)
+        )
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
