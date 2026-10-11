@@ -5,18 +5,17 @@ Provides endpoints for admin authentication:
 - POST /api/auth/setup — Create first admin account
 - POST /api/auth/login — Local username/password login
 - POST /api/auth/login/{method} — External provider login
-- POST /api/auth/refresh — Exchange refresh token for new access token
-- POST /api/auth/logout — Revoke tokens and clear cookies
+- POST /api/auth/refresh — Rotate the refresh token, issue a new access token
+- POST /api/auth/logout — End the auth session and clear cookies
 - GET /api/auth/me — Current admin info (requires auth)
 """
 
 import hmac
 import secrets
 from collections.abc import Sequence
-from datetime import UTC, datetime, timedelta
 
 from litestar import Controller, Request, Response, get, patch, post
-from litestar.datastructures import Cookie, State
+from litestar.datastructures import State
 from litestar.security.jwt import Token
 from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,11 +23,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from zondarr.config import Settings
 from zondarr.core.auth import AdminUser
 from zondarr.core.exceptions import AuthenticationError
-from zondarr.repositories.admin import AdminAccountRepository, RefreshTokenRepository
+from zondarr.repositories.admin import (
+    AdminAccountRepository,
+    AuthSessionRepository,
+    RefreshTokenRepository,
+)
 from zondarr.repositories.app_setting import AppSettingRepository
-from zondarr.services.auth import REFRESH_TOKEN_EXPIRY_DAYS, AuthService
+from zondarr.services.auth import AuthService
 from zondarr.services.oauth_session import OAuthSessionStore
-from zondarr.services.settings import SettingsService
 
 from .schemas import (
     AdminEmailUpdate,
@@ -48,10 +50,16 @@ from .schemas import (
     PasswordChangeResponse,
     ProviderAuthInfo,
 )
+from .session_cookies import (
+    ACCESS_COOKIE,
+    REFRESH_COOKIE,
+    cleared_session_cookies,
+    resolve_secure_cookies,
+    session_cookies,
+    session_id_from_access_token,
+    start_session_cookies,
+)
 from .totp import create_challenge_token
-
-# Access token lifetime
-ACCESS_TOKEN_MINUTES = 15
 
 
 class AuthController(Controller):
@@ -63,58 +71,10 @@ class AuthController(Controller):
     def _create_auth_service(self, session: AsyncSession) -> AuthService:
         return AuthService(
             admin_repo=AdminAccountRepository(session),
+            session_repo=AuthSessionRepository(session),
             token_repo=RefreshTokenRepository(session),
             app_setting_repo=AppSettingRepository(session),
         )
-
-    async def _resolve_secure_cookies(
-        self, session: AsyncSession, settings: Settings
-    ) -> bool:
-        """Resolve the effective secure_cookies value.
-
-        If the SECURE_COOKIES env var is set, use the Settings value (which
-        came from the env var). Otherwise, check the database.
-        """
-        import os
-
-        if os.environ.get("SECURE_COOKIES") is not None:
-            return settings.secure_cookies
-        service = SettingsService(AppSettingRepository(session))
-        value, _ = await service.get_secure_cookies()
-        return value
-
-    def _create_refresh_cookie(self, raw_token: str, *, secure: bool = False) -> Cookie:
-        """Create HTTP-only cookie for the refresh token."""
-        return Cookie(
-            key="zondarr_refresh_token",
-            value=raw_token,
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=REFRESH_TOKEN_EXPIRY_DAYS * 86400,
-            path="/",
-        )
-
-    def _create_access_token(
-        self, admin_id: str, secret_key: str, *, secure: bool = False
-    ) -> tuple[str, Cookie]:
-        """Create JWT access token and cookie."""
-        token = Token(
-            sub=admin_id,
-            exp=datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_MINUTES),
-            iss="zondarr",
-        )
-        encoded = token.encode(secret=secret_key, algorithm="HS256")
-        cookie = Cookie(
-            key="zondarr_access_token",
-            value=encoded,
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=ACCESS_TOKEN_MINUTES * 60,
-            path="/",
-        )
-        return encoded, cookie
 
     @get(
         "/methods",
@@ -196,21 +156,14 @@ class AuthController(Controller):
         )
         await service.initialize_onboarding()
 
-        # Issue tokens
-        secret_key = settings.secret_key
-        secure = await self._resolve_secure_cookies(session, settings)
-        _, access_cookie = self._create_access_token(
-            str(admin.id), secret_key, secure=secure
+        cookies = await start_session_cookies(
+            service, admin, request=request, session=session, settings=settings
         )
-        refresh_token = await service.create_refresh_token(admin)
-        refresh_cookie = self._create_refresh_cookie(refresh_token, secure=secure)
-
-        response = Response(
+        return Response(
             AuthSuccessResponse(),
             status_code=HTTP_201_CREATED,
-            cookies=[access_cookie, refresh_cookie],
+            cookies=cookies,
         )
-        return response
 
     @post(
         "/onboarding/advance",
@@ -237,6 +190,7 @@ class AuthController(Controller):
     async def login(
         self,
         data: LoginRequest,
+        request: Request[None, None, State],
         session: AsyncSession,
         settings: Settings,
     ) -> Response[LoginResponse]:
@@ -268,20 +222,11 @@ class AuthController(Controller):
                 status_code=HTTP_200_OK,
             )
 
-        # No TOTP — issue tokens normally
-        secret_key = settings.secret_key
-        secure = await self._resolve_secure_cookies(session, settings)
-        _, access_cookie = self._create_access_token(
-            str(admin.id), secret_key, secure=secure
+        # No TOTP — start the session
+        cookies = await start_session_cookies(
+            service, admin, request=request, session=session, settings=settings
         )
-        refresh_token = await service.create_refresh_token(admin)
-        refresh_cookie = self._create_refresh_cookie(refresh_token, secure=secure)
-
-        return Response(
-            LoginResponse(),
-            status_code=HTTP_200_OK,
-            cookies=[access_cookie, refresh_cookie],
-        )
+        return Response(LoginResponse(), status_code=HTTP_200_OK, cookies=cookies)
 
     @post(
         "/login/{method:str}",
@@ -293,6 +238,7 @@ class AuthController(Controller):
         self,
         method: str,
         data: ExternalLoginRequest,
+        request: Request[None, None, State],
         session: AsyncSession,
         settings: Settings,
     ) -> Response[LoginResponse]:
@@ -351,20 +297,11 @@ class AuthController(Controller):
                 status_code=HTTP_200_OK,
             )
 
-        # No TOTP — issue tokens normally
-        secret_key = settings.secret_key
-        secure = await self._resolve_secure_cookies(session, settings)
-        _, access_cookie = self._create_access_token(
-            str(admin.id), secret_key, secure=secure
+        # No TOTP — start the session
+        cookies = await start_session_cookies(
+            service, admin, request=request, session=session, settings=settings
         )
-        refresh_token = await service.create_refresh_token(admin)
-        refresh_cookie = self._create_refresh_cookie(refresh_token, secure=secure)
-
-        return Response(
-            LoginResponse(),
-            status_code=HTTP_200_OK,
-            cookies=[access_cookie, refresh_cookie],
-        )
+        return Response(LoginResponse(), status_code=HTTP_200_OK, cookies=cookies)
 
     @post(
         "/refresh",
@@ -378,29 +315,34 @@ class AuthController(Controller):
         session: AsyncSession,
         settings: Settings,
     ) -> Response[AuthSuccessResponse]:
-        """Exchange a refresh token for a new access token."""
-        token = request.cookies.get("zondarr_refresh_token")
+        """Rotate the refresh token and issue a new access token.
+
+        The rotation and the new tokens belong to the refresh token's auth
+        session; see ``AuthService.rotate`` for replay and lost-answer
+        handling.
+        """
+        token = request.cookies.get(REFRESH_COOKIE)
         if not token:
             raise AuthenticationError(
                 "No refresh token provided", "MISSING_REFRESH_TOKEN"
             )
 
         service = self._create_auth_service(session)
-        admin = await service.consume_refresh_token(token)
+        rotation = await service.rotate(token)
+        if not rotation.admin.enabled:
+            raise AuthenticationError(
+                "Account not found or disabled", "ACCOUNT_DISABLED"
+            )
 
-        secret_key = settings.secret_key
-        secure = await self._resolve_secure_cookies(session, settings)
-        _, access_cookie = self._create_access_token(
-            str(admin.id), secret_key, secure=secure
+        secure = await resolve_secure_cookies(session, settings)
+        cookies = session_cookies(
+            admin_id=rotation.admin.id,
+            session_id=rotation.session_id,
+            raw_refresh=rotation.raw_token,
+            secret_key=settings.secret_key,
+            secure=secure,
         )
-        new_refresh_token = await service.create_refresh_token(admin)
-        refresh_cookie = self._create_refresh_cookie(new_refresh_token, secure=secure)
-
-        return Response(
-            AuthSuccessResponse(),
-            status_code=HTTP_200_OK,
-            cookies=[access_cookie, refresh_cookie],
-        )
+        return Response(AuthSuccessResponse(), status_code=HTTP_200_OK, cookies=cookies)
 
     @post(
         "/logout",
@@ -414,37 +356,29 @@ class AuthController(Controller):
         session: AsyncSession,
         settings: Settings,
     ) -> Response[dict[str, bool]]:
-        """Revoke tokens and clear cookies."""
-        token = request.cookies.get("zondarr_refresh_token")
-        if token:
+        """End this browser's auth session and clear its cookies.
+
+        The session is found by the refresh cookie, or by the access token's
+        ``sid`` when the refresh cookie is missing. Other sessions of the
+        admin are not affected.
+        """
+        raw_refresh = request.cookies.get(REFRESH_COOKIE)
+        session_id = session_id_from_access_token(
+            request.cookies.get(ACCESS_COOKIE), settings.secret_key
+        )
+        if raw_refresh or session_id is not None:
             service = self._create_auth_service(session)
-            await service.revoke_refresh_token(token)
+            _ = await service.end_session(
+                raw_refresh=raw_refresh or None,
+                session_id=session_id,
+                reason="logout",
+            )
 
-        # Clear both cookies
-        secure = await self._resolve_secure_cookies(session, settings)
-        clear_access_cookie = Cookie(
-            key="zondarr_access_token",
-            value="",
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=0,
-            path="/",
-        )
-        clear_refresh_cookie = Cookie(
-            key="zondarr_refresh_token",
-            value="",
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=0,
-            path="/",
-        )
-
+        secure = await resolve_secure_cookies(session, settings)
         return Response(
             {"success": True},
             status_code=HTTP_200_OK,
-            cookies=[clear_access_cookie, clear_refresh_cookie],
+            cookies=cleared_session_cookies(secure=secure),
         )
 
     @get(

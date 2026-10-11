@@ -30,12 +30,13 @@ from zondarr.core.retry import (
     is_retryable_sync_error,
 )
 from zondarr.models.sync_run import SyncRun
-from zondarr.repositories.admin import RefreshTokenRepository
+from zondarr.repositories.admin import AuthSessionRepository
 from zondarr.repositories.identity import IdentityRepository
 from zondarr.repositories.invitation import InvitationRepository
 from zondarr.repositories.media_server import MediaServerRepository
 from zondarr.repositories.sync_run import SyncRunRepository
 from zondarr.repositories.user import UserRepository
+from zondarr.services.auth import REVOKED_SESSION_RETENTION_DAYS
 from zondarr.services.media_server import MediaServerService
 from zondarr.services.oauth_session import OAuthSessionStore
 from zondarr.services.sync import SyncService
@@ -593,7 +594,7 @@ class BackgroundTaskManager:
             )
 
     async def _run_token_cleanup_task(self, state: State, /) -> None:
-        """Periodically clean up expired refresh tokens.
+        """Periodically clean up auth sessions that are over, with their tokens.
 
         Runs at the same interval as expiration checks.
         """
@@ -607,20 +608,38 @@ class BackgroundTaskManager:
 
             await asyncio.sleep(interval)
 
+    async def cleanup_expired_tokens(self, state: State, /) -> None:
+        """Delete stale auth sessions and their refresh tokens.
+
+        Public method for testing. Delegates to internal implementation.
+
+        Args:
+            state: Application state containing session factory (positional-only).
+        """
+        await self._cleanup_expired_tokens(state)
+
     async def _cleanup_expired_tokens(self, state: State, /) -> None:
-        """Delete expired refresh tokens from the database."""
+        """Delete auth sessions that are over, and their refresh tokens.
+
+        A session is deleted once past its absolute expiry, once it has no
+        live refresh token that has not expired, or, when revoked, after the
+        audit retention period.
+        """
         session_factory = cast(
             async_sessionmaker[AsyncSession],
             state.session_factory,
         )
 
         async with session_factory() as session:
-            repo = RefreshTokenRepository(session)
+            repo = AuthSessionRepository(session)
             now = datetime.now(UTC)
-            deleted = await repo.delete_expired(now)
+            deleted = await repo.delete_stale(
+                now,
+                revoked_before=now - timedelta(days=REVOKED_SESSION_RETENTION_DAYS),
+            )
+            await session.commit()
             if deleted > 0:
-                await session.commit()
-                logger.info("Cleaned up expired refresh tokens", count=deleted)
+                logger.info("Cleaned up stale auth sessions", count=deleted)
 
     async def _run_oauth_cleanup_task(self, state: State, /) -> None:
         """Periodically clean up expired OAuth sessions.

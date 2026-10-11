@@ -24,7 +24,11 @@ from zondarr.api.errors import authentication_error_handler
 from zondarr.config import Settings
 from zondarr.core.exceptions import AuthenticationError
 from zondarr.models.admin import AdminAccount
-from zondarr.repositories.admin import AdminAccountRepository, RefreshTokenRepository
+from zondarr.repositories.admin import (
+    AdminAccountRepository,
+    AuthSessionRepository,
+    RefreshTokenRepository,
+)
 from zondarr.repositories.app_setting import AppSettingRepository
 from zondarr.services.auth import AuthService
 
@@ -224,6 +228,7 @@ class TestAuthenticateExternalBlockedDuringSetup:
 def _make_service(session: AsyncSession) -> AuthService:
     return AuthService(
         admin_repo=AdminAccountRepository(session),
+        session_repo=AuthSessionRepository(session),
         token_repo=RefreshTokenRepository(session),
         app_setting_repo=AppSettingRepository(session),
     )

@@ -17,7 +17,7 @@ from uuid import UUID
 
 import structlog
 from litestar import Controller, Request, Response, post
-from litestar.datastructures import Cookie, State
+from litestar.datastructures import State
 from litestar.security.jwt import Token
 from litestar.status_codes import HTTP_200_OK
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,9 +26,13 @@ from zondarr.config import Settings
 from zondarr.core.auth import AdminUser
 from zondarr.core.exceptions import AuthenticationError
 from zondarr.models.admin import AdminAccount
-from zondarr.repositories.admin import AdminAccountRepository, RefreshTokenRepository
+from zondarr.repositories.admin import (
+    AdminAccountRepository,
+    AuthSessionRepository,
+    RefreshTokenRepository,
+)
 from zondarr.repositories.app_setting import AppSettingRepository
-from zondarr.services.auth import REFRESH_TOKEN_EXPIRY_DAYS, AuthService
+from zondarr.services.auth import AuthService
 from zondarr.services.password import verify_password
 from zondarr.services.totp import TOTPService
 
@@ -43,6 +47,7 @@ from .schemas import (
     TOTPSetupResponse,
     TOTPVerifyRequest,
 )
+from .session_cookies import start_session_cookies
 
 logger: structlog.stdlib.BoundLogger = structlog.get_logger(__name__)  # pyright: ignore[reportAny]
 
@@ -121,10 +126,6 @@ def validate_challenge_token(encoded_token: str, secret_key: str) -> tuple[UUID,
         ) from None
 
 
-# Access token lifetime (matches AuthController)
-ACCESS_TOKEN_MINUTES = 15
-
-
 class TOTPController(Controller):
     """Controller for TOTP verification endpoints during login."""
 
@@ -134,57 +135,10 @@ class TOTPController(Controller):
     def _create_auth_service(self, session: AsyncSession) -> AuthService:
         return AuthService(
             admin_repo=AdminAccountRepository(session),
+            session_repo=AuthSessionRepository(session),
             token_repo=RefreshTokenRepository(session),
             app_setting_repo=AppSettingRepository(session),
         )
-
-    async def _resolve_secure_cookies(
-        self, session: AsyncSession, settings: Settings
-    ) -> bool:
-        """Resolve the effective secure_cookies value."""
-        import os
-
-        from zondarr.repositories.app_setting import AppSettingRepository
-        from zondarr.services.settings import SettingsService
-
-        if os.environ.get("SECURE_COOKIES") is not None:
-            return settings.secure_cookies
-        service = SettingsService(AppSettingRepository(session))
-        value, _ = await service.get_secure_cookies()
-        return value
-
-    def _create_refresh_cookie(self, raw_token: str, *, secure: bool = False) -> Cookie:
-        """Create HTTP-only cookie for the refresh token."""
-        return Cookie(
-            key="zondarr_refresh_token",
-            value=raw_token,
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=REFRESH_TOKEN_EXPIRY_DAYS * 86400,
-            path="/",
-        )
-
-    def _create_access_token(
-        self, admin_id: str, secret_key: str, *, secure: bool = False
-    ) -> tuple[str, Cookie]:
-        """Create JWT access token and cookie."""
-        token = Token(
-            sub=admin_id,
-            exp=datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_MINUTES),
-            iss="zondarr",
-        )
-        encoded = token.encode(secret=secret_key, algorithm="HS256")
-        cookie = Cookie(
-            key="zondarr_access_token",
-            value=encoded,
-            httponly=True,
-            secure=secure,
-            samesite="lax",
-            max_age=ACCESS_TOKEN_MINUTES * 60,
-            path="/",
-        )
-        return encoded, cookie
 
     @post(
         "/verify",
@@ -195,6 +149,7 @@ class TOTPController(Controller):
     async def verify_totp(
         self,
         data: TOTPVerifyRequest,
+        request: Request[None, None, State],
         session: AsyncSession,
         settings: Settings,
     ) -> Response[AuthSuccessResponse]:
@@ -236,19 +191,14 @@ class TOTPController(Controller):
         totp_service.reset_failed_attempts(admin)
         admin.last_login_at = datetime.now(UTC)
 
-        auth_service = self._create_auth_service(session)
-        secure = await self._resolve_secure_cookies(session, settings)
-        _, access_cookie = self._create_access_token(
-            str(admin.id), secret_key, secure=secure
+        cookies = await start_session_cookies(
+            self._create_auth_service(session),
+            admin,
+            request=request,
+            session=session,
+            settings=settings,
         )
-        refresh_token = await auth_service.create_refresh_token(admin)
-        refresh_cookie = self._create_refresh_cookie(refresh_token, secure=secure)
-
-        return Response(
-            AuthSuccessResponse(),
-            status_code=HTTP_200_OK,
-            cookies=[access_cookie, refresh_cookie],
-        )
+        return Response(AuthSuccessResponse(), status_code=HTTP_200_OK, cookies=cookies)
 
     @post(
         "/backup-code",
@@ -259,6 +209,7 @@ class TOTPController(Controller):
     async def verify_backup_code(
         self,
         data: TOTPBackupCodeRequest,
+        request: Request[None, None, State],
         session: AsyncSession,
         settings: Settings,
     ) -> Response[AuthSuccessResponse]:
@@ -300,19 +251,14 @@ class TOTPController(Controller):
         totp_service.reset_failed_attempts(admin)
         admin.last_login_at = datetime.now(UTC)
 
-        auth_service = self._create_auth_service(session)
-        secure = await self._resolve_secure_cookies(session, settings)
-        _, access_cookie = self._create_access_token(
-            str(admin.id), secret_key, secure=secure
+        cookies = await start_session_cookies(
+            self._create_auth_service(session),
+            admin,
+            request=request,
+            session=session,
+            settings=settings,
         )
-        refresh_token = await auth_service.create_refresh_token(admin)
-        refresh_cookie = self._create_refresh_cookie(refresh_token, secure=secure)
-
-        return Response(
-            AuthSuccessResponse(),
-            status_code=HTTP_200_OK,
-            cookies=[access_cookie, refresh_cookie],
-        )
+        return Response(AuthSuccessResponse(), status_code=HTTP_200_OK, cookies=cookies)
 
     # =========================================================================
     # Authenticated TOTP management endpoints
