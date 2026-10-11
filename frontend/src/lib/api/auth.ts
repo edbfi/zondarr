@@ -1,11 +1,14 @@
 /**
  * Auth API wrappers for /api/auth/* endpoints.
  *
- * Uses raw fetch for auth endpoints that use cookie-based auth.
+ * Uses raw fetch for auth endpoints that use cookie-based auth. Calls that need a signed-in
+ * admin go through `withSessionRefresh`, so a 401 in the browser refreshes the session and
+ * retries, as the API client does.
  * Types are imported from the auto-generated OpenAPI types.
  */
 
 import * as env from '$app/env/public';
+import { withSessionRefresh } from './session-refresh';
 import type { components } from './types';
 
 const API_BASE_URL = env.PUBLIC_API_URL ?? '';
@@ -224,10 +227,13 @@ export async function logout(customFetch: typeof globalThis.fetch = fetch): Prom
 export async function advanceOnboarding(
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: OnboardingStatusResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/onboarding/advance`, {
-		method: 'POST',
-		credentials: 'include'
-	});
+	const response = await withSessionRefresh(customFetch)(
+		`${API_BASE_URL}/api/auth/onboarding/advance`,
+		{
+			method: 'POST',
+			credentials: 'include'
+		}
+	);
 	if (!response.ok) {
 		const error = await response.json();
 		return { error };
@@ -260,7 +266,7 @@ export async function updateAdminEmail(
 	data: { email: string | null },
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: AdminProfileResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/me`, {
+	const response = await withSessionRefresh(customFetch)(`${API_BASE_URL}/api/auth/me`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(data),
@@ -280,12 +286,15 @@ export async function changePassword(
 	data: { current_password: string; new_password: string },
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: PasswordChangeResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/me/change-password`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(data),
-		credentials: 'include'
-	});
+	const response = await withSessionRefresh(customFetch)(
+		`${API_BASE_URL}/api/auth/me/change-password`,
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+			credentials: 'include'
+		}
+	);
 	if (!response.ok) {
 		const error = await response.json();
 		return { error };
@@ -300,12 +309,15 @@ export async function linkProvider(
 	data: { method: string; credentials: Record<string, string> },
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: LinkProviderResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/me/link-provider`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(data),
-		credentials: 'include'
-	});
+	const response = await withSessionRefresh(customFetch)(
+		`${API_BASE_URL}/api/auth/me/link-provider`,
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+			credentials: 'include'
+		}
+	);
 	if (!response.ok) {
 		const error = await response.json();
 		return { error };
@@ -337,7 +349,7 @@ export interface TotpBackupCodesResponse {
 export async function totpSetup(
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: TotpSetupResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/totp/setup`, {
+	const response = await withSessionRefresh(customFetch)(`${API_BASE_URL}/api/auth/totp/setup`, {
 		method: 'POST',
 		credentials: 'include'
 	});
@@ -356,12 +368,15 @@ export async function totpVerifySetup(
 	data: { code: string },
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: TotpVerifySetupResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/totp/confirm-setup`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(data),
-		credentials: 'include'
-	});
+	const response = await withSessionRefresh(customFetch)(
+		`${API_BASE_URL}/api/auth/totp/confirm-setup`,
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+			credentials: 'include'
+		}
+	);
 	if (!response.ok) {
 		const error = await response.json();
 		return { error };
@@ -376,7 +391,7 @@ export async function totpDisable(
 	data: { password: string; code: string },
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/totp/disable`, {
+	const response = await withSessionRefresh(customFetch)(`${API_BASE_URL}/api/auth/totp/disable`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(data),
@@ -396,12 +411,15 @@ export async function totpRegenerateBackupCodes(
 	data: { code: string },
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: TotpBackupCodesResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/auth/totp/regenerate-backup-codes`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(data),
-		credentials: 'include'
-	});
+	const response = await withSessionRefresh(customFetch)(
+		`${API_BASE_URL}/api/auth/totp/regenerate-backup-codes`,
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+			credentials: 'include'
+		}
+	);
 	if (!response.ok) {
 		const error = await response.json();
 		return { error };
@@ -413,7 +431,7 @@ export async function getMe(
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<AdminMeResponse | null> {
 	try {
-		const response = await customFetch(`${API_BASE_URL}/api/auth/me`, {
+		const response = await withSessionRefresh(customFetch)(`${API_BASE_URL}/api/auth/me`, {
 			credentials: 'include'
 		});
 		if (!response.ok) return null;

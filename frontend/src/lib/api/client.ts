@@ -10,6 +10,7 @@
 import createClient, { type Client } from 'openapi-fetch';
 import * as env from '$app/env/public';
 import { showApiError, showNetworkError } from '$lib/utils/toast';
+import { withSessionRefresh } from './session-refresh';
 import type { components, paths } from './types';
 
 /** Type alias for a typed openapi-fetch client instance. */
@@ -24,98 +25,24 @@ const API_BASE_URL = env.PUBLIC_API_URL ?? '';
  */
 export const api = createClient<paths>({
 	baseUrl: API_BASE_URL,
-	credentials: 'include'
+	credentials: 'include',
+	// Refreshes the session on a 401 in the browser and retries once (see session-refresh).
+	fetch: withSessionRefresh()
 });
 
-// Auth endpoints that should not trigger a refresh attempt
-const AUTH_ENDPOINTS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/setup'];
-
-/**
- * What a token refresh came to: `ok` (new session cookies are set), `rejected` (the backend
- * refused the session with a 401/403: sign in again) or `transient` (no answer, or another
- * failure: the session may still be valid, so keep it and let the caller retry later).
- */
-type RefreshOutcome = 'ok' | 'rejected' | 'transient';
-
-// Module-level promise to serialize concurrent refresh attempts
-let refreshPromise: Promise<RefreshOutcome> | null = null;
-
-async function attemptTokenRefresh(): Promise<RefreshOutcome> {
-	try {
-		const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-			method: 'POST',
-			credentials: 'include'
-		});
-		await response.body?.cancel();
-		if (response.ok) return 'ok';
-		return response.status === 401 || response.status === 403 ? 'rejected' : 'transient';
-	} catch {
-		return 'transient';
-	}
-}
-
-// Store request clones for retry after token refresh (keyed by original request).
-// Cloning in onRequest preserves the body before fetch() consumes it.
-const requestClones = new Map<Request, Request>();
-
-// Auto-refresh on 401 responses (client-side only).
-// Skipped for SSR and when already on public auth pages to avoid redirect loops.
-api.use({
-	onRequest({ request }) {
-		requestClones.set(request, request.clone());
-		return undefined;
-	},
-	async onResponse({ request, response }) {
-		const requestClone = requestClones.get(request);
-		requestClones.delete(request);
-
-		if (
-			response.status !== 401 ||
-			typeof window === 'undefined' ||
-			window.location.pathname.startsWith('/login') ||
-			window.location.pathname.startsWith('/join') ||
-			window.location.pathname.startsWith('/setup')
-		) {
-			return response;
-		}
-
-		// Don't try to refresh for auth endpoints themselves
-		const url = new URL(request.url, window.location.origin);
-		if (AUTH_ENDPOINTS.some((ep) => url.pathname === ep || url.pathname.startsWith(`${ep}/`))) {
-			window.location.href = '/login';
-			return response;
-		}
-
-		// Serialize concurrent refresh attempts
-		if (!refreshPromise) {
-			refreshPromise = attemptTokenRefresh().finally(() => {
-				refreshPromise = null;
-			});
-		}
-
-		const outcome = await refreshPromise;
-
-		if (outcome === 'ok' && requestClone) {
-			// Retry with the cloned request (body stream is still unconsumed)
-			return fetch(requestClone);
-		}
-
-		// Only a refused session leads to the login page; after a transient failure the caller
-		// gets the original 401 and the session cookies stay for the next attempt.
-		if (outcome === 'rejected') window.location.href = '/login';
-		return response;
-	}
-});
+/** `fetch` for the raw wrappers below, with the same session refresh as `api`. */
+const sessionFetch = withSessionRefresh();
 
 /**
  * Create a scoped API client that uses a custom fetch function.
- * Use this in SvelteKit load functions to pass SvelteKit's provided fetch.
+ * Use this in SvelteKit load functions to pass SvelteKit's provided fetch. In the browser a 401
+ * refreshes the session and retries, as with `api`; on the server calls pass straight through.
  */
 export function createScopedClient(customFetch: typeof globalThis.fetch): ApiClient {
 	return createClient<paths>({
 		baseUrl: API_BASE_URL,
 		credentials: 'include',
-		fetch: customFetch
+		fetch: withSessionRefresh(customFetch)
 	});
 }
 
@@ -798,7 +725,7 @@ export async function getCsrfOrigin(
 export async function setCsrfOrigin(data: {
 	csrf_origin: string | null;
 }): Promise<{ data?: CsrfOriginResponse; error?: unknown }> {
-	const response = await fetch(`${API_BASE_URL}/api/v1/settings/csrf-origin`, {
+	const response = await sessionFetch(`${API_BASE_URL}/api/v1/settings/csrf-origin`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(data),
@@ -827,7 +754,7 @@ export interface CsrfOriginTestResponse {
 export async function testCsrfOrigin(
 	origin: string
 ): Promise<{ data?: CsrfOriginTestResponse; error?: unknown }> {
-	const response = await fetch(`${API_BASE_URL}/api/v1/settings/csrf-origin/test`, {
+	const response = await sessionFetch(`${API_BASE_URL}/api/v1/settings/csrf-origin/test`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ origin }),
@@ -860,7 +787,7 @@ export async function getSecureCookies(): Promise<{
 	data?: SecureCookiesResponse;
 	error?: unknown;
 }> {
-	const response = await fetch(`${API_BASE_URL}/api/v1/settings/secure-cookies`, {
+	const response = await sessionFetch(`${API_BASE_URL}/api/v1/settings/secure-cookies`, {
 		credentials: 'include'
 	});
 	if (!response.ok) {
@@ -879,7 +806,7 @@ export async function getSecureCookies(): Promise<{
 export async function setSecureCookies(
 	value: boolean
 ): Promise<{ data?: SecureCookiesResponse; error?: unknown }> {
-	const response = await fetch(`${API_BASE_URL}/api/v1/settings/secure-cookies`, {
+	const response = await sessionFetch(`${API_BASE_URL}/api/v1/settings/secure-cookies`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ secure_cookies: value }),
@@ -927,7 +854,7 @@ export async function getAllSettings(customFetch: typeof globalThis.fetch = fetc
 	data?: AllSettingsResponse;
 	error?: unknown;
 }> {
-	const response = await customFetch(`${API_BASE_URL}/api/v1/settings`, {
+	const response = await withSessionRefresh(customFetch)(`${API_BASE_URL}/api/v1/settings`, {
 		credentials: 'include'
 	});
 	if (!response.ok) {
@@ -943,7 +870,7 @@ export async function getAllSettings(customFetch: typeof globalThis.fetch = fetc
 export async function updateSyncInterval(
 	value: number
 ): Promise<{ data?: SettingValue; error?: unknown }> {
-	const response = await fetch(`${API_BASE_URL}/api/v1/settings/sync-interval`, {
+	const response = await sessionFetch(`${API_BASE_URL}/api/v1/settings/sync-interval`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ sync_interval_seconds: value }),
@@ -962,7 +889,7 @@ export async function updateSyncInterval(
 export async function updateExpirationInterval(
 	value: number
 ): Promise<{ data?: SettingValue; error?: unknown }> {
-	const response = await fetch(`${API_BASE_URL}/api/v1/settings/expiration-interval`, {
+	const response = await sessionFetch(`${API_BASE_URL}/api/v1/settings/expiration-interval`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ expiration_check_interval_seconds: value }),
@@ -983,7 +910,7 @@ export async function updateExpirationInterval(
 export async function getAbout(
 	customFetch: typeof globalThis.fetch = fetch
 ): Promise<{ data?: AboutResponse; error?: unknown }> {
-	const response = await customFetch(`${API_BASE_URL}/api/v1/settings/about`, {
+	const response = await withSessionRefresh(customFetch)(`${API_BASE_URL}/api/v1/settings/about`, {
 		credentials: 'include'
 	});
 	if (!response.ok) {
