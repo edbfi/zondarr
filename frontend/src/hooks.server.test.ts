@@ -432,3 +432,223 @@ describe('session refresh relays backend cookies with Secure from the request or
 		}
 	);
 });
+
+describe('session check: budget, cancellation and transient failures', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	const user = {
+		id: '00000000-0000-0000-0000-000000000001',
+		username: 'admin',
+		email: null,
+		auth_method: 'local',
+		onboarding_required: false,
+		onboarding_step: 'complete'
+	};
+
+	/** An event with a cookie jar that `set` updates, so the retried /me sees a rotated token. */
+	function sessionEvent(
+		pathname = '/dashboard',
+		{ refreshToken }: { refreshToken?: string } = { refreshToken: 'refresh-token' }
+	) {
+		const client = new AbortController();
+		const url = new URL(`http://frontend.local${pathname}`);
+		const jar = new Map([['zondarr_access_token', 'expired-access']]);
+		if (refreshToken) jar.set('zondarr_refresh_token', refreshToken);
+		const event = {
+			request: new Request(url, { signal: client.signal }),
+			cookies: {
+				get: vi.fn((name: string) => jar.get(name)),
+				set: vi.fn((name: string, value: string) => {
+					jar.set(name, value);
+				}),
+				delete: vi.fn(),
+				parse: (header: string) => {
+					const [name, value] = (header.split(';')[0] ?? '').split('=');
+					return { name, value, path: '/' };
+				}
+			},
+			locals: {} as { user?: unknown },
+			url
+		};
+		return { client, event };
+	}
+
+	/** A backend call that settles only when its signal aborts. */
+	const stalled = (init?: RequestInit) =>
+		new Promise<Response>((_resolve, reject) => {
+			init?.signal?.addEventListener('abort', () =>
+				reject(new DOMException('aborted', 'AbortError'))
+			);
+		});
+	const rotated = () =>
+		new Response('{}', {
+			status: 200,
+			headers: [
+				['set-cookie', 'zondarr_access_token=new-access; Path=/'],
+				['set-cookie', 'zondarr_refresh_token=new-refresh; Path=/']
+			]
+		});
+
+	async function expectUnavailable(response: Response) {
+		expect(response.status).toBe(503);
+		expect(await response.json()).toEqual({ detail: 'Authentication temporarily unavailable' });
+	}
+
+	it('answers 503 on a protected page and keeps the cookies when /me passes its budget', async () => {
+		vi.useFakeTimers();
+		vi.spyOn(globalThis, 'fetch').mockImplementation((_input, init) => stalled(init));
+		const { event } = sessionEvent();
+		const pending = handle({ event, resolve: okResolve() } as never);
+		await vi.advanceTimersByTimeAsync(5000);
+		await expectUnavailable(await pending);
+		expect(event.cookies.delete).not.toHaveBeenCalled();
+		expect(event.locals.user).toBeNull();
+	});
+
+	it.each([500, 503])('treats a %i from /me as transient', async (status) => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status }));
+		const { event } = sessionEvent();
+		await expectUnavailable(await handle({ event, resolve: okResolve() } as never));
+		expect(event.cookies.delete).not.toHaveBeenCalled();
+	});
+
+	it('lets a public page through while the backend is unavailable', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 503 }));
+		const { event } = sessionEvent('/login');
+		const resolve = okResolve();
+		expect((await handle({ event, resolve } as never)).status).toBe(200);
+		expect(resolve).toHaveBeenCalledOnce();
+	});
+
+	it('keeps the cookies when the refresh fails with a 503', async () => {
+		vi.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(new Response('{}', { status: 401 }))
+			.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+		const { event } = sessionEvent();
+		await expectUnavailable(await handle({ event, resolve: okResolve() } as never));
+		expect(event.cookies.delete).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		['the backend rejects the refresh', { refreshToken: 'refresh-token' }, 2],
+		['there is no refresh token', {}, 1]
+	])('logs out when %s', async (_label, options, calls) => {
+		const spy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(new Response('{}', { status: 401 }))
+			.mockResolvedValueOnce(new Response('{}', { status: 401 }));
+		const { event } = sessionEvent('/dashboard', options);
+		await expect(handle({ event, resolve: okResolve() } as never)).rejects.toMatchObject({
+			status: 302,
+			location: '/login'
+		});
+		expect(spy).toHaveBeenCalledTimes(calls);
+		expect(event.cookies.delete).toHaveBeenCalledTimes(2);
+	});
+
+	it('never times out the refresh itself; only the request cancels it', async () => {
+		vi.useFakeTimers();
+		const spy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(new Response('{}', { status: 401 }))
+			.mockImplementationOnce((_input, init) => stalled(init));
+		const { client, event } = sessionEvent();
+		const pending = handle({ event, resolve: okResolve() } as never);
+		await vi.advanceTimersByTimeAsync(60_000);
+		const refreshSignal = spy.mock.calls[1]?.[1]?.signal;
+		expect(refreshSignal?.aborted).toBe(false);
+		client.abort();
+		await expectUnavailable(await pending);
+		expect(event.cookies.delete).not.toHaveBeenCalled();
+	});
+
+	it('shares the budget between both /me calls and keeps rotated cookies when it runs out', async () => {
+		vi.useFakeTimers();
+		const spy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockImplementationOnce(
+				() =>
+					new Promise<Response>((done) =>
+						setTimeout(() => done(new Response('{}', { status: 401 })), 4000)
+					)
+			)
+			.mockResolvedValueOnce(rotated())
+			.mockImplementationOnce((_input, init) => stalled(init));
+		const { event } = sessionEvent();
+		const pending = handle({ event, resolve: okResolve() } as never);
+		await vi.advanceTimersByTimeAsync(4000);
+		const retrySignal = () => spy.mock.calls[2]?.[1]?.signal;
+		expect(retrySignal()?.aborted).toBe(false);
+		await vi.advanceTimersByTimeAsync(999);
+		expect(retrySignal()?.aborted).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(retrySignal()?.aborted).toBe(true);
+		await expectUnavailable(await pending);
+		expect(spy.mock.calls[2]?.[1]?.headers).toEqual({ Cookie: 'zondarr_access_token=new-access' });
+		expect(event.cookies.set).toHaveBeenCalledWith(
+			'zondarr_access_token',
+			'new-access',
+			expect.anything()
+		);
+		expect(event.cookies.delete).not.toHaveBeenCalled();
+	});
+
+	// The refresh takes longer than the whole budget; the retried /me still gets what the first
+	// one left (1 s), and that deadline covers reading its body too.
+	it('does not count the refresh against the budget, and bounds the retried body', async () => {
+		vi.useFakeTimers();
+		const spy = vi
+			.spyOn(globalThis, 'fetch')
+			.mockImplementationOnce(
+				() =>
+					new Promise<Response>((done) =>
+						setTimeout(() => done(new Response('{}', { status: 401 })), 4000)
+					)
+			)
+			.mockImplementationOnce(
+				() => new Promise<Response>((done) => setTimeout(() => done(rotated()), 10_000))
+			)
+			.mockImplementationOnce(
+				async (_input, init) =>
+					new Response(
+						new ReadableStream({
+							start(controller) {
+								init?.signal?.addEventListener('abort', () =>
+									controller.error(new DOMException('aborted', 'AbortError'))
+								);
+							}
+						}),
+						{ status: 200, headers: { 'content-type': 'application/json' } }
+					)
+			);
+		const { event } = sessionEvent();
+		const pending = handle({ event, resolve: okResolve() } as never);
+		await vi.advanceTimersByTimeAsync(14_000);
+		const retrySignal = () => spy.mock.calls[2]?.[1]?.signal;
+		expect(retrySignal()?.aborted).toBe(false);
+		await vi.advanceTimersByTimeAsync(999);
+		expect(retrySignal()?.aborted).toBe(false);
+		await vi.advanceTimersByTimeAsync(1);
+		await expectUnavailable(await pending);
+		expect(event.cookies.set).toHaveBeenCalledWith(
+			'zondarr_access_token',
+			'new-access',
+			expect.anything()
+		);
+		expect(event.cookies.delete).not.toHaveBeenCalled();
+	});
+
+	it('signs in with the rotated token after a refresh', async () => {
+		vi.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(new Response('{}', { status: 401 }))
+			.mockResolvedValueOnce(rotated())
+			.mockResolvedValueOnce(Response.json(user));
+		const { event } = sessionEvent();
+		expect((await handle({ event, resolve: okResolve() } as never)).status).toBe(200);
+		expect(event.locals.user).toEqual(user);
+		expect(event.cookies.delete).not.toHaveBeenCalled();
+	});
+});

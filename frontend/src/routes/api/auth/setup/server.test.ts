@@ -278,3 +278,30 @@ describe('POST /api/auth/setup (hardened proxy)', () => {
 		expect([...forwarded.keys()].sort()).toEqual(['content-type', 'origin']);
 	});
 });
+
+describe('POST /api/auth/setup deadline', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	it('answers 504 when the backend does not answer within the deadline', async () => {
+		vi.useFakeTimers();
+		mockConsumeNonce.mockReturnValue(false);
+		vi.spyOn(globalThis, 'fetch').mockImplementation(
+			(_input, init) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener('abort', () =>
+						reject(new DOMException('aborted', 'AbortError'))
+					);
+				})
+		);
+		const pending = POST(
+			makeEvent({ username: 'admin', password: 'pass', bootstrap_token: 'manual-token' }) as never
+		);
+		await vi.advanceTimersByTimeAsync(120_000);
+		const response = await pending;
+		expect(response.status).toBe(504);
+		expect(await response.json()).toEqual({ detail: 'Backend timed out' });
+	});
+});

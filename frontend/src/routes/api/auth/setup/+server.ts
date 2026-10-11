@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import * as env from '$app/env/private';
 import * as publicEnv from '$app/env/public';
-import { backendRequestHeaders, relayResponseHeaders } from '$lib/server/backend-relay';
+import {
+	BACKEND_DEADLINE_MS,
+	backendCall,
+	backendRequestHeaders,
+	backendTimeoutResponse,
+	relayResponseHeaders
+} from '$lib/server/backend-relay';
 import { isSecureRequest } from '$lib/server/request-origin';
 import { consumeNonce } from '$lib/server/setup-nonce';
 import type { RequestHandler } from './$types';
@@ -59,13 +65,16 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	}
 
 	headers.set('content-type', 'application/json');
+	const call = backendCall(request.signal);
+	call.arm(BACKEND_DEADLINE_MS);
 
 	try {
 		const response = await fetch(upstream, {
 			method: 'POST',
 			headers,
 			body,
-			redirect: 'manual'
+			redirect: 'manual',
+			signal: call.signal
 		});
 
 		const responseBody = await response.arrayBuffer();
@@ -76,9 +85,12 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 			headers: relayResponseHeaders(response.headers, url)
 		});
 	} catch {
+		if (call.timedOut()) return backendTimeoutResponse();
 		return new Response(JSON.stringify({ detail: 'Backend unavailable' }), {
 			status: 502,
 			headers: { 'content-type': 'application/json' }
 		});
+	} finally {
+		call.clear();
 	}
 };
