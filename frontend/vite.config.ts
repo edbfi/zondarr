@@ -42,7 +42,13 @@ export default defineConfig({
 			{
 				extends: true,
 				plugins: [svelteTesting()],
-				test: { name: 'components', include: componentTests }
+				test: {
+					name: 'components',
+					include: componentTests,
+					// Property tests render a real component 20-50 times in one test (fast-check
+					// numRuns), so 5 s, the default sized for one render, fails on slower machines.
+					testTimeout: 30_000
+				}
 			},
 			{
 				extends: true,
