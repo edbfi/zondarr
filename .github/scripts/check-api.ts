@@ -1,19 +1,33 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { createRequire } from "node:module";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
+import { generateApiTypes } from "../../frontend/scripts/openapi-types.ts";
 
-const require = createRequire(resolve("frontend/package.json"));
-const ts =
-	require("typescript") as typeof import("../../frontend/node_modules/typescript");
-const temporary = mkdtempSync(join(tmpdir(), "zondarr-api-ci-"));
 const generated = "frontend/src/lib/api/.ci-types.d.ts";
 const env = {
 	...process.env,
 	SECRET_KEY: "ci-schema-only-ephemeral-secret-at-least-32",
 	DATABASE_URL: "sqlite+aiosqlite:///:memory:",
 };
+
+// Litestar's generated examples are random, and they reach the declarations only as JSDoc.
+// Compare the declarations without comments. The generator writes each JSDoc block on lines of
+// its own and escapes `*/` inside it, so a block runs from a line starting `/**` to the next
+// line ending `*/`; Biome keeps that layout.
+function declarations(path: string): string {
+	const kept: string[] = [];
+	let inComment = false;
+	for (const line of readFileSync(path, "utf8").split("\n")) {
+		const text = line.trim();
+		if (!inComment && text.startsWith("/**")) inComment = true;
+		if (!inComment) kept.push(line);
+		else if (text.endsWith("*/")) inComment = false;
+	}
+	if (inComment) throw new Error(`Unterminated comment in ${path}.`);
+	return kept.join("\n");
+}
+
 try {
 	const schema = execFileSync(
 		"backend/.venv/bin/python",
@@ -23,31 +37,12 @@ try {
 		],
 		{ env },
 	);
-	const schemaFile = join(temporary, "openapi.json");
-	await Bun.write(schemaFile, schema);
-	execFileSync(
-		"frontend/node_modules/.bin/openapi-typescript",
-		[schemaFile, "-o", generated],
-		{ stdio: "inherit" },
-	);
+	await Bun.write(generated, generateApiTypes(JSON.parse(schema.toString())));
 	execFileSync("node_modules/.bin/biome", ["format", "--write", generated], {
 		stdio: "inherit",
 	});
-	const printer = ts.createPrinter({ removeComments: true });
-	const normalize = (path: string) =>
-		printer.printFile(
-			ts.createSourceFile(
-				path,
-				readFileSync(path, "utf8"),
-				ts.ScriptTarget.Latest,
-				true,
-				ts.ScriptKind.TS,
-			),
-		);
-	// Litestar's generated example timestamps vary with the date. They are JSDoc,
-	// not API types. Compare the parsed declarations without those comments.
-	const expected = normalize("frontend/src/lib/api/types.d.ts");
-	const actual = normalize(generated);
+	const expected = declarations("frontend/src/lib/api/types.d.ts");
+	const actual = declarations(generated);
 	if (actual !== expected) {
 		const diagnostics = join(
 			process.env.RUNNER_TEMP ?? tmpdir(),
@@ -66,7 +61,7 @@ try {
 			throw new Error("Could not produce the API declaration diff.");
 		await Bun.write(join(diagnostics, "declarations.diff"), diff.stdout);
 		console.error(diff.stdout.slice(0, 32_000));
-		console.error(`Normalized API diagnostics retained in ${diagnostics}`);
+		console.error(`API declaration diagnostics retained in ${diagnostics}`);
 		throw new Error(
 			"API declarations have drifted. Regenerate frontend API types from the backend schema.",
 		);
@@ -74,5 +69,4 @@ try {
 	console.log("Generated API declarations match the backend schema.");
 } finally {
 	rmSync(generated, { force: true });
-	rmSync(temporary, { recursive: true, force: true });
 }

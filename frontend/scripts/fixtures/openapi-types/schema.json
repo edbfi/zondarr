@@ -1,0 +1,216 @@
+{
+	"openapi": "3.1.0",
+	"info": { "title": "openapi-types fixture", "version": "1.0.0" },
+	"paths": {
+		"/items/{item_id}": {
+			"parameters": [
+				{
+					"name": "item_id",
+					"in": "path",
+					"required": true,
+					"schema": { "type": "string", "format": "uuid" }
+				},
+				{
+					"name": "X-Trace",
+					"in": "header",
+					"required": false,
+					"schema": { "type": "string" },
+					"description": "Shared header"
+				}
+			],
+			"get": {
+				"operationId": "GetItem",
+				"summary": "Get one item",
+				"description": "Multi-line\ndescription with a */ in it.",
+				"deprecated": true,
+				"parameters": [
+					{ "name": "X-Trace", "in": "header", "required": true, "schema": { "type": "string" } },
+					{
+						"name": "expand",
+						"in": "query",
+						"schema": { "type": "array", "items": { "type": "string", "enum": ["owner", "tags"] } }
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"schema": { "type": "integer", "default": 10, "minimum": 1 }
+					},
+					{ "name": "session", "in": "cookie", "required": true },
+					{
+						"name": "since",
+						"in": "query",
+						"schema": {
+							"oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+						},
+						"examples": { "now": { "value": "2020-01-01T00:00:00Z" } }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"headers": {
+							"x-rate": {
+								"schema": { "type": "integer" },
+								"required": true,
+								"description": "Requests left"
+							},
+							"x-note": { "schema": { "type": "string" } }
+						},
+						"content": { "application/json": { "schema": { "$ref": "#/components/schemas/Item" } } }
+					},
+					"204": { "description": "" },
+					"4XX": {
+						"description": "Client error",
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Problem" } },
+							"text/plain": {}
+						}
+					},
+					"default": {
+						"description": "Anything else",
+						"content": { "application/json": { "schema": true } }
+					}
+				}
+			},
+			"put": {
+				"operationId": "Replace#Item",
+				"requestBody": {
+					"required": true,
+					"description": "The new item",
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["name"],
+								"properties": {
+									"name": { "type": "string", "minLength": 1 },
+									"count": { "type": "integer", "default": 0 },
+									"settings": {
+										"type": "object",
+										"properties": { "mode": { "type": "string", "default": "fast" } }
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {}
+			},
+			"patch": {
+				"operationId": "PatchItem",
+				"requestBody": { "content": {} },
+				"responses": {
+					"200": {
+						"description": "Patched",
+						"content": { "application/json": { "schema": { "type": "object" } } }
+					}
+				}
+			}
+		},
+		"/health": {
+			"get": {
+				"operationId": "Health",
+				"responses": {
+					"200": {
+						"description": "Up",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"status": { "const": "ok" },
+										"uptime": { "type": ["number", "null"] },
+										"checks": {
+											"type": "object",
+											"additionalProperties": {
+												"oneOf": [{ "type": "boolean" }, { "type": "null" }]
+											}
+										},
+										"meta": { "type": "object", "additionalProperties": true },
+										"labels": {
+											"type": "object",
+											"properties": { "a": { "type": "string" } },
+											"additionalProperties": { "type": "string" }
+										},
+										"matrix": {
+											"type": "array",
+											"items": { "type": "array", "items": { "type": "integer" } }
+										},
+										"grid": {
+											"type": "array",
+											"items": { "oneOf": [{ "type": "array", "items": { "type": "string" } }] }
+										},
+										"anything": {},
+										"never": false,
+										"always": true
+									},
+									"required": ["status"]
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"Item": {
+				"title": "Item",
+				"type": "object",
+				"description": "An item.\n\nSecond paragraph.",
+				"required": ["id", "kind", "owner"],
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"readOnly": true,
+						"examples": ["0d8e…", { "nested": [1, 2] }]
+					},
+					"kind": { "type": "string", "enum": ["a", "b", "it's \"quoted\""] },
+					"level": { "type": ["integer", "null"], "enum": [1, 2, -3, null] },
+					"owner": { "oneOf": [{ "$ref": "#/components/schemas/Owner" }, { "type": "null" }] },
+					"tags": {
+						"type": "array",
+						"items": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+						"minItems": 1,
+						"default": []
+					},
+					"secret": { "type": "string", "writeOnly": true },
+					"score": { "type": "number", "default": null, "example": 1.5 },
+					"flags": { "anyOf": [{ "type": "boolean" }, { "type": "string" }, { "type": "string" }] },
+					"mixed": {
+						"type": ["string", "integer", "null"],
+						"oneOf": [{ "type": "string", "maxLength": 3 }, { "type": "null" }]
+					},
+					"legacy": { "type": "string", "nullable": true },
+					"obj_enum": { "type": "object", "enum": [{ "a": 1 }] },
+					"1st": { "type": "boolean" },
+					"with space": { "type": "boolean", "deprecated": true },
+					"$dollar": { "type": "string", "title": "  Padded title  ", "default": "" },
+					"owner_name": { "$ref": "#/components/schemas/Owner/properties/name" }
+				}
+			},
+			"Owner": {
+				"type": "object",
+				"properties": {
+					"name": { "type": "string" },
+					"items": { "type": "array", "items": { "$ref": "#/components/schemas/Item" } }
+				}
+			},
+			"Problem": {
+				"type": "object",
+				"required": ["detail"],
+				"properties": {
+					"detail": { "type": "string" },
+					"extra": { "type": "object", "additionalProperties": {} }
+				}
+			},
+			"Empty": { "type": "object" },
+			"Untyped": {},
+			"Status": { "type": "string", "enum": ["on", "off"], "description": "On or off" }
+		},
+		"securitySchemes": { "BearerToken": { "type": "http", "scheme": "bearer" } }
+	}
+}

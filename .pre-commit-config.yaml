@@ -58,9 +58,9 @@ repos:
     rev: d07ccc13141d4aee4fa28546f4328f4e48d5363b  # frozen: v0.1.0
     hooks:
       - id: privileged-jobs
-      # check-peers (args [".", frontend]) waits until main has no required-peer
-      # mismatch (design/prek.md rule 12): openapi-typescript 7.13.0 requires
-      # typescript ^5.x, and the frontend has 6.0.3.
+      # One run per audit directory (ci.yml audit-bun matrix).
+      - id: check-peers
+        args: [".", frontend]
 
   # Local hooks — project-specific quality gates
   - repo: local
@@ -126,7 +126,7 @@ repos:
         entry: bun .github/scripts/check-api.ts
         language: system
         pass_filenames: false
-        files: ^(backend/|frontend/src/lib/api/|frontend/package\.json$|\.github/scripts/check-api\.ts$)
+        files: ^(backend/|frontend/src/lib/api/|frontend/package\.json$|frontend/scripts/openapi-types\.ts$|\.github/scripts/check-api\.ts$)
         stages: [pre-push, manual]
       - id: biome-migrate
         name: Migrate Biome configuration
