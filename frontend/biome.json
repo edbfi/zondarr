@@ -10,6 +10,7 @@
 			"!**/node_modules",
 			"!**/*.db",
 			"!**/bun.lock",
+			"!**/scripts/fixtures/openapi-types/expected.d.ts",
 			"!**/src/lib/components/ui/form/form-field.svelte",
 			"!**/src/lib/components/ui/form/form-fieldset.svelte",
 			"!**/src/lib/components/ui/form/form-element-field.svelte"

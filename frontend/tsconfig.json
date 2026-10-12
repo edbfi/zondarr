@@ -14,6 +14,8 @@
 		"vite.config.ts",
 		"vitest-setup.ts",
 		"scripts/serve.ts",
-		"scripts/serve.test.ts"
+		"scripts/serve.test.ts",
+		"scripts/openapi-types.ts",
+		"scripts/openapi-types.test.ts"
 	]
 }
