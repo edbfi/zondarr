@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { css } from "#styled-system/css";
+import { css } from "#styled-system/css";
 </script>
 
 <svelte:head>

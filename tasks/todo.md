@@ -143,8 +143,9 @@ logs no console errors, and that `/healthz` returns `ok`.
 
 ### Checkpoint B
 
-- [ ] `check`, `test`, `build` and `smoke` pass from a clean clone.
-- [ ] Review with the orchestrator before the tooling switches on.
+- [x] `check`, `test`, `build` and `smoke` pass from a clean clone.
+- [x] Review with the orchestrator before the tooling switches on (the whole stream is one PR,
+  reviewed there).
 
 ## Phase 3: Tooling and CI
 
@@ -155,11 +156,11 @@ The shared `biome.json` already skips the installed skills and the tool-written 
 (`.claude/`, `.codex/`, `.impeccable/`, `skills-lock.json`); it changes only for all five apps at once.
 
 **Acceptance criteria:**
-- [ ] `bun run --bun lint` passes.
-- [ ] Biome skips the installed skills and the tool-written configs.
+- [x] `bun run --bun lint` passes.
+- [x] Biome skips the installed skills and the tool-written configs.
 
 **Verification:**
-- [ ] `bun run --bun lint`
+- [x] `bun run --bun lint`
 
 **Dependencies:** T1 (scheduled after checkpoint B)
 
