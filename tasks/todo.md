@@ -11,7 +11,7 @@ Every check below runs with failing `node`, `npm` and `npx` shims on `PATH`. Pla
 `dev`, `build`, `preview` and `check` scripts with `--bun`, a `prepare` that runs
 `bun --bun svelte-kit sync`), `bun.lock`, the Vite config with the SvelteKit plugin and adapter-bun,
 `tsconfig.json`, the document shell and a placeholder `(public)` page at `/`. Move the logo from
-`public/` to `static/zondarr-logo.svg` and repoint the README image (spec, open question 1).
+`public/` to `static/zondarr-logo.svg` and repoint the README image (spec, ground-floor choice 4).
 
 **Acceptance criteria:**
 - [ ] `bun ci`, `bun run --bun check` (zero errors and warnings) and `bun run --bun build` pass.

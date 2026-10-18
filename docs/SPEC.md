@@ -1,6 +1,6 @@
 # Spec: zondarr
 
-**Status:** the ground floor (skeleton) is specified here and waits for the orchestrator's approval.
+**Status:** the ground floor (skeleton) is specified here and approved by the orchestrator (2026-10-18).
 Product modules aren't specified yet (see the capability map).
 
 ## Objective
@@ -84,7 +84,7 @@ src/
                                  jobs/, http/ (SSRF-safe fetch), config/, security/, logging/
     components/                  later: ui/ (Ark wrappers), layout/, <feature>/
     shared/                      later: isomorphic types, schemas, utilities
-static/zondarr-logo.svg          the logo, moved from public/ (open question 1)
+static/zondarr-logo.svg          the logo, moved from public/ (ground-floor choice 4)
 tests/
   e2e/smoke.test.ts              Playwright smoke
   fixtures/demo-fixtures.json    design fixtures (exists)
@@ -179,10 +179,6 @@ for anything different, so they're reused here.
 3. **Security headers and CSP.** The legacy join page suppresses the referrer (legacy spec §6.6,
    §10). Security headers, the referrer policy and a CSP belong to the first module that serves real
    pages (the public join flow or admin sign-in), not the skeleton.
-
-## Open questions
-
-1. **Where the logo lives.** The logo is `public/zondarr-logo.svg`, which the README shows; SvelteKit
-   serves static files from `static/`. Proposed: T1 moves it to `static/zondarr-logo.svg` and updates
-   the README link, the layout the other rewrite apps use. The alternative is pointing SvelteKit's
-   assets directory at `public/`.
+4. **Where the logo lives.** SvelteKit serves static files from `static/`, so T1 moves
+   `public/zondarr-logo.svg` to `static/zondarr-logo.svg` and updates the README link, the layout the
+   other rewrite apps use.

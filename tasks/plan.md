@@ -1,6 +1,6 @@
 # Implementation plan: zondarr ground floor (skeleton)
 
-**Status:** waits for the orchestrator's approval, with [docs/SPEC.md](../docs/SPEC.md).
+**Status:** approved with [docs/SPEC.md](../docs/SPEC.md) (2026-10-18).
 The tasks, with acceptance criteria and checks, are in [todo.md](todo.md).
 
 ## Overview
@@ -51,8 +51,3 @@ T2, T3 and T5 can run in parallel after T1. Everything else is sequential.
 | Hydration isn't proven by server-rendered HTML alone | Medium | the smoke test waits for a client-side signal, not only the HTML |
 | `check-peers` fails on a required peer | Medium | fix the peer before the hook is enabled (edbfi-ci prek rule 12) |
 | The adapter-bun output or preview command differs from `bun ./build` | Low | T1 records the working command in the `preview` script |
-
-## Open questions
-
-- The spec's open question 1 (where the logo lives) shapes T1, which follows the proposed answer
-  (`static/`) unless the orchestrator picks the alternative.
