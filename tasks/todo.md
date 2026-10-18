@@ -74,7 +74,7 @@ the placeholder page uses only tokens. Font tokens use system fallbacks (spec, g
 
 **Verification:**
 - [x] `rm -rf node_modules styled-system && bun ci && bun run --bun check && bun run --bun build`
-- [ ] Manual: the built page's background is `#222137` and the heading uses the `h1` style.
+- [x] Manual: the built page's background is `#222137` and the heading uses the `h1` style.
 
 **Dependencies:** T1
 
@@ -89,12 +89,12 @@ the placeholder page uses only tokens. Font tokens use system fallbacks (spec, g
 and repoint every link to them (AGENTS.md, docs/SPEC.md) at `panda.config.ts`.
 
 **Acceptance criteria:**
-- [ ] No doc links to the deleted tokens (`rg 'tokens\.(json|css)' AGENTS.md DESIGN.md PRODUCT.md docs .impeccable` finds nothing).
-- [ ] Nothing in `tokens.json` is missing from `panda.config.ts` (preservation gate in the PR body).
+- [x] No doc links to the deleted tokens (`rg 'tokens\.(json|css)' AGENTS.md DESIGN.md PRODUCT.md docs .impeccable` finds nothing).
+- [x] Nothing in `tokens.json` is missing from `panda.config.ts` (preservation gate in the PR body).
 
 **Verification:**
-- [ ] `rg -n 'tokens\.(json|css)' AGENTS.md DESIGN.md PRODUCT.md docs .impeccable`
-- [ ] `prek run --all-files --hook-stage manual`
+- [x] `rg -n 'tokens\.(json|css)' AGENTS.md DESIGN.md PRODUCT.md docs .impeccable`
+- [x] `prek run --all-files --hook-stage manual`
 
 **Dependencies:** T3
 

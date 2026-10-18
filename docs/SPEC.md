@@ -112,12 +112,11 @@ export const GET: RequestHandler = () =>
 
 ## Design tokens
 
-- `panda.config.ts` takes every value in [`docs/design/tokens.json`](design/tokens.json): colours,
-  type styles, spacing, radii, layout sizes and motion durations, under the names DESIGN.md uses.
+- [`panda.config.ts`](../panda.config.ts) holds every design token: colours, type styles,
+  spacing, radii, layout sizes, breakpoints and motion durations, under the names DESIGN.md uses.
+  It replaced the seed token files that came with the design package.
 - Colours are semantic tokens behind a colour-mode condition, dark by default; light values can be
   added later without touching components.
-- Once the Panda config holds them, `docs/design/tokens.json` and `tokens.css` are deleted, and the
-  links to them point at `panda.config.ts`.
 - The placeholder page uses only Panda tokens: no raw colour, size or font values in components. Its
   heading uses the `h1` style (Outfit); DM Serif Display stays reserved for the public welcome and
   success surfaces.
