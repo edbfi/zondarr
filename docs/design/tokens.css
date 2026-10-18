@@ -1,0 +1,34 @@
+/* Proposed Zondarr design seed. Map these tokens into Panda CSS; this file adds no UI framework. */
+:root {
+  --color-background: #222137;
+  --color-surface: #302D3B;
+  --color-raised: #3C3553;
+  --color-border: #655777;
+  --color-control-border: #8C8199;
+  --color-primary: #E4C9A0;
+  --color-secondary: #BCA9D5;
+  --color-text: #FCF5EE;
+  --color-muted: #C9BDD4;
+  --color-success: #A9D9BB;
+  --color-warning: #F0CC83;
+  --color-danger: #FFACB5;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-section: 48px;
+  --space-hero: 64px;
+  --radius-sm: 4px;
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-dialog: 16px;
+  --radius-full: 999px;
+  --font-display: "DM Serif Display", serif;
+  --font-body: "Outfit", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --control-height: 44px;
+  --sidebar-width: 224px;
+  --topbar-height: 64px;
+}

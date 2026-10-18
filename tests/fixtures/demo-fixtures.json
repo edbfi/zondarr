@@ -1,0 +1,43 @@
+{
+	"note": "Fictional historical fixture, deliberately independent of the current date. Production values come from server responses; screenshots never define calculations.",
+	"snapshotDate": "2025-10-15",
+	"zondarr": {
+		"members": 48,
+		"activeInvitations": 6,
+		"servers": 2,
+		"invitations": [
+			{
+				"code": "MOVIENIGHT",
+				"used": 2,
+				"maxUses": 5,
+				"remaining": 3,
+				"status": "Limited",
+				"expires": "2025-12-31"
+			},
+			{
+				"code": "FAMILY",
+				"used": 1,
+				"maxUses": 3,
+				"remaining": 2,
+				"status": "Limited",
+				"expires": "2025-12-31"
+			},
+			{
+				"code": "WEEKEND",
+				"used": 5,
+				"maxUses": 5,
+				"remaining": 0,
+				"status": "Used up"
+			},
+			{
+				"code": "SUMMER",
+				"used": 0,
+				"maxUses": 3,
+				"status": "Expired",
+				"expires": "2025-06-30"
+			}
+		],
+		"accessDuration": "No expiry",
+		"downloadAllowed": false
+	}
+}
