@@ -128,12 +128,12 @@ heading, hydrates (a client-side signal, not only the HTML), applies the Panda b
 logs no console errors, and that `/healthz` returns `ok`.
 
 **Acceptance criteria:**
-- [ ] `bun run --bun build && bun run --bun smoke` passes after `bunx --bun playwright install chromium`.
-- [ ] Breaking hydration or the stylesheet makes the smoke test fail.
+- [x] `bun run --bun build && bun run --bun smoke` passes after `bunx --bun playwright install chromium`.
+- [x] Breaking hydration or the stylesheet makes the smoke test fail.
 
 **Verification:**
-- [ ] `bun run --bun build && bun run --bun smoke`
-- [ ] Manual: temporarily break the layout's stylesheet import and see the test fail.
+- [x] `bun run --bun build && bun run --bun smoke`
+- [x] Manual: temporarily break the layout's stylesheet import and see the test fail.
 
 **Dependencies:** T2, T3
 
