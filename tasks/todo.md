@@ -14,14 +14,15 @@ Every check below runs with failing `node`, `npm` and `npx` shims on `PATH`. Pla
 `public/` to `static/zondarr-logo.svg` and repoint the README image (spec, ground-floor choice 4).
 
 **Acceptance criteria:**
-- [ ] `bun ci`, `bun run --bun check` (zero errors and warnings) and `bun run --bun build` pass.
-- [ ] `bun run --bun preview` serves `/` with the placeholder heading.
-- [ ] SvelteKit's configuration lives in the Vite plugin; `#lib` resolves.
-- [ ] The built server serves `/zondarr-logo.svg`, and the README shows the logo from `static/`.
+- [x] `bun ci`, `bun run --bun check` (zero errors and warnings) and `bun run --bun build` pass.
+- [x] `bun run --bun preview` serves `/` with the placeholder heading.
+- [x] SvelteKit's configuration lives in the Vite plugin; `#lib` resolves (declared here, first
+  used by `/healthz` in T2).
+- [x] The built server serves `/zondarr-logo.svg`, and the README shows the logo from `static/`.
 
 **Verification:**
-- [ ] `bun ci && bun run --bun check && bun run --bun build`
-- [ ] `bun run --bun preview`, then `curl -fsS localhost:<port>/` shows the heading.
+- [x] `bun ci && bun run --bun check && bun run --bun build`
+- [x] `bun run --bun preview`, then `curl -fsS localhost:<port>/` shows the heading.
 
 **Dependencies:** none
 
