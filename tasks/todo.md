@@ -68,12 +68,12 @@ type styles, spacing, radii, layout sizes, motion durations. The root layout loa
 the placeholder page uses only tokens. Font tokens use system fallbacks (spec, ground-floor choice 1).
 
 **Acceptance criteria:**
-- [ ] Every token in `tokens.json` exists in `panda.config.ts` under DESIGN.md's names.
-- [ ] No raw colour, size or font value in `src/`.
-- [ ] A clean clone builds (`styled-system/` is generated, never committed).
+- [x] Every token in `tokens.json` exists in `panda.config.ts` under DESIGN.md's names.
+- [x] No raw colour, size or font value in `src/`.
+- [x] A clean clone builds (`styled-system/` is generated, never committed).
 
 **Verification:**
-- [ ] `rm -rf node_modules styled-system && bun ci && bun run --bun check && bun run --bun build`
+- [x] `rm -rf node_modules styled-system && bun ci && bun run --bun check && bun run --bun build`
 - [ ] Manual: the built page's background is `#222137` and the heading uses the `h1` style.
 
 **Dependencies:** T1
