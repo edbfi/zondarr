@@ -162,12 +162,14 @@ Jellyfin account; the owner manages invitations, members, servers and welcome wi
 console. It is being rewritten from scratch; the previous version is on the `legacy-old/v1` branch,
 for reference only.
 
-**Status:** context only. The skeleton is next: [`docs/SPEC.md`](docs/SPEC.md) and
-[`tasks/plan.md`](tasks/plan.md). Product modules come later, each through an owner-approved
-`docs/SPEC-<id>.md`.
+**Status:** the ground floor is built: an empty SvelteKit app on Bun with Panda tokens, `/healthz`,
+one unit test, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). Product modules
+come next, each through an owner-approved `docs/SPEC-<id>.md`, starting with the capability map.
 
-**Commands:** none yet beyond `prek run --all-files --hook-stage manual`. The skeleton adds
-`package.json` scripts.
+**Commands** (what each does: [docs/SPEC.md](docs/SPEC.md#commands)): `bun ci`, then
+`bun run --bun <dev|build|preview|check|test|smoke|lint>`; `prek run --all-files --hook-stage
+manual` is CI's `checks` job. `smoke` runs against the built server, so run `build` first, and it
+needs Chromium once per machine: `bunx --bun playwright install chromium`.
 
 **Boundaries.**
 - The legacy spec describes behaviour to keep, not the technology: its header names the superseded
@@ -183,3 +185,42 @@ for reference only.
   such as `route:/join/MOVIENIGHT` resolve too), [screens and references](docs/design/),
   [design tokens](panda.config.ts), [demo fixtures](tests/fixtures/demo-fixtures.json).
 - Decisions: [docs/decisions.md](docs/decisions.md).
+
+## Structure
+
+Folders exist only once they hold a real file; the later ones are the layout that modules grow
+into. These are principles, not hard limits.
+
+```text
+src/
+  app.html                       document shell; `class="dark"` sets the default colour mode
+  app.css                        Panda layer order; the Vite plugin appends the generated CSS
+  app.d.ts                       SvelteKit ambient types
+  routes/
+    +layout.svelte               loads app.css; marks <html data-hydrated> once mounted
+    (public)/+page.svelte        `/`: placeholder page
+    healthz/+server.ts           `/healthz`: public one-word status
+    (public)/join/ (admin)/ api/ later: public join flow, admin console, JSON endpoints
+  lib/                           imported as `#lib/<path>.<ext>`, e.g. `#lib/server/health.ts`
+    server/                      server-only: health.ts; later db/ (schema per aggregate),
+                                 providers/<plex|jellyfin>/, services/<domain>/, jobs/,
+                                 http/ (SSRF-safe fetch), config/, security/, logging/
+    components/                  later: ui/ (Ark wrappers), layout/, <feature>/
+    shared/                      later: isomorphic types, schemas, utilities
+static/                          served as is (zondarr-logo.svg, also the favicon)
+tests/
+  e2e/smoke.test.ts              Playwright smoke against the built server
+  fixtures/demo-fixtures.json    design fixtures
+drizzle/                         later: reviewed migrations
+panda.config.ts                  every design token; components use them through
+                                 `#styled-system/<module>` (generated, gitignored)
+vite.config.ts                   SvelteKit (all its configuration), Panda and Vitest
+playwright.config.ts  tsconfig.json  package.json  bun.lock
+```
+
+- Routes stay thin and call `#lib/server` code; they never reach the database or a provider
+  directly.
+- Unit tests sit next to their source as `*.test.ts` (Vitest takes `src/**/*.test.ts`); e2e tests
+  live in `tests/e2e/`.
+- One purpose per file and one component per file (naming: [docs/SPEC.md](docs/SPEC.md#code-style)).
+  A file that keeps growing is a prompt to split it, raised in review.
