@@ -153,7 +153,7 @@ Controls use 8px corners, panels 12px, dialogs 16px. Use pill radius only for sm
 
 ## Components
 
-Inputs have visible labels; use helper/error IDs and aria-invalid on failure. A password field may reveal only newly typed input; a stored service secret is a noninteractive stored-state receipt plus a blank replacement field. Subscriber player credentials are a separate revealable field type.
+Inputs have visible labels; use helper/error IDs and aria-invalid on failure. A password field may reveal only newly typed input; a stored service secret is a noninteractive stored-state receipt plus a blank replacement field.
 
 Use a solid primary button, bordered secondary button, ghost navigation action and danger button for destructive confirmation. Disabled controls remain visibly labelled and expose disabled state. During saving, use a verb such as Saving… and prevent duplicate requests. Do not announce success before durable completion.
 
