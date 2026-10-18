@@ -166,8 +166,8 @@ zondarr moves from the Content tier to Bun web with this work
 
 ## Ground-floor choices
 
-The orchestrator settled these for the first rewrite app's skeleton; zondarr's design doesn't call
-for anything different, so they're reused here.
+Choices 1–3 were settled for the first rewrite app's skeleton and are reused here, since zondarr's
+design doesn't call for anything different; choice 4 is zondarr's own.
 
 1. **Fonts.** DESIGN.md wants DM Serif Display, Outfit and IBM Plex Mono bundled locally (the legacy
    app loaded them from a hosted service, legacy spec §9.4). The skeleton defines the font tokens
