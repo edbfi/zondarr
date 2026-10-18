@@ -23,7 +23,7 @@ Use the shared [design system](../../DESIGN.md). Match hierarchy, density and pa
 
 ## Required content
 
-'Invitations'. MOVIENIGHT Active 2/5; FAMILY Limited 1/3; WEEKEND Used up 5/5; SUMMER Expired 0/3. Drawer 'Create invitation': Servers Home Cinema selected; Libraries Movies / Shows; Maximum uses 5; Invitation expires 31 Dec 2025; Access duration No expiry; Welcome wizard House rules. 'Create invitation'.
+'Invitations'. MOVIENIGHT Limited 2/5; FAMILY Limited 1/3; WEEKEND Used up 5/5; SUMMER Expired 0/3. Drawer 'Create invitation': Servers Home Cinema selected; Libraries Movies / Shows; Maximum uses 5; Invitation expires 31 Dec 2025; Access duration No expiry; Welcome wizard House rules. 'Create invitation'.
 
 ## Acceptance criteria
 
