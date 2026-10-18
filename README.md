@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/zondarr-logo.svg" alt="Zondarr Logo" width="256" height="256">
+  <img src="static/zondarr-logo.svg" alt="Zondarr Logo" width="256" height="256">
 </p>
 
 <h1 align="center">Zondarr</h1>
