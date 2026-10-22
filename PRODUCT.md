@@ -66,7 +66,7 @@ What exists:
 - **Design mockups:** ten generated screens in `docs/design/screens/`, `01-public-invitation.webp` through `10-recovery-and-components.webp`, covering the invitee flow, a 390px mobile board, the admin console and a states-and-components board. They are composition references; their text is illustrative, and the surface briefs' raster corrections win (DESIGN.md).
 - **Direction references:** `docs/design/references/golden-welcome.webp` and `docs/design/references/velvet-premiere.webp`, the two references the confirmed direction blends.
 - **Surface briefs:** nine proposed briefs in `.impeccable/surfaces/`, one per route, five admin and four invitee.
-- **Demo data:** [tests/fixtures/demo-fixtures.json](tests/fixtures/demo-fixtures.json), a fictional historical fixture (snapshot 2025-10-15: 48 members, 6 active invitations, 2 servers, and the invitations MOVIENIGHT, FAMILY, WEEKEND and SUMMER). The names in the briefs (Home Cinema, Living Room, Alex, Jordan, Morgan) are demo content too.
+- **Demo data:** [tests/fixtures/demo-fixtures.json](tests/fixtures/demo-fixtures.json) is fictional. It and the names in the briefs are the canonical demo content.
 - **Identity asset:** `static/zondarr-logo.svg`, used in the README and as the favicon.
 - **Licence:** AGPL-3.0, in `LICENSE`.
 
@@ -76,7 +76,7 @@ What does not exist, and must not be fabricated:
 - No usage numbers, benchmarks, analytics or uptime figures. The legacy app was dogfooded by its author, but nothing quantifies that beyond the legacy spec §2 history.
 - No release, version number or changelog for either the legacy app or the rewrite (legacy spec §2). No hosted service, pricing or plans exist (the invitee brief rules out public pricing).
 - No screenshots of the legacy app (none on `main` or `legacy-old/v1`) and none of rewrite screens; the mockups are generated design seeds, not captures of working software.
-- No approved Plex or Jellyfin brand marks in the repo (DESIGN.md says not to reproduce generated connector logos), and no bundled font files yet (docs/SPEC.md, ground-floor choice 1).
+- No approved Plex or Jellyfin brand marks in the repo (DESIGN.md says not to reproduce generated connector logos).
 - No user research, interviews or `docs/research/` notes.
 - No email delivery, notifications or persistent member portal; copy must not imply them.
 
