@@ -46,7 +46,7 @@ Setup facts for this stack:
 - SvelteKit 3 is configured through its Vite plugin (`vite.config.ts`); there's no
   `svelte.config.js`. `tsconfig.json` extends `$app/tsconfig`, which `svelte-kit sync` generates.
 - Package subpath imports replace `$lib` and need explicit file targets: `#lib/*` maps to
-  `./src/lib/*` and imports name the file with its extension (`#lib/server/health.ts`);
+  `./src/lib/*` and imports name the file with its extension (`#lib/server/services/health.ts`);
   `#styled-system/*` maps to the generated `./styled-system/*/index.js`.
 - `svelte-kit sync` runs before Panda's codegen, in `prepare` and in `check`.
 - The Panda Vite plugin appends the generated CSS to the stylesheet that declares the layer order
@@ -73,16 +73,17 @@ Setup facts for this stack:
 
 ## Project structure
 
-The folder layout and its rules are in [AGENTS.md](../AGENTS.md#structure): the tree that exists
-and the folders modules add.
+The folder tree is in [AGENTS.md](../AGENTS.md#structure) and its rules in
+[Code structure](../AGENTS.md#code-structure).
 
 ## Code style
 
 Biome's defaults with the shared `biome.json` (tabs, double quotes, 100 columns). TypeScript strict;
-`#lib/…` imports; kebab-case file names; PascalCase `.svelte` component files.
+`#lib/…` imports. File names and layout follow
+[Code structure](../AGENTS.md#code-structure).
 
 ```ts
-import { healthResponse } from "#lib/server/health.ts";
+import { healthResponse } from "#lib/server/services/health.ts";
 import type { RequestHandler } from "./$types";
 
 export const GET: RequestHandler = () => healthResponse();
