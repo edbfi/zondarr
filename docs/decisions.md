@@ -161,8 +161,9 @@ app keeps its own copy; there is no shared package.
   After that, setup no longer exists: its routes answer "not found".
 - **`sign-in`.** The owner signs in with the username and password created in `setup`. Sessions
   are server-side, and only a hash of each session token is stored.
-- **`two-factor`.** Optional, but strongly recommended: the last first-run step offers it, and the
-  admin shell keeps reminding the owner until it is on. It uses authenticator-app codes (TOTP), with
+- **`two-factor`.** Optional, but strongly recommended: first-run setup offers it right after the
+  owner account is created, before any connection step, and the admin shell keeps reminding the
+  owner until it is on. It uses authenticator-app codes (TOTP), with
   the secret encrypted by `secrets`, single-use backup codes stored only as hashes, each code
   accepted once and a limit on failed attempts. When it is on, every way of signing in passes
   through it, except where an `oidc-sign-in` spec decides to trust the identity provider's own
