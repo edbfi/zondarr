@@ -138,6 +138,77 @@ and a server share are different relationships.
 Why: a maintained library covers most operations, and one provider boundary keeps the access rules
 (share, friendship, home user) explicit and testable.
 
+### D20. Shared opening modules and owner sign-in, in the same shape in every app
+
+Every edbfi rewrite app builds five modules before any feature module, in this order: `secrets`,
+`i18n`, `setup`, `sign-in`, then `two-factor`. Each app also gets `oidc-sign-in` later. These
+modules have the same shape in all five apps, so signing in works the same way everywhere. Each
+app keeps its own copy; there is no shared package.
+
+- **One owner.** Each instance has exactly one owner account, with no other roles: no co-admins,
+  viewers or operators, and none planned for later.
+- **`secrets`.** Secret values are encrypted in the app before they reach the database, with
+  AES-256-GCM through WebCrypto, so this works on any database engine:
+  - The key is 32 random bytes from an environment variable or a secret file. It is never derived
+    from a password, and a missing or malformed key stops the app at startup.
+  - Every encryption uses a fresh random 12-byte nonce.
+  - Associated data ties each value to its record and field, so a value copied to another row or
+    field fails to decrypt.
+  - Every stored value carries its key ID, so the key can be rotated.
+- **`i18n`.** The translation groundwork (D21), in place before the first screen.
+- **`setup`.** If nobody has claimed the instance yet, the app prints a one-time bootstrap token to
+  its log at startup. Whoever types that token claims the instance and creates the owner account.
+  After that, setup no longer exists: its routes answer "not found".
+- **`sign-in`.** The owner signs in with the username and password created in `setup`. Sessions
+  are server-side, and only a hash of each session token is stored.
+- **`two-factor`.** Optional, but strongly recommended: the last first-run step offers it, and the
+  admin shell keeps reminding the owner until it is on. It uses authenticator-app codes (TOTP), with
+  the secret encrypted by `secrets`, single-use backup codes stored only as hashes, each code
+  accepted once and a limit on failed attempts. When it is on, every way of signing in passes
+  through it, except where an `oidc-sign-in` spec decides to trust the identity provider's own
+  second factor.
+- **Plex for the owner is an option.** In the apps that use Plex (all of them except comradarr and
+  zimuarr), the owner can link their account to their own Plex account in the admin settings once
+  setup is done. After that, "Sign in with Plex" also signs them in as the owner. The password
+  keeps working, and Plex sign-in for the owner stays off until they link. Where an app has users
+  besides the owner, those users sign in with Plex.
+- **`oidc-sign-in`.** The owner can also link their account to one OpenID Connect provider, such as
+  Authentik, Authelia, Pocket ID or Tinyauth, which then signs them in as the owner. It uses
+  discovery and the authorization code flow with PKCE, and keys the link on the provider's issuer
+  and subject. As with Plex, linking never creates an owner, and the password keeps working.
+  Signing in through a reverse proxy's headers isn't supported.
+
+Each app's connection modules add their own first-run steps after `setup`, such as adding the first
+media server here. Invitees never sign in to zondarr; Plex sign-in on the join page only proves
+which Plex account gets the share. The owner can't sign in with a Jellyfin account (owner decision:
+Jellyfin is a local server, while Plex sign-in runs on Plex's own site).
+
+Why: the owner wants the five apps to look and work alike, and everything else depends on these
+modules: every app stores upstream secrets, shows text that must be translatable, needs a safe
+first claim and has to know who its owner is. Encrypting in the app (D4: secrets are configured
+apart from the database) keeps stolen database files unreadable without the key. Two-factor and
+OIDC sign-in were the owner's call for every app; one standard OIDC flow covers the self-hosted
+identity providers without a client for each. A copy per app is enough for five apps and avoids
+building a shared package before it's needed (YAGNI). A random key with key IDs replaces the legacy
+app's keys derived from one application secret, whose rotation broke every stored key (legacy spec
+§9.2, §12.22).
+
+### D21. Every interface is translatable, in English and Danish
+
+Every edbfi app is built for translation from its first screen. No user-facing text is written into
+components or services: it comes from message files, one per language. English is the source
+language and the default, and Danish is the second language. Each request uses the viewer's own
+choice, then the browser's preferred languages, then English. Dates, times and numbers are formatted
+for the viewer's locale through `Intl`, never in a fixed format. The message files use a format
+Weblate reads, plurals included, so a Weblate project can be connected later without changing code.
+Connecting Weblate is later work and belongs to no module yet. Text the owner writes, such as
+zondarr's wizard steps, is content, translated per step as before (legacy spec §6.7), not through
+the message files.
+
+Why: the owner wants full translation support in every app, with Weblate as the translation tool,
+and English and Danish now. Adding translation afterwards touches every screen; building it in from
+the first one costs little. This fixes legacy spec §12.17 (English only, fixed US dates).
+
 ## Open
 
 ### D13. Producing the OpenAPI document
@@ -185,3 +256,10 @@ The rewrite recipe covers Plex only. How the Jellyfin provider talks to Jellyfin
 library or focused `fetch` methods, as D12 does for Plex) isn't chosen; either way it sits behind the
 same server-only provider contract as Plex (legacy spec §7.1) and uses the SSRF-safe fetch (D8).
 Closes with the Jellyfin provider.
+
+### D22. Translation library and message format
+
+Which translation library (D21) and which Weblate-readable file format to use isn't chosen. One
+candidate is Paraglide JS storing its messages as i18next JSON; gettext PO and XLIFF are others.
+The choice must work with SvelteKit 3 on Bun, with server rendering, plurals and TypeScript 6.
+Closes with the `i18n` module.
