@@ -75,7 +75,7 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 | `i18n` | the message files (where the D22 library keeps them), `lib/shared/i18n/` (language choice and formatting); choosing the language in `hooks.server.ts` |
 | `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate in `hooks.server.ts` |
 | `sign-in` | `services/sign-in/`, `security/` (sessions, password hashing, rate limits, origin check, headers); `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
-| `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/` |
+| `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/`; the offer in `routes/setup/`, the challenge page beside the sign-in page, its section in `routes/(admin)/admin/settings/`, and the reminder in `lib/components/layout/` |
 | `plex-provider` | `providers/plex/`, `providers/media-server.ts` (the contract, if first), `http/` (if first) |
 | `jellyfin-provider` | `providers/jellyfin/`, `providers/media-server.ts` and `http/` (if first) |
 | `servers` | `services/servers/`, `db/` server and library schema; `routes/(admin)/admin/servers/` |
