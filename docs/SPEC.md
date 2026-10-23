@@ -1,7 +1,7 @@
 # Spec: zondarr
 
 **Status:** the ground floor (skeleton) is specified here, approved by the orchestrator
-(2026-10-18) and built. Product modules aren't specified yet (see the capability map).
+(2026-10-18) and built. The capability map below is approved; no product module is specified yet.
 
 ## Objective
 
@@ -17,10 +17,115 @@ make the first module spec cheap to build: every later PR adds behaviour, not pl
 
 ## Capability map
 
-Placeholder. Product modules come later, each through an owner-approved `docs/SPEC-<id>.md`. The map
-(module ids, dependencies, build order) is proposed with `spec-driven-development` Phase 0 after the
-skeleton has merged, from the legacy spec and the [surface briefs](../.impeccable/surfaces/). No
-module id exists yet.
+**Status:** approved by the owner (2026-10-24). Module ids never change. Each module gets its own
+`docs/SPEC-<id>.md`, which the owner approves just before it is built.
+Sources: [PRODUCT.md](../PRODUCT.md), [decisions.md](decisions.md), the
+[legacy spec](product/legacy-spec.md) and the [surface briefs](../.impeccable/surfaces/).
+
+**Every module keeps to [Code structure](../AGENTS.md#code-structure).** Its spec names the files it
+adds in that layout, and review checks them. In short:
+- The same role folders as every edbfi app. A folder exists only once it holds a real file.
+- One purpose per file. No `utils`, `helpers`, `common` or `misc` files.
+- Group by domain under the role folders. The folder says where; the file name says what.
+- Imports only go downwards. Routes, hooks and jobs stay thin and call services.
+- Tests sit next to their source.
+
+**Every module writes its text in English and Danish** through `i18n` (D21): no user-facing text in
+components or services, and dates and numbers formatted for the viewer's locale.
+
+| # | Module id | Responsibility | Depends on | Surfaces |
+|---|---|---|---|---|
+| 1 | `secrets` | Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20) | — | — |
+| 2 | `i18n` | The translation groundwork (D21, D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's locale, and a check that every message exists in both languages | — | the language switcher in each shell |
+| 3 | `setup` | Startup checks, database and migrations, settings with their environment locks (legacy §8.2, §9.2), the bootstrap token, and claiming the instance for its one owner, keeping the origin it was claimed from as the trusted origin (legacy §6.1 pre-filled it). Replaces `/healthz` with the legacy §9.4 health (ground-floor choice 5) | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
+| 4 | `sign-in` | Owner sign-in with username and password, sessions, sign-out, lockout and rate limits on sign-in (legacy §12.11), origin check and the trusted origin with its test (the first value comes from `setup`), secure cookies, security headers, referrer policy and CSP, and the admin shell | `setup` | owner sign-in (no brief yet); the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections |
+| 5 | `two-factor` | Optional but strongly recommended (D20): authenticator codes, backup codes and the challenge after every way of signing in, with replay protection and the attempt limit (legacy §6.2, §10). Adds the offer to first-run setup, right after the owner account is created and before any connection step, and the reminder in the admin shell while it is off | `sign-in` | the two-factor offer in first-run setup; the two-factor section of `/admin/settings` (Account); the reminder in the admin shell |
+| 6 | `plex-provider` | The Plex provider (D12, D18): connection test, server info, libraries, the user list with relationship types, direct share, friend and home accounts, removal stepped by relationship, library access, permissions and PIN sign-in. Reconciles shares by machine id and account id after every write (legacy §12.14) | `setup` | — |
+| 7 | `jellyfin-provider` | The Jellyfin provider (D19): connection test, server info, libraries, the user list with administrators flagged (legacy §12.15), create with password, delete, enable and disable, library access and permissions | `setup` | — |
+| 8 | `servers` | Adding a server with the mandatory connection test and type detection, the list and detail, editing with a re-test that works with the stored key (legacy §12.3), deleting with defined cascade rules (legacy §12.7), the per-provider environment overrides, library sync, and the optional first-server step after `setup` and the two-factor offer | `sign-in`, `plex-provider`, `jellyfin-provider` | `/admin/servers` (no brief yet); the Servers tab of `/admin/settings` |
+| 9 | `members` | Identities and their per-server users, the members list with search and filters, the detail with linked users, enable and disable where the provider can, permissions loaded from the server (legacy §12.6), and delete stepped by relationship | `servers` | `/admin/members/[id]` |
+| 10 | `wizards` | Wizards, steps, interactions and translations, the content allow-list, keyboard reordering (legacy §12.20), the preview, and the server-side step check: signed progress and completion tokens, the quiz cool-down and a timer started on the server (legacy §12.10). A disabled or empty wizard counts as none (legacy §12.9) | `sign-in` | `/admin/wizards/[id]`; the wizard list (no brief yet) |
+| 11 | `invitations` | Invitations with target servers, libraries, expiry, max uses, access duration and wizards; generated and normalised codes (legacy §12.12), the validation order, clear errors for max uses below the use count (legacy §12.8), the copy link, and the invitation expiry job | `servers`, `wizards` | `/admin/invitations` |
+| 12 | `join` | The public join shell, code validation with its exact reasons, the server check, and the pre- and post-registration wizard stages, with rate limits on validation (legacy §12.11) | `invitations`, `wizards` | `/join/[code]`, `/join/[code]/welcome` |
+| 13 | `redemption` | Plex sign-in for invitees (opaque handles, one-time redemption tokens, the real reason when one is invalid, legacy §12.16), the Jellyfin account form, the reservation, creating each account once, rollback with the partial-success report, an idempotency key against double submits (legacy §12.23), the default permissions, the receipt, and the cleanup job for expired sign-in attempts | `join`, `members` | `/join/[code]/account`, `/join/[code]/complete` |
+| 14 | `sync` | User sync (matched, orphaned, stale; dry run by default, import, relationship refresh), the media server sync job with per-server timeouts, retries and circuit breakers, sync runs, an interval that takes effect without a restart (legacy §12.2), and running it by hand | `members` | the Sync tab of `/admin/settings`; the sync panel on server detail; "Sync members" on `/admin/members/[id]` |
+| 15 | `member-expiry` | The owner's expiry policy (disable by default, delete only if the owner chooses it), the job that enforces it, and showing on each invitation what happens at expiry (PRODUCT.md, legacy §12.1) | `members`, `invitations` | the policy setting (its spec decides where); the invitation detail |
+| 16 | `owner-plex-sign-in` | Linking the owner's account to their Plex account in the admin settings, after which "Sign in with Plex" signs them in as the owner, through two-factor when it is on (D20) | `two-factor`, `plex-provider`, `redemption` | the Plex section of `/admin/settings` (Account); the Plex button on owner sign-in |
+| 17 | `oidc-sign-in` | Connecting one OpenID Connect provider (Authentik, Authelia, Pocket ID, Tinyauth and others) by its issuer, client id and secret, and linking the owner's account to it, after which it signs them in as the owner (D20). Its spec decides whether the provider's own second factor replaces `two-factor` | `two-factor` | the OIDC section of `/admin/settings` (Account); its button on owner sign-in |
+| 18 | `logs` | The live log viewer: the in-memory buffer of recent entries, the stream with reconnects that don't repeat entries, filters, search and the detail panel (legacy §6.9) | `sign-in` | `/admin/logs` (no brief yet) |
+| 19 | `overview` | The owner dashboard: member, invitation and server counts, server health, pending invitations, recent activity, and a reminder while no server is connected (legacy §12.21) | `servers`, `invitations`, `members`, `sync` | `/admin` |
+
+Build order: `secrets` → `i18n` → `setup` → `sign-in` → `two-factor` → `plex-provider`,
+`jellyfin-provider` → `servers` → `members`, `wizards` → `invitations` → `join` → `redemption` →
+`sync`, `member-expiry`, `owner-plex-sign-in`, `oidc-sign-in`, `logs` → `overview`. A comma means
+either order works. The first five are the opening every edbfi app shares (D20). The first of the
+two providers adds the provider contract with its capability declarations (legacy §7.1) and the
+SSRF-safe outbound HTTP (D8). `redemption` is the first time an invitee gets something they can
+use, so everything before it is the shortest path there.
+
+### Where modules live
+
+Paths are under `src/lib/server/`, except those starting with `routes/` (under `src/`) or `lib/`
+(under `src/`), and `hooks.server.ts` (`src/hooks.server.ts`). They follow the
+[Code structure](../AGENTS.md#code-structure) layout:
+
+| Module | Main homes |
+|---|---|
+| `secrets` | `security/secrets/`; loading the key in `config/` |
+| `i18n` | the message files (where the D22 library keeps them), `lib/shared/i18n/` (language choice and formatting); choosing the language in `hooks.server.ts` |
+| `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate in `hooks.server.ts` |
+| `sign-in` | `services/sign-in/`, `security/` (sessions, password hashing, rate limits, origin check, headers); `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
+| `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/`; the offer in `routes/setup/`, the challenge page beside the sign-in page, its section in `routes/(admin)/admin/settings/`, and the reminder in `lib/components/layout/` |
+| `plex-provider` | `providers/plex/`, `providers/media-server.ts` (the contract, if first), `http/` (if first) |
+| `jellyfin-provider` | `providers/jellyfin/`, `providers/media-server.ts` and `http/` (if first) |
+| `servers` | `services/servers/`, `db/` server and library schema; `routes/(admin)/admin/servers/` |
+| `members` | `services/members/`, `db/` identity and member schema; `routes/(admin)/admin/members/` |
+| `wizards` | `services/wizards/`, `db/` wizard schema, `lib/components/wizard/` (the invitee view, shared by the preview and the join flow); `routes/(admin)/admin/wizards/` |
+| `invitations` | `services/invitations/`, `db/` invitation schema, `jobs/invitation-expiry.ts`; `routes/(admin)/admin/invitations/` |
+| `join` | `services/join/`; `routes/(public)/join/[code]/`, `routes/(public)/join/[code]/welcome/` |
+| `redemption` | `services/redemption/`, `services/provider-sign-in/`, `db/` sign-in attempt schema, `jobs/provider-sign-in-cleanup.ts`; `routes/(public)/join/[code]/account/`, `routes/(public)/join/[code]/complete/`, the sign-in polling endpoint under `routes/api/` |
+| `sync` | `services/sync/`, `db/` sync-run schema, `jobs/media-server-sync.ts` |
+| `member-expiry` | `services/member-expiry/`, `jobs/member-expiry.ts` |
+| `owner-plex-sign-in` | `services/sign-in/plex.ts` (uses `services/provider-sign-in/`) |
+| `oidc-sign-in` | `services/sign-in/oidc.ts`, the provider settings and the owner's link in `db/`; its callback route beside the sign-in page |
+| `logs` | `logging/` (the buffer), `services/logs/`; `routes/(admin)/admin/logs/` and its stream endpoint |
+| `overview` | `services/overview/`; `routes/(admin)/admin/` |
+
+### Open decisions each module closes
+
+- `i18n`: D22 (translation library and message format).
+- `setup`: D15 (Drizzle and Turso pair) and the logging library half of D14. The secrets half of
+  D16's backup and restore goes with `secrets`.
+- The first module with a background job closes the job half of D14: `sign-in` if its session
+  cleanup is a job, otherwise `invitations`.
+- `plex-provider`: D18. `jellyfin-provider`: D19.
+- D13: `redemption`'s sign-in polling is the first JSON endpoint; its spec decides whether it needs
+  a generated client. D17 stays open as an accepted limit.
+
+### Left out on purpose
+
+- Any role beyond the one owner, and admin management (legacy §4, §12.4; PRODUCT.md, D20).
+- Rotating refresh tokens, short-lived access tokens and the bearer header for scripts (legacy
+  §6.2, §10). D20's server-side sessions replace them, and no script needs the API.
+- Owner sign-in with a Jellyfin account (legacy §6.2; owner decision, D20).
+- Signing in through a reverse proxy's headers (D20): `oidc-sign-in` covers the same identity
+  providers.
+- Connecting Weblate (D21): later work, outside this map. The message files are ready for it.
+- Checking that a Plex sign-in belongs to the owner of a configured Plex server (legacy §6.2). The
+  signed-in owner links their Plex account themselves (D20), and zondarr may have several Plex
+  servers or none.
+- Per-invitation permissions (legacy §12.5): the field was never used, and redemption applies the
+  default set.
+- The debug mode's auth bypass, test-only PIN endpoint and API documentation pages (legacy §9.2):
+  development tooling, not product.
+- Email, notifications and a member portal (PRODUCT.md, legacy §12.25).
+
+### Surfaces with no brief yet
+
+First-run setup, owner sign-in, `/admin/servers`, the wizard list and `/admin/logs` are needed (all
+are in the legacy app and in PRODUCT.md's admin shell) but have no brief. The
+`/join/[code]/account` brief covers only Plex; the Jellyfin account form joins it. Each gets its
+brief before its module is specced.
 
 ## Tech stack
 
