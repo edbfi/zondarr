@@ -37,8 +37,8 @@ components or services, and dates and numbers formatted for the viewer's locale.
 |---|---|---|---|---|
 | 1 | `secrets` | Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20) | — | — |
 | 2 | `i18n` | The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's locale, and a check that every message exists in both languages | — | the language switcher in each shell |
-| 3 | `setup` | Startup checks, database and migrations, settings with their environment locks (legacy §8.2, §9.2), the bootstrap token, and claiming the instance for its one owner, keeping the origin it was claimed from as the trusted origin (legacy §6.1 pre-filled it). Replaces `/healthz` with the legacy §9.4 health (ground-floor choice 5) | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
-| 4 | `sign-in` | Owner sign-in with username and password, sessions, sign-out, lockout and rate limits on sign-in (legacy §12.11), origin check and the trusted origin with its test (the first value comes from `setup`), secure cookies, security headers, referrer policy and CSP, and the admin shell | `setup` | owner sign-in (no brief yet); the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections |
+| 3 | `setup` | Startup checks, database and migrations, settings with their environment locks (legacy §8.2, §9.2), security headers, the referrer policy and CSP (ground-floor choice 3), the bootstrap token, and claiming the instance for its one owner, keeping the origin it was claimed from as the trusted origin (legacy §6.1 pre-filled it). Replaces `/healthz` with the legacy §9.4 health (ground-floor choice 5) | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
+| 4 | `sign-in` | Owner sign-in with username and password, sessions, sign-out, lockout and rate limits on sign-in (legacy §12.11), origin check and the trusted origin with its test (the first value comes from `setup`), secure cookies, and the admin shell | `setup` | owner sign-in (no brief yet); the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections |
 | 5 | `two-factor` | Optional but strongly recommended (D20): authenticator codes, backup codes and the challenge after every way of signing in (except the optional OIDC skip, D20), with replay protection and the attempt limit (legacy §6.2, §10). Adds the offer to first-run setup, right after the owner account is created and before any connection step, and the reminder in the admin shell while it is off | `sign-in` | the two-factor offer in first-run setup; the two-factor section of `/admin/settings` (Account); the reminder in the admin shell |
 | 6 | `plex-provider` | The Plex provider (D12, D18): connection test, server info, libraries, the user list with relationship types, direct share, friend and home accounts, removal stepped by relationship, disabling as a share with no libraries (D23), library access, permissions and PIN sign-in. Reconciles shares by machine id and account id after every write (legacy §12.14) | `setup` | — |
 | 7 | `jellyfin-provider` | The Jellyfin provider (D19): connection test, server info, libraries, the user list with administrators flagged (legacy §12.15), create with password, delete, enable and disable, library access and permissions | `setup` | — |
@@ -73,8 +73,8 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 |---|---|
 | `secrets` | `security/secrets/`; loading the key in `config/` |
 | `i18n` | `messages/en.json` and `messages/da.json`, `project.inlang/` (Paraglide's settings), `lib/shared/i18n/` (formatting); `paraglideMiddleware` in `hooks.server.ts` |
-| `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate in `hooks.server.ts` |
-| `sign-in` | `services/sign-in/`, `security/` (sessions, password hashing, rate limits, origin check, headers); `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
+| `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`, `security/headers.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate and the headers in `hooks.server.ts` |
+| `sign-in` | `services/sign-in/`, `security/` (sessions, password hashing, rate limits, origin check); `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
 | `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/`; the offer in `routes/setup/`, the challenge page beside the sign-in page, its section in `routes/(admin)/admin/settings/`, and the reminder in `lib/components/layout/` |
 | `plex-provider` | `providers/plex/`, `providers/media-server.ts` (the contract, if first), `http/` (if first) |
 | `jellyfin-provider` | `providers/jellyfin/`, `providers/media-server.ts` and `http/` (if first) |
@@ -267,7 +267,7 @@ design doesn't call for anything different; choices 4 and 5 are zondarr's own.
    that needs one.
 3. **Security headers and CSP.** The legacy join page suppresses the referrer (legacy spec §6.6,
    §10). Security headers, the referrer policy and a CSP belong to the first module that serves real
-   pages (the public join flow or admin sign-in), not the skeleton.
+   pages (`setup`, whose claim page comes before admin sign-in and the join flow), not the skeleton.
 4. **Where the logo lives.** SvelteKit serves static files from `static/`, so the logo is
    `static/zondarr-logo.svg` (it was in `public/`), which the README shows and `src/app.html` uses
    as the favicon, the layout the other rewrite apps use.
