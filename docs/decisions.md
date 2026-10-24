@@ -287,14 +287,15 @@ older. Its contract tests run against that release; when a new stable release sh
 the app move to it in the app's next release, and support for the one before goes. The app adds no
 code for older versions and no workarounds for upstream bugs that a later release may fix: a bug
 that harms users is reported upstream and named in the app's docs. A service on any other version
-(older, newer than the one tested, a prerelease, or a version the app can't read) keeps working,
-and the app says plainly in setup and on its health page which version it is tested with.
-Responses are still validated, so a real difference in the API shows up as an error, not as wrong
-data.
+(older, newer than the one tested, a prerelease, or a version the app can't read) keeps working, and
+the app tells the owner plainly which version it is tested with, in setup and on the owner's own
+status screens; the public health endpoint never shows a version. Responses are still validated, so
+a real difference in the API shows up as an error, not as wrong data.
 
 In zondarr the services are Plex Media Server and Jellyfin, each held to its latest stable release
-(the latest public release for Plex), and the Jellyfin client (D19) is written for the latest
-stable Jellyfin. Plex's account service has no version to check.
+(the latest public release for Plex), and the Jellyfin client (D19) is written for the latest stable
+Jellyfin. Plex's account service has no version to check. The warning shows where a server is added
+and on its detail (`servers`), and in the server health on `/admin` (`overview`).
 
 Why: the owner doesn't want a backlog of backwards compatibility in any app (owner decision). Code
 for old versions and for upstream bugs is seldom removed once it's in, and each workaround outlives
