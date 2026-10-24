@@ -166,8 +166,7 @@ app keeps its own copy; there is no shared package.
   owner until it is on. It uses authenticator-app codes (TOTP), with
   the secret encrypted by `secrets`, single-use backup codes stored only as hashes, each code
   accepted once and a limit on failed attempts. When it is on, every way of signing in passes
-  through it, except where an `oidc-sign-in` spec decides to trust the identity provider's own
-  second factor.
+  through it, with one optional exception for OIDC (below).
 - **Plex for the owner is an option.** In the apps that use Plex (all of them except comradarr and
   zimuarr), the owner can link their account to their own Plex account in the admin settings once
   setup is done. After that, "Sign in with Plex" also signs them in as the owner. The password
@@ -178,6 +177,12 @@ app keeps its own copy; there is no shared package.
   discovery and the authorization code flow with PKCE, and keys the link on the provider's issuer
   and subject. As with Plex, linking never creates an owner, and the password keeps working.
   Signing in through a reverse proxy's headers isn't supported.
+  - **The provider's own second factor can replace the app's, if the owner chooses.** When the ID
+    token's `amr` claim (RFC 8176) reports that the owner used a second factor at the provider,
+    such as Authentik's or Authelia's TOTP or a passkey, the app offers to skip its own two-factor
+    for OIDC sign-ins. It stays on until the owner accepts. Every OIDC sign-in checks the claim
+    again, and one that reports no second factor goes through the app's two-factor. Password and
+    Plex sign-ins always do. A provider that doesn't send `amr` never gets the offer.
 
 Each app's connection modules add their own first-run steps after `setup`, such as adding the first
 media server here. Invitees never sign in to zondarr; Plex sign-in on the join page only proves
@@ -185,14 +190,15 @@ which Plex account gets the share. The owner can't sign in with a Jellyfin accou
 Jellyfin is a local server, while Plex sign-in runs on Plex's own site).
 
 Why: the owner wants the five apps to look and work alike, and everything else depends on these
-modules: every app stores upstream secrets, shows text that must be translatable, needs a safe
-first claim and has to know who its owner is. Encrypting in the app (D4: secrets are configured
-apart from the database) keeps stolen database files unreadable without the key. Two-factor and
-OIDC sign-in were the owner's call for every app; one standard OIDC flow covers the self-hosted
-identity providers without a client for each. A copy per app is enough for five apps and avoids
-building a shared package before it's needed (YAGNI). A random key with key IDs replaces the legacy
-app's keys derived from one application secret, whose rotation broke every stored key (legacy spec
-§9.2, §12.22).
+modules: every app stores upstream secrets, shows text that must be translatable, needs a safe first
+claim and has to know who its owner is. Encrypting in the app (D4: secrets are configured apart from
+the database) keeps stolen database files unreadable without the key. Two-factor and OIDC sign-in
+were the owner's call for every app, and so was letting a provider's own second factor stand in for
+the app's, optionally; one standard OIDC flow covers the self-hosted identity providers without a
+client for each, and `amr` is the standard way to see the provider's factor. A copy per app is
+enough for five apps and avoids building a shared package before it's needed (YAGNI). A random key
+with key IDs replaces the legacy app's keys derived from one application secret, whose rotation
+broke every stored key (legacy spec §9.2, §12.22).
 
 ### D21. Every interface is translatable, in English and Danish
 
@@ -209,6 +215,59 @@ the message files.
 Why: the owner wants full translation support in every app, with Weblate as the translation tool,
 and English and Danish now. Adding translation afterwards touches every screen; building it in from
 the first one costs little. This fixes legacy spec §12.17 (English only, fixed US dates).
+
+### D22. Paraglide JS with i18next JSON v4 messages
+
+Translation (D21) uses Paraglide JS 2 (`@inlang/paraglide-js`) through its Vite plugin, SvelteKit's
+official i18n integration. Messages live in `messages/en.json` and `messages/da.json` in i18next
+JSON v4, through `@inlang/plugin-i18next` 6.2.0 or later (which fixed its plural handling), with
+plurals under CLDR suffixes. Weblate reads that format as "i18next JSON v4" (`i18nextv4`),
+monolingual, with `messages/en.json` as the base file.
+
+- Components and services call the typed message functions Paraglide compiles, so a missing
+  message is a type error. The compiled output is generated and gitignored.
+- On the server, `paraglideMiddleware` in `hooks.server.ts` picks each request's language (the
+  viewer's cookie, then the browser's preferred languages, then English) and keeps it in
+  AsyncLocalStorage, so concurrent requests can't mix languages. Under SvelteKit 3 it passes the
+  translated request on a copy of the event, because `event.request` is read-only.
+- Dates, times and numbers stay with `Intl` (D21).
+
+Still to validate in the `i18n` module: the pinned versions with SvelteKit 3, TypeScript 6 and Bun;
+building and serving through adapter-bun (Paraglide issue
+[#725](https://github.com/opral/paraglide-js/issues/725) reports the middleware returning nothing in
+builds that use instrumentation); and a Weblate round trip of a plural message.
+
+Why: it is the integration SvelteKit itself points to. Compiled, tree-shaken message functions add
+almost nothing to the bundle and are checked by strict TypeScript. A language per request through
+AsyncLocalStorage is safe for server rendering. i18next JSON v4 is a native Weblate format with
+correct plurals for English and Danish. gettext PO (through wuchale or Lingui) would also carry
+notes for translators, which i18next JSON v4 can't, but those integrations are younger and keep the
+language in stores, which need care when the server renders concurrent requests; svelte-i18n
+resolves messages at runtime, without typed messages. The owner left the choice to the agents.
+
+### D23. Member expiry: a default policy, with an override per invitation
+
+When a member's access period ends, zondarr applies the expiry policy: disable or delete. The owner
+sets the default in the settings, disable unless they choose otherwise, and each invitation can
+override it. The invitation shows which policy applies to the people who join with it
+(PRODUCT.md). The policy in force when a member's access ends decides what happens to them.
+
+- **Disable** is reversible. On Jellyfin it sets the account's disabled flag. Plex has no disabled
+  state (legacy spec §7.1), so a disabled Plex member keeps their share of the server, and so stays
+  a member, but with no libraries. Enabling them gives back the libraries they had, which zondarr
+  keeps for that.
+- **Delete** removes the account on the server and the local record, as deleting a member by hand
+  does (legacy spec §6.8).
+- Disabling and enabling a Plex member by hand mean the same thing, so the members list offers them
+  for Plex too, where the legacy app refused (legacy spec §6.8).
+
+Whether Plex keeps a share that has no libraries is verified in the Plex library audit (D18). If it
+doesn't, the `member-expiry` spec takes that back to the owner.
+
+Why: the owner chose both a default and a per-invitation override, and Plex's "disabled" as a
+membership with no libraries. Keeping the share means enabling a member again needs no new
+invitation or friend request. Deleting only by the owner's explicit choice keeps unattended work
+safe (PRODUCT.md, principle 4). This fixes legacy spec §12.1 (expiry was never enforced).
 
 ## Open
 
@@ -257,10 +316,3 @@ The rewrite recipe covers Plex only. How the Jellyfin provider talks to Jellyfin
 library or focused `fetch` methods, as D12 does for Plex) isn't chosen; either way it sits behind the
 same server-only provider contract as Plex (legacy spec §7.1) and uses the SSRF-safe fetch (D8).
 Closes with the Jellyfin provider.
-
-### D22. Translation library and message format
-
-Which translation library (D21) and which Weblate-readable file format to use isn't chosen. One
-candidate is Paraglide JS storing its messages as i18next JSON; gettext PO and XLIFF are others.
-The choice must work with SvelteKit 3 on Bun, with server rendering, plurals and TypeScript 6.
-Closes with the `i18n` module.
