@@ -231,7 +231,8 @@ zondarr is a Bun web repo with edbfi-ci's Bun web templates:
   (outside PRs); `checks` and `smoke` sit behind `ci-ok`, every job that installs runs with failing
   `node`, `npm` and `npx` on `PATH`, and the weekly run is `2 4 * * 0`.
 - `.github/dependabot.yml` covers `github-actions`, `pre-commit` and `bun`, and
-  `.github/workflows/biome-migrate.yml` applies Biome migrations to Dependabot's Biome PRs.
+  `.github/workflows/biome-migrate.yml` applies Biome migrations and formatter output to
+  Dependabot's Biome PRs.
 
 ## Boundaries
 
