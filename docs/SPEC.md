@@ -1,7 +1,8 @@
 # Spec: zondarr
 
 **Status:** the ground floor (skeleton) is specified here, approved by the orchestrator
-(2026-10-18) and built. The capability map below is approved; no product module is specified yet.
+(2026-10-18) and built. The capability map below is approved; `secrets` is specified in
+[SPEC-secrets.md](SPEC-secrets.md).
 
 ## Objective
 
@@ -35,7 +36,7 @@ components or services, and dates and numbers formatted for the viewer's locale.
 
 | # | Module id | Responsibility | Depends on | Surfaces |
 |---|---|---|---|---|
-| 1 | `secrets` | Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20) | — | — |
+| 1 | `secrets` | Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20, D25), and the secret wrapper that shows only a redaction marker and opens at one named call | — | — |
 | 2 | `i18n` | The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's locale, and a check that every message exists in both languages | — | the language switcher in each shell |
 | 3 | `setup` | Startup checks, database and migrations, settings with their environment locks (legacy §8.2, §9.2), security headers, the referrer policy and CSP (ground-floor choice 3), the bootstrap token, and claiming the instance for its one owner, keeping the origin it was claimed from as the trusted origin (legacy §6.1 pre-filled it). Replaces `/healthz` with the legacy §9.4 health (ground-floor choice 5) | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
 | 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out, lockout and rate limits on sign-in (legacy §12.11), origin check and the trusted origin with its test (the first value comes from `setup`), secure cookies, recovery (D20), and the admin shell | `setup` | owner sign-in (no brief yet); the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections |
@@ -71,7 +72,7 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 
 | Module | Main homes |
 |---|---|
-| `secrets` | `security/secrets/`; loading the key in `config/` |
+| `secrets` | `security/secrets/` (the cipher and the secret wrapper); loading the key in `config/` |
 | `i18n` | `messages/en.json` and `messages/da.json`, `project.inlang/` (Paraglide's settings), `lib/shared/i18n/` (formatting); `paraglideMiddleware` in `hooks.server.ts` |
 | `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`, `security/headers.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate and the headers in `hooks.server.ts` |
 | `sign-in` | `services/sign-in/` (sessions and their storage, recovery), `db/` session schema, `security/` (session-token and password hashing, rate limiting, origin check); the sign-in at the claim in `routes/setup/`, `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
@@ -95,8 +96,7 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 
 - `i18n`: the validation that D22 lists (pinned versions, the adapter-bun build, a Weblate round
   trip).
-- `setup`: D15 (Drizzle and Turso pair) and the logging library half of D14. The secrets half of
-  D16's backup and restore goes with `secrets`.
+- `setup`: D15 (Drizzle and Turso pair) and the logging library half of D14.
 - The first module with a background job closes the job half of D14: `sign-in` if its session
   cleanup is a job, otherwise `invitations`.
 - `plex-provider`: D18, including whether Plex keeps a share with no libraries (D23).

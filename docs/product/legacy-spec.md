@@ -4,12 +4,14 @@
 > **Legacy product specification**, imported from the pre-rewrite documentation. It describes the
 > shipped app's behaviour, which the rewrite keeps unless an approved spec or decision changes it.
 > Its technology and deployment content is superseded by [`docs/decisions.md`](../decisions.md) and
-> [`docs/SPEC.md`](../SPEC.md): §2 (status of the old code), §9.1 (deployment shape), the store, port
-> and cross-origin rows in §9.2, the developer launcher in §9.4, and the separate web layer that
-> relays to a backend (§3.3, the relay hygiene in §10, the store and worker notes in §11). Its visual
-> design (§3.1) is superseded by [PRODUCT.md](../../PRODUCT.md) and [DESIGN.md](../../DESIGN.md).
-> Sections are deleted as approved `docs/SPEC-<id>.md` files cover them, and the file goes once
-> nothing is left (AGENTS.md, cleanup procedures).
+> [`docs/SPEC.md`](../SPEC.md): §2 (status of the old code), §9.1 (deployment shape), the store,
+> port and cross-origin rows in §9.2, the developer launcher in §9.4, and the separate web layer
+> that relays to a backend (§3.3, the relay hygiene in §10, the store and worker notes in §11). Its
+> visual design (§3.1) is superseded by [PRODUCT.md](../../PRODUCT.md) and
+> [DESIGN.md](../../DESIGN.md). D25 supersedes the application secret and its purpose-separated keys
+> (§9.2, §10) and §12's improvement idea 22 (key rotation). Sections are deleted as approved
+> `docs/SPEC-<id>.md` files cover them, and the file goes once nothing is left (AGENTS.md, cleanup
+> procedures).
 
 Unified invitation and user management for Plex and Jellyfin media servers.
 
