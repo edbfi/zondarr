@@ -1,8 +1,9 @@
 # Decisions
 
 Each entry is a decision and why it was made. Open entries keep their number when they're settled.
-The stack entries come from the shared rewrite recipe used by all five edbfi apps, cut down to what
-applies to zondarr. Versions live in `package.json` and `bun.lock`.
+The stack entries are the stack every edbfi rewrite app shares
+([Shared groundwork](../AGENTS.md#shared-groundwork)), cut down to what applies to zondarr.
+Versions live in `package.json` and `bun.lock`.
 
 ## Decided
 
@@ -15,7 +16,7 @@ which call application services.
 
 Why: one framework and one origin for both surfaces (the public join flow and the admin console)
 keeps sessions, origin checks and deployment simple without the legacy app's separate web layer
-relaying to a backend, and it's the recipe all five apps share.
+relaying to a backend, and all five apps share it.
 
 ### D2. TypeScript 6, strict
 
@@ -142,8 +143,8 @@ Why: a maintained library covers most operations, and one provider boundary keep
 
 Every edbfi rewrite app builds five modules before any feature module, in this order: `secrets`,
 `i18n`, `setup`, `sign-in`, then `two-factor`. Each app also gets `oidc-sign-in` later. These
-modules have the same shape in all five apps, so signing in works the same way everywhere. Each
-app keeps its own copy; there is no shared package.
+modules have the same shape in all five apps, so signing in works the same way everywhere; each app
+keeps its own copy ([Shared groundwork](../AGENTS.md#shared-groundwork)).
 
 - **One owner.** Each instance has exactly one owner account, with no other roles: no co-admins,
   viewers or operators, and none planned for later.
@@ -208,8 +209,7 @@ were the owner's call for every app, and so was letting a provider's own second 
 the app's, optionally; one standard OIDC flow covers the self-hosted identity providers without a
 client for each, and `amr` is the standard way to see the provider's factor. Recovery was the
 owner's call for every app too, after comradarr's legacy recovery mode showed that the opening had
-no way back in. A copy per app is enough for five apps and avoids building a shared package before
-it's needed (YAGNI). A random key with key IDs replaces the legacy app's keys derived from one
+no way back in. A random key with key IDs replaces the legacy app's keys derived from one
 application secret, whose rotation broke every stored key (legacy spec §9.2, §12.22).
 
 ### D21. Every interface is translatable, in English and Danish
@@ -378,7 +378,7 @@ replace a working flow. Closes with the Plex provider.
 
 ### D19. Jellyfin client
 
-The rewrite recipe covers Plex only. How the Jellyfin provider talks to Jellyfin (a maintained
-library or focused `fetch` methods, as D12 does for Plex) isn't chosen; either way it sits behind the
-same server-only provider contract as Plex (legacy spec §7.1) and uses the SSRF-safe fetch (D8).
-Closes with the Jellyfin provider.
+The stack the edbfi apps share ([Shared groundwork](../AGENTS.md#shared-groundwork)) covers Plex
+only. How the Jellyfin provider talks to Jellyfin (a maintained library or focused `fetch` methods,
+as D12 does for Plex) isn't chosen; either way it sits behind the same server-only provider contract
+as Plex (legacy spec §7.1) and uses the SSRF-safe fetch (D8). Closes with the Jellyfin provider.
