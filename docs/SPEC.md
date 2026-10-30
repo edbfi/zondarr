@@ -18,8 +18,9 @@ make the first module spec cheap to build: every later PR adds behaviour, not pl
 
 ## Capability map
 
-**Status:** approved by the owner (2026-10-24). Module ids never change. Each module gets its own
-`docs/SPEC-<id>.md`, which the owner approves just before it is built.
+**Status:** approved by the owner (2026-10-24; shared rows aligned 2026-10-30). Module ids never
+change. Each module gets its own `docs/SPEC-<id>.md`, which the owner approves just before it is
+built.
 Sources: [PRODUCT.md](../PRODUCT.md), [decisions.md](decisions.md), the
 [legacy spec](product/legacy-spec.md) and the [surface briefs](../.impeccable/surfaces/).
 
@@ -38,8 +39,8 @@ components or services, and dates and numbers formatted for the viewer's locale.
 |---|---|---|---|---|
 | 1 | `secrets` | Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20, D25), and the secret wrapper that shows only a redaction marker and opens at one named call | — | — |
 | 2 | `i18n` | The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's locale, and a check that every message exists in both languages | — | the language switcher in each shell |
-| 3 | `setup` | Startup checks, database and migrations, settings with their environment locks (legacy §8.2, §9.2), security headers, the referrer policy and CSP (ground-floor choice 3), the bootstrap token, and claiming the instance for its one owner, keeping the origin it was claimed from as the trusted origin (legacy §6.1 pre-filled it). Replaces `/healthz` with the legacy §9.4 health (ground-floor choice 5) | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
-| 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out, lockout and rate limits on sign-in (legacy §12.11), origin check and the trusted origin with its test (the first value comes from `setup`), secure cookies, recovery (D20), and the admin shell | `setup` | owner sign-in (no brief yet); the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections |
+| 3 | `setup` | Startup checks, database and migrations, settings, structured logging with redaction, security headers and CSP (ground-floor choice 3), the setup gate, the bootstrap token, printed to the console and never through the stored logs, and claiming the instance for its one owner, keeping the origin it was claimed from as the first allowed origin (legacy §6.1 pre-filled it). zondarr adds environment locks on settings (legacy §8.2, §9.2) and the referrer policy among the headers, and replaces `/healthz` with the legacy §9.4 health (ground-floor choice 5) | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
+| 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out (POST only), rate limits on sign-in (legacy §12.11), the origin check with the allowed origins (the first entry comes from `setup`), cookies that work over plain HTTP at home and behind an HTTPS proxy, password change, error pages, recovery (D20), and the admin shell. zondarr adds the lockout on sign-in (legacy §12.11) and the origin test (legacy §6.1) | `setup` | owner sign-in (no brief yet); the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections; the password section of `/admin/settings` (Account) |
 | 5 | `two-factor` | Optional but strongly recommended (D20): authenticator codes, backup codes and the challenge after every way of signing in (except the optional OIDC skip, D20), with replay protection and the attempt limit (legacy §6.2, §10). Recovery turns it off. Adds the offer to first-run setup, right after the owner account is created and before any connection step, and the reminder in the admin shell while it is off | `sign-in` | the two-factor offer in first-run setup; the two-factor section of `/admin/settings` (Account); the reminder in the admin shell |
 | 6 | `plex-provider` | The Plex provider (D12, D18): connection test, server info, libraries, the user list with relationship types, direct share, friend and home accounts, removal stepped by relationship, disabling as a share with no libraries (D23), library access, permissions and PIN sign-in. Reconciles shares by machine id and account id after every write (legacy §12.14) | `setup` | — |
 | 7 | `jellyfin-provider` | The Jellyfin provider (D19): connection test, server info, libraries, the user list with administrators flagged (legacy §12.15), create with password, delete, enable and disable, library access and permissions | `setup` | — |
@@ -271,7 +272,8 @@ design doesn't call for anything different; choices 4 and 5 are zondarr's own.
    pages (`setup`, whose claim page comes before admin sign-in and the join flow), not the skeleton.
 4. **Where the logo lives.** SvelteKit serves static files from `static/`, so the logo is
    `static/zondarr-logo.svg` (it was in `public/`), which the README shows and `src/app.html` uses
-   as the favicon, the layout the other rewrite apps use.
+   as the favicon. Where the logo lives is each app's own choice: obzorarr imports its icon from
+   `src/lib/assets/` instead.
 5. **Health.** `/healthz` always answers `ok`. The module that adds the database replaces it with
    legacy spec §9.4's health: overall (healthy, or degraded by a persistence check), liveness and
    readiness, unauthenticated.
