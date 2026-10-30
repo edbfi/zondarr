@@ -306,19 +306,20 @@ late working.
 ### D25. The master key: its format, its checks, and when it's required
 
 `secrets` (D20) takes one master key, exactly 32 bytes in canonical standard base64, from
-`ZONDARR_SECRET_KEY` or `ZONDARR_SECRET_KEY_FILE`; setting both is an error. Startup refuses a key
-whose bytes have at most 4.0 bits of Shannon entropy per byte, step by one constant amount, or are
-all printable ASCII; there is no denylist. The key is imported only as HKDF input, and each use
-derives its own key under its own label: the AES-256-GCM key and a 16-byte key ID. A stored value is
-one text value, `v1.<key id>.<nonce>.<ciphertext and tag>`, with `NULL` for none, and decrypts only
-under the table, field, row and app it was written for. The `Secret` wrapper keeps plaintext out of
-logs, errors and JSON, and `reveal()` is the only way to read it. There is no rotation: the key ID
-D20 asks for makes a value written under another key fail with its own clear error, and a new key
-means entering the stored secrets again. `secrets` checks the key in SvelteKit's `init` hook from
-its first version, so every way of running the app, dev and CI included, needs one. The key is
-restored with the database file (D16). The legacy application secret (legacy §9.2: at least 32
-characters, with purpose-separated keys derived from it) goes with it, and so does §12's improvement
-idea 22: a key change is handled by entering the secrets again, not by rotation. The details are in
+`ZONDARR_SECRET_KEY` or `ZONDARR_SECRET_KEY_FILE`; setting both is an error, and an empty variable
+counts as unset. Startup refuses a key whose bytes have at most 4.0 bits of Shannon entropy per
+byte, step by one constant amount, or are all printable ASCII; there is no denylist. The key is
+imported only as HKDF input, and each use derives its own key under its own label: the AES-256-GCM
+key and a 16-byte key ID. A stored value is one text value,
+`v1.<key id>.<nonce>.<ciphertext and tag>`, with `NULL` for none, and decrypts only under the table,
+field, row and app it was written for. The `Secret` wrapper keeps plaintext out of logs, errors and
+JSON, and `reveal()` is the only way to read it. There is no rotation: the key ID D20 asks for makes
+a value written under another key fail with its own clear error, and a new key means entering the
+stored secrets again. `secrets` checks the key in SvelteKit's `init` hook from its first version, so
+every way of running the app, dev and CI included, needs one. The key is restored with the database
+file (D16). The legacy application secret (legacy §9.2: at least 32 characters, with
+purpose-separated keys derived from it) goes with it, and so does §12's improvement idea 22: a key
+change is handled by entering the secrets again, not by rotation. The details are in
 [SPEC-secrets.md](SPEC-secrets.md). The design is the same in all five edbfi apps; only the variable
 prefix, the app name and the stored secrets differ.
 
@@ -327,7 +328,9 @@ design first, with safety first (owner decision, after a council of three models
 check catches a real mistake (a padded or doubled short secret, a counter, a passphrase), and
 together they refuse a random key about once in 62 billion. A denylist adds upkeep without safety
 once no key is ever written in the repo. One encoding and an error when both variables are set leave
-nothing ambiguous at startup. HKDF keeps the master key out of every primitive but one, so later
+nothing ambiguous at startup. An empty variable can't hold a key or a path, and Compose writes one
+for every `${VAR}` that isn't defined, so counting it as set would only break the usual secret-file
+setup (owner decision). HKDF keeps the master key out of every primitive but one, so later
 uses can derive their own keys safely. One self-describing column can't come apart. The wrapper
 joins every app, not only comradarr (owner decision). Rotation is left out because the apps are
 rewritten from scratch with no stored data to carry over, and a key change is rare enough to handle
