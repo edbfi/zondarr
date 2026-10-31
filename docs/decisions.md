@@ -319,8 +319,10 @@ stored secrets again. `secrets` checks the key in SvelteKit's `init` hook from i
 every way of running the app, dev and CI included, needs one. The key is restored with the database
 file (D16). The legacy application secret (legacy §9.2: at least 32 characters, with
 purpose-separated keys derived from it) goes with it, and so does §12's improvement idea 22: a key
-change is handled by entering the secrets again, not by rotation. The details are in
-[SPEC-secrets.md](SPEC-secrets.md). The design is the same in all five edbfi apps; only the variable
+change is handled by entering the secrets again, not by rotation. A missing, malformed or weak
+key's error puts the key the app ran with before a new one, because a lost variable or a typo in a
+key in use fails the same checks, and the key loads before any database could say whether anything
+is stored (owner decision, 2026-10-31). The details are in [SPEC-secrets.md](SPEC-secrets.md). The design is the same in all five edbfi apps; only the variable
 prefix, the app name and the stored secrets differ.
 
 Why: the shared opening keeps `secrets` the same in every app (D20), and comradarr settled its

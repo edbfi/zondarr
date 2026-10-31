@@ -35,7 +35,8 @@ anything:
   whitespace-only key file.
 - A file is read once at startup, must be at most 4 KiB, and may end in one newline (LF or CRLF);
   anything else around the key is part of it. A file that can't be read is an error naming the
-  variable and the path.
+  variable and the system's error code (such as `ENOENT`), never the path: a key set as the path
+  by mistake would otherwise be echoed, and a base64 key can't be told from a path.
 
 **Format.** A key is exactly 32 bytes in canonical standard base64: 44 characters
 (`A–Z a–z 0–9 + /`) ending in one `=`, which decode to 32 bytes and encode back to the same text.
@@ -53,9 +54,16 @@ malformed; a 64-character hex key gets a hint saying so.
 There is no denylist: no doc, example or test in the repo holds a decodable key, and docs use a
 placeholder that fails as malformed.
 
-**Failing.** Every key error stops startup with one line naming the variable and the check that
-failed, plus `openssl rand -base64 32` where a new key is the fix. No message, error or test output
-ever contains a key or part of one.
+**Failing.** Every key error stops startup with an error whose message is one line naming the
+variable and the check that failed; Bun prints its stack around it. A missing, malformed or weak
+key's message ends with one fix that puts the existing key first: `if Zondarr has run before,
+set the key it ran with; otherwise generate one with: openssl rand -base64 32`. A key already in
+use reaches these checks too, through a variable lost from Compose or a typo (a stray space, a
+cut-off paste, quotes kept around it), and a new key would make every stored secret unreadable.
+The fix can't depend on whether anything is stored: the key loads before any database is open.
+Both variables set, an unreadable file and a file over 4 KiB keep their own fix and never
+mention a new key: a new key fixes none of them. No message, error or test output ever contains
+a key or part of one.
 
 **Derivation.** The 32 bytes are imported once into WebCrypto as non-extractable HKDF input and used
 for nothing else, so any later use derives a key of its own without touching the cipher's. Each use
@@ -68,6 +76,10 @@ derives its own key with HKDF-SHA-256, an empty salt and its own `info` label:
 
 The key ID is derived, so nobody assigns it, and it reveals nothing about the key. Its one job is a
 clear error: a value written under another key says so, instead of failing as tampered.
+
+The keyring keeps the derived keys and never the HKDF key: whoever holds that can derive the AES
+key's bytes with `deriveBits`, undoing its non-extractability. A later use adds its own label in
+`keyring.ts`.
 
 ## Startup
 
@@ -115,11 +127,15 @@ v1.<key id>.<nonce>.<ciphertext and tag>
   ciphertext ends in GCM's 16-byte tag.
 - **A stored secret is never `NULL` or empty; `NULL` means none.** Encrypting an empty secret is an
   error, so an empty string never means "nothing stored". Any stored text that isn't exactly this
-  shape is corruption and an error, never a silent empty value.
+  shape is corruption and an error, never a silent empty value. The version is checked first, so a
+  later version with another shape is reported as unknown, not corrupt. The ciphertext is at least
+  17 bytes (one byte and the tag), since an empty secret is never stored.
 - One self-describing column: its parts can't drift apart, and it works on any database engine.
 
 **The binding.** The associated data is the UTF-8 bytes of the JSON array
-`["v1", <key id>, "zondarr", <table>, <field>, <row id>]`. The array can't be read two ways
+`["v1", <key id>, "zondarr", <table>, <field>, <row id>]`, written compactly, as `JSON.stringify`
+writes it (no spaces; lone surrogates are escaped, so every binding has exactly one encoding). The
+array can't be read two ways
 (unlike joined strings), and it also binds the version and the key ID. The caller always passes the
 binding of the place it reads from or writes to, never one stored beside the value, so a value
 copied to another row, field or app fails to decrypt. Table, field and row ID must be non-empty.
@@ -130,10 +146,12 @@ encrypted), which never changes for the row's life; names and URLs, which do cha
 of it. A table with one row uses a fixed ID.
 
 **Errors.** Each is its own error class, and none carries the plaintext, the key or the stored
-value:
+value, as a field, a `cause` or in its message (Bun prints an uncaught error's own fields and its
+`cause` chain):
 - `SecretFormatError`: the stored text isn't the format above, or names an unknown version.
 - `SecretKeyMismatchError`: the value's key ID isn't the loaded key's: it was written under another
-  master key. It names the table, field and row ID.
+  master key. It names the table, field and row ID, and says to set the key it was written with, or
+  enter the secret again.
 - `SecretDecryptError`: the tag doesn't verify: the value was changed, or read under another
   binding.
 
@@ -154,14 +172,15 @@ bare string by accident.
 ## Changing the key
 
 There is one master key and no rotation. A new key makes every stored secret fail with
-`SecretKeyMismatchError`, and the owner enters those secrets again; the README says so. Rotation
+`SecretKeyMismatchError`, and the owner enters those secrets again; the README covers this in its
+"Master key" section. Rotation
 with re-encryption is left out until the owner asks for it.
 
 ## Backups
 
 The master key is stored apart from the database file and restored with it (D16): a database
 restored without the key it was written with fails with `SecretKeyMismatchError` on every stored
-secret. The README's key section says this. The Turso backup and restore procedure itself stays open
+secret. The README covers this in its "Master key" section. The Turso backup and restore procedure itself stays open
 in D16.
 
 ## Project structure
@@ -187,10 +206,10 @@ how to generate it, the two variables, what changing it means, and backups.
 As in [docs/SPEC.md](SPEC.md#code-style). The hook stays thin:
 
 ```ts
+import type { ServerInit } from "@sveltejs/kit/hooks";
+import { loadKeyring } from "#lib/server/security/secrets/keyring.ts";
 import { building } from "$app/env";
 import * as env from "$app/env/private";
-import { loadKeyring } from "#lib/server/security/secrets/keyring.ts";
-import type { ServerInit } from "@sveltejs/kit/hooks";
 
 export const init: ServerInit = async () => {
 	if (!building) await loadKeyring(env);
@@ -200,7 +219,8 @@ export const init: ServerInit = async () => {
 ## Testing strategy
 
 Unit tests (Vitest), next to their source; every key in them is generated at test time:
-- **Reading:** each variable alone, neither, both, an unreadable file, a file over 4 KiB, a file
+- **Reading:** each variable alone, neither, both, an unreadable file (its error names no path, and
+  no part of a key set as the path), a file over 4 KiB, a file
   with one trailing LF or CRLF and with other whitespace; an empty key with a file, a key with an
   empty file variable, both empty, and an empty key file.
 - **Format:** canonical keys pass; 43 or 45 characters, a missing `=`, base64url, hex (with its
@@ -217,10 +237,10 @@ Unit tests (Vitest), next to their source; every key in them is generated at tes
   `SecretKeyMismatchError`; every segment's length is checked.
 - **Wrapper:** each form above prints `[redacted]`, and only `reveal()` returns the value.
 
-e2e (Playwright, against the built server): `bun ./build` with no key, with a malformed key and with
-a weak key each exits non-zero before listening, naming the check, and its output never contains the
-key; the existing smoke test passes with the generated key. A key in the developer's `.env` changes
-none of these results.
+e2e (Playwright, against the built server): `bun --no-env-file ./build` with no key, with a
+malformed key and with a weak key each exits non-zero before listening, naming the check, and its
+output never contains the key; the existing smoke test passes with the generated key. A key in the
+developer's `.env` changes none of these results.
 
 ## Commands
 
