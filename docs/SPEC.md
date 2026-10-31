@@ -122,6 +122,18 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 - The debug mode's auth bypass, test-only PIN endpoint and API documentation pages (legacy §9.2):
   development tooling, not product.
 - Email, notifications and a member portal (PRODUCT.md, legacy §12.25).
+- **The container image's first start** (deferred: a note, not a design). It is specified and
+  built only when Zondarr is first tested through its image (`edbfi/zondarr-docker`); building
+  images through GitHub, including the nightly build of `main`, is a later goal. The intent, with
+  the app's code unchanged: when `ZONDARR_SECRET_KEY` and `ZONDARR_SECRET_KEY_FILE` are both unset
+  or empty, the image's setup script points `ZONDARR_SECRET_KEY_FILE` at `/config/secret.key`
+  whenever that file exists. It creates the file first (a random 32-byte key in standard base64,
+  written atomically, mode 0600, owned by the app's user) only when `/config/data` is empty and
+  nothing shows an older install (such as the previous app's secret or database variables; the
+  image's own defaults don't count, and the exact checks are decided with the image); otherwise it
+  creates nothing, and the app stops with its own key error. An operator's own key or secret file
+  always wins, and the README tells the operator to keep a copy of the key file. Nothing the v0.1.x
+  images left is ever used as a key; how such an install upgrades is decided with the image.
 
 ### Surfaces with no brief yet
 
