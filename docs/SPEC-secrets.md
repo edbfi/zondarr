@@ -5,8 +5,8 @@ D25 hold the decisions. The design is the same in all five edbfi apps, and obzor
 ([Shared groundwork](../AGENTS.md#shared-groundwork)): the code and tests are a copy of obzorarr's
 `b9b4737` with zondarr's names, and only the environment variable prefix, the app name in the
 associated data and the list of stored secrets differ. This file keeps what the code and tests
-can't say. The full text before this cut is `09e720a:docs/SPEC-secrets.md`, and the pull request
-of the commit that cut it maps every cut requirement to where it now lives.
+can't say. The full text before this cut is `09e720a:docs/SPEC-secrets.md`, and #330, which cut
+it, maps every cut requirement to where it now lives.
 
 ## Objective
 
