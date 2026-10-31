@@ -272,14 +272,22 @@ console. It is being rewritten from scratch; the previous version is on the `leg
 for reference only.
 
 **Status:** the ground floor is built: an empty SvelteKit app on Bun with Panda tokens, `/healthz`,
-one unit test, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). Product modules
+unit tests, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). Product modules
 come next, in the order of the approved capability map in `docs/SPEC.md`, each through an
-owner-approved `docs/SPEC-<id>.md`.
+owner-approved `docs/SPEC-<id>.md`. Module 1, `secrets`
+([`docs/SPEC-secrets.md`](docs/SPEC-secrets.md)), is built and ready for consumers: a master key's
+text is read from the environment or a file, decoded and checked for weak keys, and loaded into a
+keyring of the cipher's keys. The built server loads it in the `init` hook and won't start without
+a valid key; `dev` fails every request instead. The cipher encrypts a secret bound to its table,
+field and row, and the `Secret` wrapper prints a plaintext as `[redacted]` everywhere except
+`reveal()`. Nothing stores a secret yet, and no database exists.
 
 **Commands** (what each does: [docs/SPEC.md](docs/SPEC.md#commands)): `bun ci`, then
 `bun run --bun <dev|build|preview|check|test|smoke|lint>`; `prek run --all-files --hook-stage
-manual` is CI's `checks` job. `smoke` runs against the built server, so run `build` first, and it
-needs Chromium once per machine: `bunx --bun playwright install chromium`.
+manual` is CI's `checks` job. `dev` and `preview` need a master key (the README's
+[Master key](README.md#master-key)); `smoke` brings its own. `smoke` runs against the built server,
+so run `build` first, and it needs Chromium once per machine:
+`bunx --bun playwright install chromium`.
 
 **Boundaries.**
 - The legacy spec describes behaviour to keep, not the technology: its header names the superseded
@@ -306,6 +314,9 @@ src/
   app.html                       document shell; `class="dark"` sets the default colour mode
   app.css                        Panda layer order; the Vite plugin appends the generated CSS
   app.d.ts                       SvelteKit ambient types
+  env.ts                         declares `ZONDARR_SECRET_KEY` and `ZONDARR_SECRET_KEY_FILE`:
+                                 private, read at runtime, optional
+  hooks.server.ts                the `init` hook: loads the keyring, except while building
   routes/
     +layout.svelte               loads app.css; marks <html data-hydrated> once mounted
     (public)/+page.svelte        `/`: placeholder page
@@ -315,12 +326,21 @@ src/
                                  `#lib/server/services/health.ts`
     server/                      server-only: services/health.ts; later db/ (schema per aggregate),
                                  providers/<plex|jellyfin>/, services/<domain>/, jobs/,
-                                 http/ (SSRF-safe fetch), config/, security/, logging/
+                                 http/ (SSRF-safe fetch), logging/
+      config/secret-key.ts       the master key's text from `ZONDARR_SECRET_KEY` or the file
+                                 `ZONDARR_SECRET_KEY_FILE` names; no key logic
+      security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
+                                 malformed and weak keys; keyring.ts: loads the key and derives
+                                 the AES key and key ID; secret.ts: the `Secret` wrapper,
+                                 `[redacted]` everywhere but `reveal()`; cipher.ts: encrypts a
+                                 secret bound to its table, field and row, and decrypts it only
+                                 there
     components/                  later: ui/ (Ark wrappers), layout/, <feature>/
     shared/                      later: browser-safe shared code
 static/                          served as is (zondarr-logo.svg, also the favicon)
 tests/
   e2e/smoke.test.ts              Playwright smoke against the built server
+  e2e/secret-key.test.ts         the built server refuses to start without a valid key
   fixtures/demo-fixtures.json    design fixtures
 drizzle/                         later: reviewed migrations
 panda.config.ts                  every design token; components use them through
