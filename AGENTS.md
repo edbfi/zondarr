@@ -290,14 +290,12 @@ so run `build` first, and it needs Chromium once per machine:
 `bunx --bun playwright install chromium`.
 
 **Boundaries.**
-- The legacy spec describes behaviour to keep, not the technology: its header names the superseded
-  sections. Its known weaknesses (§12) become changes only through an approved spec.
 - Plex and Jellyfin sit behind server-only providers that declare their capabilities; no service or
-  screen hard-codes either product (legacy spec §7.1, D12, D19).
+  screen hard-codes either product (D12, D19).
 - Never bring code over from `legacy-old/v1`; rebuild from the spec.
 
 **Read next.**
-- Product: [PRODUCT.md](PRODUCT.md), [legacy spec](docs/product/legacy-spec.md).
+- Product: [PRODUCT.md](PRODUCT.md).
 - Design: [DESIGN.md](DESIGN.md), the [surface briefs](.impeccable/surfaces/) (one per route;
   dynamic segments use SvelteKit's form, as in `route:/join/[code]`, and the handoff's demo paths
   such as `route:/join/MOVIENIGHT` resolve too), [screens and references](docs/design/),

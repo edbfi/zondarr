@@ -6,8 +6,7 @@ import { css } from "#styled-system/css";
 	<title>Zondarr</title>
 </svelte:head>
 
-<!-- Placeholder until the first module gives / a surface (the legacy root sends people to the
-     admin sign-in or the dashboard). -->
+<!-- Placeholder until the first module gives / a surface. -->
 <main
 	class={css({
 		maxWidth: "readingMax",

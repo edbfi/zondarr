@@ -90,7 +90,8 @@ Every outbound call goes through server-side `fetch` with explicit address valid
 policy.
 
 Why: Plex and Jellyfin server addresses are admin-supplied, so the server must not become a proxy to
-arbitrary hosts. Which address ranges are allowed is product behaviour (legacy spec §6.3 and §10).
+arbitrary hosts. Which address ranges are allowed is product behaviour (`servers` in
+[SPEC.md](SPEC.md)'s Module notes).
 
 ### D9. Generated HTTP API clients
 
@@ -210,7 +211,7 @@ the app's, optionally; one standard OIDC flow covers the self-hosted identity pr
 client for each, and `amr` is the standard way to see the provider's factor. Recovery was the
 owner's call for every app too, after comradarr's legacy recovery mode showed that the opening had
 no way back in. A random key with key IDs replaces the legacy app's keys derived from one
-application secret, whose rotation broke every stored key (legacy spec §9.2, §12.22).
+application secret, whose rotation broke every stored key.
 
 ### D21. Every interface is translatable, in English and Danish
 
@@ -221,12 +222,12 @@ choice, then the browser's preferred languages, then English. Dates, times and n
 for the viewer's locale through `Intl`, never in a fixed format. The message files use a format
 Weblate reads, plurals included, so a Weblate project can be connected later without changing code.
 Connecting Weblate is later work and belongs to no module yet. Text the owner writes, such as
-zondarr's wizard steps, is content, translated per step as before (legacy spec §6.7), not through
-the message files.
+zondarr's wizard steps, is content, translated per step as in the legacy app (`wizards`), not
+through the message files.
 
 Why: the owner wants full translation support in every app, with Weblate as the translation tool,
 and English and Danish now. Adding translation afterwards touches every screen; building it in from
-the first one costs little. This fixes legacy spec §12.17 (English only, fixed US dates).
+the first one costs little. This fixes the legacy app's English-only interface and fixed US dates.
 
 ### D22. Paraglide JS with i18next JSON v4 messages
 
@@ -265,13 +266,13 @@ override it. The invitation shows which policy applies to the people who join wi
 (PRODUCT.md). The policy in force when a member's access ends decides what happens to them.
 
 - **Disable** is reversible. On Jellyfin it sets the account's disabled flag. Plex has no disabled
-  state (legacy spec §7.1), so a disabled Plex member keeps their share of the server, and so stays
-  a member, but with no libraries. Enabling them gives back the libraries they had, which zondarr
-  keeps for that.
+  state ([research/plex.md](research/plex.md)), so a disabled Plex member keeps their share of the
+  server, and so stays a member, but with no libraries. Enabling them gives back the libraries they
+  had, which zondarr keeps for that.
 - **Delete** removes the account on the server and the local record, as deleting a member by hand
-  does (legacy spec §6.8).
+  does.
 - Disabling and enabling a Plex member by hand mean the same thing, so the members list offers them
-  for Plex too, where the legacy app refused (legacy spec §6.8).
+  for Plex too, where the legacy app refused.
 
 Whether Plex keeps a share that has no libraries is verified in the Plex library audit (D18). If it
 doesn't, the `member-expiry` spec takes that back to the owner.
@@ -279,7 +280,7 @@ doesn't, the `member-expiry` spec takes that back to the owner.
 Why: the owner chose both a default and a per-invitation override, and Plex's "disabled" as a
 membership with no libraries. Keeping the share means enabling a member again needs no new
 invitation or friend request. Deleting only by the owner's explicit choice keeps unattended work
-safe (PRODUCT.md, principle 4). This fixes legacy spec §12.1 (expiry was never enforced).
+safe (PRODUCT.md, principle 4). This fixes the legacy app's expiry, which was never enforced.
 
 ### D24. Other software: the latest stable release only
 
@@ -317,13 +318,13 @@ JSON, and `reveal()` is the only way to read it. There is no rotation: the key I
 a value written under another key fail with its own clear error, and a new key means entering the
 stored secrets again. `secrets` checks the key in SvelteKit's `init` hook from its first version, so
 every way of running the app, dev and CI included, needs one. The key is restored with the database
-file (D16). The legacy application secret (legacy §9.2: at least 32 characters, with
-purpose-separated keys derived from it) goes with it, and so does §12's improvement idea 22: a key
-change is handled by entering the secrets again, not by rotation. A missing, malformed or weak
-key's error puts the key the app ran with before a new one, because a lost variable or a typo in a
-key in use fails the same checks, and the key loads before any database could say whether anything
-is stored (owner decision, 2026-10-31). The details are in [SPEC-secrets.md](SPEC-secrets.md). The design is the same in all five edbfi apps; only the variable
-prefix, the app name and the stored secrets differ.
+file (D16). The legacy app's application secret (at least 32 characters, with purpose-separated
+keys derived from it) goes with it, and so does rotating it: a key change is handled by entering the
+secrets again, not by rotation. A missing, malformed or weak key's error puts the key the app ran
+with before a new one, because a lost variable or a typo in a key in use fails the same checks, and
+the key loads before any database could say whether anything is stored (owner decision, 2026-10-31).
+The details are in [SPEC-secrets.md](SPEC-secrets.md). The design is the same in all five edbfi
+apps; only the variable prefix, the app name and the stored secrets differ.
 
 Why: the shared opening keeps `secrets` the same in every app (D20), and comradarr settled its
 design first, with safety first (owner decision, after a council of three models and a review). Each
@@ -386,4 +387,5 @@ replace a working flow. Closes with the Plex provider.
 The stack the edbfi apps share ([Shared groundwork](../AGENTS.md#shared-groundwork)) covers Plex
 only. How the Jellyfin provider talks to Jellyfin (a maintained library or focused `fetch` methods,
 as D12 does for Plex) isn't chosen; either way it sits behind the same server-only provider contract
-as Plex (legacy spec §7.1) and uses the SSRF-safe fetch (D8). Closes with the Jellyfin provider.
+as Plex (`plex-provider` in [SPEC.md](SPEC.md)'s Module notes) and uses the SSRF-safe fetch (D8).
+Closes with the Jellyfin provider.
