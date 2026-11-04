@@ -36,7 +36,7 @@ The mechanism the record supports:
 
 ## Operating Context
 
-- **Deployment:** one self-hosted instance per owner, run as one container, one process and one HTTP port, with the database file on a persistent volume; container packaging lives in the separate `zondarr-docker` repository (D4, D5). It runs on a trusted network or behind a reverse proxy; a proxy that rewrites the host needs `ORIGIN` or the proxy fix in [docs/SPEC.md](docs/SPEC.md) (`sign-in`'s Module notes).
+- **Deployment:** one self-hosted instance per owner, run as one container, one process and one HTTP port, with the database file on a persistent volume; container packaging lives in the separate `zondarr-docker` repository (D4, D5). It runs on a trusted network or behind a reverse proxy; if a proxy rewrites the host, `sign-in`'s Module notes in [docs/SPEC.md](docs/SPEC.md) explain when `ORIGIN` or a proxy fix is needed.
 - **Scale:** one owner's servers (typically one to a few), hundreds to low thousands of members and dozens of invitations.
 - **Roles:** one owner account, the only administrator (there are no co-administrators), invitees who only ever see the public join page, and the operator who deploys the instance and whose environment settings lock the matching console settings.
 - **How an invitation travels:** the admin copies the invite link and shares it out of band, since Zondarr sends no email. Codes are also read aloud and typed by hand, which is why generated codes avoid ambiguous characters (route-admin-invitations brief).
@@ -52,8 +52,8 @@ The mechanism the record supports:
 - Used up differs from Expired. Invitation deletion preserves existing members.
 - Plex joins through existing Plex account; Jellyfin may create username/password. No automatic email delivery.
 - Member expiry follows the owner's policy: disable by default, delete only if the owner chooses it. The invitation shows what will happen at expiry. Wizard order enforced, required terms explicit.
-- Privacy: Zondarr stores members' usernames, their account ids on each server, optional emails and Plex relationship types, and nothing about what they watch. It never stores a member's password, and keeps an invitee's Plex token only until their join uses it. It talks only to the media servers, Plex's account service and the owner's OIDC provider, if one is connected.
-- Copy is plain, direct and in the second person, in short full sentences. A destructive confirmation says it can't be undone, and an empty state pairs a short title with one sentence on how the list fills. Labels and headings use sentence case, as the briefs do. The admin console explains or avoids technical terms such as circuit breaker, environment variable and event stream. These rules are written for English; Danish keeps their intent.
+- Privacy: Zondarr stores members' usernames, their account ids on each server, optional emails and Plex relationship types, and no media activity. It never stores a member's password, and keeps a Plex sign-in token only until the join or sign-in uses it, and never past the ten-minute sign-in window. It talks only to the media servers, Plex's account service and the owner's OIDC provider, if one is connected.
+- Copy is plain, direct and in the second person, in short full sentences. A destructive confirmation says it can't be undone, and an empty state pairs a short title with one sentence on how the list fills. Labels and headings use sentence case, as DESIGN.md sets for titles. The admin console explains or avoids technical terms such as circuit breaker, environment variable and event stream. These rules are written for English; Danish keeps their intent.
 
 ## Confirmed visual direction
 
@@ -93,4 +93,4 @@ What does not exist, and must not be fabricated:
 
 ## Accessibility and inclusion
 
-The interface meets WCAG 2.1 AA. Keyboard access throughout, a skip link to the main content, visible focus, labelled inputs, text plus icon for status, 44px touch targets, readable text at 200% zoom, and reduced-motion alternatives. Never use color alone to communicate a decision. Bundle fonts locally in the implementation.
+The interface must meet WCAG 2.1 AA. Keyboard access throughout, a skip link to the main content, visible focus, labelled inputs, the current page marked in navigation, status and alert roles on empty and error states, a live region for wizard progress, autocomplete and one-time-code hints on inputs, text plus icon for status, 44px touch targets, readable text at 200% zoom, and reduced-motion alternatives. Never use color alone to communicate a decision. Bundle fonts locally in the implementation.

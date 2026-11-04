@@ -222,8 +222,8 @@ choice, then the browser's preferred languages, then English. Dates, times and n
 for the viewer's locale through `Intl`, never in a fixed format. The message files use a format
 Weblate reads, plurals included, so a Weblate project can be connected later without changing code.
 Connecting Weblate is later work and belongs to no module yet. Text the owner writes, such as
-zondarr's wizard steps, is content, translated per step as in the legacy app (`wizards`), not
-through the message files.
+zondarr's wizard steps, is content, translated per step as in the legacy app (`wizards` in
+[SPEC.md](SPEC.md)'s Module notes), not through the message files.
 
 Why: the owner wants full translation support in every app, with Weblate as the translation tool,
 and English and Danish now. Adding translation afterwards touches every screen; building it in from
@@ -266,9 +266,8 @@ override it. The invitation shows which policy applies to the people who join wi
 (PRODUCT.md). The policy in force when a member's access ends decides what happens to them.
 
 - **Disable** is reversible. On Jellyfin it sets the account's disabled flag. Plex has no disabled
-  state ([research/plex.md](research/plex.md)), so a disabled Plex member keeps their share of the
-  server, and so stays a member, but with no libraries. Enabling them gives back the libraries they
-  had, which zondarr keeps for that.
+  state, so a disabled Plex member keeps their share of the server, and so stays a member, but with
+  no libraries. Enabling them gives back the libraries they had, which zondarr keeps for that.
 - **Delete** removes the account on the server and the local record, as deleting a member by hand
   does.
 - Disabling and enabling a Plex member by hand mean the same thing, so the members list offers them
@@ -311,20 +310,20 @@ late working.
 counts as unset. Startup refuses a key whose bytes have at most 4.0 bits of Shannon entropy per
 byte, step by one constant amount, or are all printable ASCII; there is no denylist. The key is
 imported only as HKDF input, and each use derives its own key under its own label: the AES-256-GCM
-key and a 16-byte key ID. A stored value is one text value,
-`v1.<key id>.<nonce>.<ciphertext and tag>`, with `NULL` for none, and decrypts only under the table,
-field, row and app it was written for. The `Secret` wrapper keeps plaintext out of logs, errors and
-JSON, and `reveal()` is the only way to read it. There is no rotation: the key ID D20 asks for makes
-a value written under another key fail with its own clear error, and a new key means entering the
-stored secrets again. `secrets` checks the key in SvelteKit's `init` hook from its first version, so
-every way of running the app, dev and CI included, needs one. The key is restored with the database
-file (D16). The legacy app's application secret (at least 32 characters, with purpose-separated
-keys derived from it) goes with it, and so does rotating it: a key change is handled by entering the
-secrets again, not by rotation. A missing, malformed or weak key's error puts the key the app ran
-with before a new one, because a lost variable or a typo in a key in use fails the same checks, and
-the key loads before any database could say whether anything is stored (owner decision, 2026-10-31).
-The details are in [SPEC-secrets.md](SPEC-secrets.md). The design is the same in all five edbfi
-apps; only the variable prefix, the app name and the stored secrets differ.
+key and a 16-byte key ID. A stored value is one text value, `v1.<key id>.<nonce>.<ciphertext and
+tag>`, with `NULL` for none, and decrypts only under the table, field, row and app it was written
+for. The `Secret` wrapper keeps plaintext out of logs, errors and JSON, and `reveal()` is the only
+way to read it. There is no rotation: the key ID D20 asks for makes a value written under another
+key fail with its own clear error, and a new key means entering the stored secrets again. `secrets`
+checks the key in SvelteKit's `init` hook from its first version, so every way of running the app,
+dev and CI included, needs one. The key is restored with the database file (D16). The legacy app's
+application secret (at least 32 characters, with purpose-separated keys derived from it) goes with
+it, and so does the legacy idea of rotating it with re-encryption: a key change is handled by
+entering the secrets again, not by rotation. A missing, malformed or weak key's error puts the key
+the app ran with before a new one, because a lost variable or a typo in a key in use fails the same
+checks, and the key loads before any database could say whether anything is stored (owner decision,
+2026-10-31). The details are in [SPEC-secrets.md](SPEC-secrets.md). The design is the same in all
+five edbfi apps; only the variable prefix, the app name and the stored secrets differ.
 
 Why: the shared opening keeps `secrets` the same in every app (D20), and comradarr settled its
 design first, with safety first (owner decision, after a council of three models and a review). Each
