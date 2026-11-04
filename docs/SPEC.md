@@ -161,15 +161,17 @@ the shared wording; a "(zondarr)" mark inside a bullet covers the rest of that b
 - **The claim** is a POST, cross-origin-checked like any other (`sign-in`), and it stores no
   address. It needs a valid bootstrap token and the browser's address (`sign-in`). Using up the
   token and creating the owner are one atomic step, and the owner session it starts follows
-  `sign-in`'s cookies.
+  `sign-in`'s cookies. (zondarr) The legacy setup link's ten-minute, single-use, same-site-strict
+  browser authorisation (legacy §6.1, §10) is not kept: the token is checked when the claim is
+  submitted.
 - **The referrer policy,** among the security headers, is `same-origin` or
   `strict-origin-when-cross-origin`, never `no-referrer` (which makes browsers send `Origin: null`
   on the app's own form posts). (zondarr) On the join page this replaces the legacy page's
   suppressed referrer and still keeps the invitation code from other sites: `same-origin` sends
   them no referrer, and `strict-origin-when-cross-origin` only the app's address, never the path.
-- **Strict transport security,** when the headers include it, is sent only over HTTPS (known when
-  `ORIGIN` is `https`, or when the browser sent `Sec-Fetch-Site` to a host that isn't loopback,
-  since browsers send it only to HTTPS and loopback addresses).
+- **Strict transport security** (zondarr: when the headers include it) is sent only over HTTPS
+  (known when `ORIGIN` is `https`, or when the browser sent `Sec-Fetch-Site` to a host that isn't
+  loopback, since browsers send it only to HTTPS and loopback addresses).
 
 #### sign-in
 
@@ -210,8 +212,9 @@ the shared wording; a "(zondarr)" mark inside a bullet covers the rest of that b
   invite links), are built in the browser from the address the user is on, or from `ORIGIN` when it
   is set. App code never uses `event.url.origin` or `event.url.protocol` for security, cookies or
   rendered URLs, which a test that searches the code enforces, and redirects stay relative.
-  (zondarr) Plex sign-in starts from the browser in two places: the invitee's on the join page
-  (`redemption`) and the owner's on owner sign-in (`owner-plex-sign-in`); both follow this rule.
+  (zondarr) Plex sign-in starts from the browser for the invitee on the join page (`redemption`)
+  and for the owner when linking in `/admin/settings` (Account) or signing in on owner sign-in
+  (`owner-plex-sign-in`); each follows this rule.
 - **The address hint:** when `ORIGIN` is set and doesn't match the address the browser is on, or
   when `ORIGIN` is unset and that address's host and port don't match the `Host` header, the claim
   and owner sign-in pages suggest setting `ORIGIN=<that address>` (or removing a wrong `ORIGIN`) or
@@ -224,8 +227,11 @@ the shared wording; a "(zondarr)" mark inside a bullet covers the rest of that b
   doesn't echo the value. adapter-bun 1.0.0 ignores `ORIGIN`; from 1.0.1 a set `ORIGIN` also
   corrects SvelteKit's `event.url`, and an empty `ORIGIN=""` throws with the value in the message,
   so the container image's entrypoint unsets an empty `ORIGIN` and its templates leave it out (the
-  image's work, not this repo's). (zondarr) It is an environment value, never a stored setting, so
-  `setup`'s environment locks don't apply to it and no console field edits it.
+  image's work, not this repo's). (zondarr) It is an environment value, never a stored setting:
+  there is no console setting for the environment to lock, and the settings page only shows it,
+  read-only. It takes the place of the legacy public origin. The legacy trusted origin, with its
+  first-run Save and Skip, and the secure-cookies setting (legacy §6.1, §9.2, §9.3) are not kept,
+  because the cross-origin check stores no address and cookies follow the browser's address.
 - **When `ORIGIN` or a proxy fix is still needed:** behind a proxy that rewrites `Host`, over plain
   HTTP for every browser, and over HTTPS only for browsers without `Sec-Fetch-Site` (Safari before
   16.4, Firefox before 90, Chrome before 76). The proxy fix is `proxy_set_header Host $http_host`
@@ -235,7 +241,8 @@ the shared wording; a "(zondarr)" mark inside a bullet covers the rest of that b
   from `https`, which is harmless on a port that speaks only HTTP; over HTTPS it affects only
   browsers without `Sec-Fetch-Site`, and only against a network attacker, and HSTS or `ORIGIN`
   closes it. DNS rebinding reaches only actions that need no sign-in, because cookies don't follow
-  a rebind, and those are gated by a console token or rate-limited.
+  a rebind, and those are gated by a console token or rate-limited (zondarr: the join flow's
+  actions also need a valid invitation code).
 - **Tests:** the cross-origin check is one pure module, unit-tested against a matrix of headers and
   copied to each app as D20 shares the opening modules. One Playwright test against the built server
   (`bun ./build`) checks that a cross-site form POST is refused and that a same-origin POST carrying
@@ -399,8 +406,9 @@ design doesn't call for anything different; choices 4 and 5 are zondarr's own.
    that needs one.
 3. **Security headers and CSP.** The legacy join page suppresses the referrer (legacy spec §6.6,
    §10); the rewrite keeps the invitation code out of other sites' referrers with a policy that
-   still lets the app's own form posts carry `Origin` (`setup`'s Module notes). Security headers, the referrer policy and a CSP belong to the first module that serves real
-   pages (`setup`, whose claim page comes before admin sign-in and the join flow), not the skeleton.
+   still lets the app's own form posts carry `Origin` (`setup`'s Module notes). Security headers,
+   the referrer policy and a CSP belong to the first module that serves real pages (`setup`, whose
+   claim page comes before admin sign-in and the join flow), not the skeleton.
 4. **Where the logo lives.** SvelteKit serves static files from `static/`, so the logo is
    `static/zondarr-logo.svg` (it was in `public/`), which the README shows and `src/app.html` uses
    as the favicon. Where the logo lives is each app's own choice: obzorarr imports its icon from
