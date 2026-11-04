@@ -23,7 +23,7 @@ Use the shared [design system](../../DESIGN.md). Match hierarchy, density and pa
 
 ## Required content
 
-'Settings'. Home Cinema connection, https://plex.example (admin only), stored API key •••• 4821, New key blank, Test connection, Save server. Sync every 15 minutes; 'Save sync schedule'. Account password, Two-factor enabled, Manage backup codes. Public address read-only: when `ORIGIN` is set, its value with lock label 'Managed by deployment'; otherwise 'Not set: links use the address you're on'.
+'Settings'. Home Cinema connection, https://plex.example (admin only), stored API key •••• 4821, New key blank, Test connection, Save server. Sync every 15 minutes; 'Save sync schedule'. Account password, Two-factor enabled, Manage backup codes. Public address read-only: when `ORIGIN` is set, its value with lock label 'Managed by deployment'; otherwise 'Not set: links use the address you're on'. Public invite address: optional; editable, or read-only with 'Managed by deployment' when the environment sets it; when empty, invite links use the address you're on or `ORIGIN`.
 
 ## Acceptance criteria
 
@@ -41,7 +41,7 @@ Source lacks server editing; this screen is an explicit proposed rewrite improve
 Use the images for composition and visual character. Use DESIGN.md, PRODUCT.md, this brief's acceptance criteria and the demo fixtures for exact values and behavior. Body copy, chart axes, tiny icons and font glyphs remain illustrative raster renderings. Rebuild them as native accessible UI and verify them against the specification. A PNG cannot verify focus order, screen-reader announcements, permission checks or real responsiveness.
 
 - Server editing with a successful re-test is a proposed rewrite improvement, not existing shipped behavior. Reuse the edit form only after the implementation supports it.
-- Public address follows Required content: `ORIGIN` is optional and never a stored setting, so the field is never editable and its lock label shows only when `ORIGIN` is set. Don't copy the raster's caption that this is the public link for invitees: whether invite links get a separate public invite address is still an owner call.
+- Public address follows Required content: `ORIGIN` is optional and never a stored setting, so the field is never editable and its lock label shows only when `ORIGIN` is set. Don't copy the raster's caption that this is the public link for invitees: that is the separate public invite address, which only builds invite links.
 
 ## Handoff prompt
 

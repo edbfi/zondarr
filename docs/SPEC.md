@@ -40,14 +40,14 @@ components or services, and dates and numbers formatted for the viewer's locale.
 | 1 | `secrets` | **Built.** Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20, D25), and the secret wrapper that shows only a redaction marker and opens at one named call | — | — |
 | 2 | `i18n` | The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's locale, and a check that every message exists in both languages | — | the language switcher in each shell |
 | 3 | `setup` | Startup checks, database and migrations, settings, structured logging with redaction, security headers and CSP (ground-floor choice 3), the setup gate, the bootstrap token, printed to the console and never through the stored logs, and claiming the instance for its one owner. zondarr adds environment locks on settings and the referrer policy among the headers, and replaces `/healthz` with the fuller health of ground-floor choice 5 | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
-| 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out (POST only), rate limits on sign-in, the cross-origin check (it asks the browser, stores no address and takes `ORIGIN` as an optional override), app-named cookies that work over plain HTTP at home and behind an HTTPS proxy, password change, error pages, recovery (D20), and the admin shell. zondarr adds the lockout on sign-in and the origin test, which only diagnoses: it compares the address the browser uses with the `Host` the app receives and `ORIGIN` when set, suggests `ORIGIN=<address>` or the proxy line `proxy_set_header Host $http_host`, and saves nothing; its suggestion also shows on the claim and owner sign-in pages, so someone without a session can recover | `setup` | owner sign-in (no brief yet); the origin test's hint on the claim and owner sign-in pages; the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections; the password section of `/admin/settings` (Account) |
+| 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions and their cleanup job, sign-out (POST only), rate limits on sign-in, the cross-origin check (it asks the browser, stores no address and takes `ORIGIN` as an optional override), app-named cookies that work over plain HTTP at home and behind an HTTPS proxy, password change, error pages, recovery (D20), and the admin shell. zondarr adds the lockout on sign-in and the origin test, which only diagnoses: it compares the address the browser uses with the `Host` the app receives and `ORIGIN` when set, suggests `ORIGIN=<address>` or the proxy line `proxy_set_header Host $http_host`, and saves nothing; its suggestion also shows on the claim and owner sign-in pages, so someone without a session can recover | `setup` | owner sign-in (no brief yet); the origin test's hint on the claim and owner sign-in pages; the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections (`invitations` adds the public invite address to General); the password section of `/admin/settings` (Account) |
 | 5 | `two-factor` | Optional but strongly recommended (D20): authenticator codes, backup codes and the challenge after every way of signing in (except the optional OIDC skip, D20), with replay protection and the attempt limit. Recovery turns it off. Adds the offer to first-run setup, right after the owner account is created and before any connection step, and the reminder in the admin shell while it is off | `sign-in` | the two-factor offer in first-run setup; the two-factor section of `/admin/settings` (Account); the reminder in the admin shell |
 | 6 | `plex-provider` | The Plex provider (D12, D18): connection test, server info, libraries, the user list with relationship types, direct share, friend and home accounts, removal stepped by relationship, disabling as a share with no libraries (D23), library access, permissions and PIN sign-in. Reconciles shares by machine id and account id after every write | `setup` | — |
 | 7 | `jellyfin-provider` | The Jellyfin provider (D19): connection test, server info, libraries, the user list with administrators flagged, create with password, delete, enable and disable, library access and permissions | `setup` | — |
-| 8 | `servers` | Adding a server with the mandatory connection test and type detection, the list and detail, editing with a re-test that works with the stored key, deleting with defined cascade rules, the per-provider environment overrides, library sync, and the optional first-server step after `setup` and the two-factor offer | `sign-in`, `plex-provider`, `jellyfin-provider` | `/admin/servers` (no brief yet); the Servers tab of `/admin/settings` |
+| 8 | `servers` | Adding a server with the mandatory connection test and type detection, the list and detail, editing with a re-test that reuses the stored key only while the address is unchanged, deleting with defined cascade rules, the per-provider environment overrides, library sync, and the optional first-server step after `setup` and the two-factor offer | `sign-in`, `plex-provider`, `jellyfin-provider` | `/admin/servers` (no brief yet); the Servers tab of `/admin/settings` |
 | 9 | `members` | Identities and their per-server users, the members list with search and filters, the detail with linked users, enable and disable (on Plex, a share with no libraries, D23), permissions loaded from the server, and delete stepped by relationship | `servers` | `/admin/members/[id]` |
 | 10 | `wizards` | Wizards, steps, interactions and translations, the content allow-list, keyboard reordering, the preview, and the server-side step check: signed progress and completion tokens, the quiz cool-down and a timer started on the server. A disabled or empty wizard counts as none | `sign-in` | `/admin/wizards/[id]`; the wizard list (no brief yet) |
-| 11 | `invitations` | Invitations with target servers, libraries, expiry, max uses, access duration and wizards; generated and normalised codes, the validation order, clear errors for max uses below the use count, the copy link, and the invitation expiry job | `servers`, `wizards` | `/admin/invitations` |
+| 11 | `invitations` | Invitations with target servers, libraries, expiry, max uses, access duration and wizards; generated and normalised codes, the validation order, clear errors for max uses below the use count, the copy link with the optional public invite address, disabling an invitation that loses its last server or every chosen library, and the invitation expiry job | `servers`, `wizards` | `/admin/invitations` |
 | 12 | `join` | The public join shell, code validation with its exact reasons, the server check, and the pre- and post-registration wizard stages, with rate limits on validation | `invitations`, `wizards` | `/join/[code]`, `/join/[code]/welcome` |
 | 13 | `redemption` | Plex sign-in for invitees (opaque handles, one-time redemption tokens, the real reason when one is invalid), the Jellyfin account form, the reservation, creating each account once, rollback with the partial-success report, an idempotency key against double submits, the default permissions, the receipt, and the cleanup job for expired sign-in attempts | `join`, `members` | `/join/[code]/account`, `/join/[code]/complete` |
 | 14 | `sync` | User sync (matched, orphaned, stale; dry run by default, import, relationship refresh), the media server sync job with per-server timeouts, retries and circuit breakers, sync runs, an interval that takes effect without a restart, and running it by hand | `members` | the Sync tab of `/admin/settings`; the sync panel on server detail; "Sync members" on `/admin/members/[id]` |
@@ -76,7 +76,7 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 | `secrets` | `security/secrets/` (key checks, keyring, cipher, `Secret`), `config/secret-key.ts`, `src/env.ts` and the `init` hook in `hooks.server.ts` |
 | `i18n` | `messages/en.json` and `messages/da.json`, `project.inlang/` (Paraglide's settings), `lib/shared/i18n/` (formatting); `paraglideMiddleware` in `hooks.server.ts` |
 | `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`, `security/headers.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate and the headers in `hooks.server.ts` |
-| `sign-in` | `services/sign-in/` (sessions and their storage, recovery), `db/` session schema, `security/` (session-token and password hashing, rate limiting, the cross-origin check), `vite.config.ts` (SvelteKit's own form check off); the sign-in at the claim in `routes/setup/`, `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
+| `sign-in` | `services/sign-in/` (sessions and their storage, recovery), `db/` session schema, `jobs/session-cleanup.ts`, `security/` (session-token and password hashing, rate limiting, the cross-origin check), `vite.config.ts` (SvelteKit's own form check off); the sign-in at the claim in `routes/setup/`, `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
 | `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/`; the offer in `routes/setup/`, the challenge page beside the sign-in page, its section in `routes/(admin)/admin/settings/`, and the reminder in `lib/components/layout/` |
 | `plex-provider` | `providers/plex/`, `providers/media-server.ts` (the contract, if first), `http/` (if first) |
 | `jellyfin-provider` | `providers/jellyfin/`, `providers/media-server.ts` and `http/` (if first) |
@@ -104,13 +104,9 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
   the app's approved docs allow one). zondarr's row promises a lockout on sign-in: one that grows
   with repeated failures from a client address and ends by itself, never one that keeps the owner
   out until recovery.
-- The first module with a background job closes the job half of D14: `sign-in` if its session
-  cleanup is a job, otherwise `invitations`.
+- `sign-in` closes the job half of D14: its session cleanup is the first background job.
 - `plex-provider`: D18, including whether Plex keeps a share with no libraries (D23).
   `jellyfin-provider`: D19.
-- `servers`: what happens to an invitation whose only target server is deleted, since an invitation
-  always targets at least one server, and to one whose every allowed library is removed, since none
-  chosen means all of them.
 - D13: `redemption`'s sign-in polling is the first JSON endpoint; its spec decides whether it needs
   a generated client. D17 stays open as an accepted limit.
 
@@ -160,7 +156,8 @@ is only a starting point for that brief. Each block moves into its module's `SPE
 module is specced. Rate limits are listed once, under `sign-in`. `i18n`, `setup`, `sign-in` and
 `two-factor` are shared with the other edbfi apps (D20): a bullet or clause marked "(zondarr)" is
 this app's own, and the rest is the shared wording; a "(zondarr)" mark inside a bullet covers the
-rest of that bullet, and "(zondarr: …)" only its own parentheses.
+rest of that bullet, and "(zondarr: …)" only its own parentheses. Decision numbers in these blocks
+are zondarr's; each app cites its own.
 
 #### i18n
 
@@ -173,8 +170,9 @@ rest of that bullet, and "(zondarr: …)" only its own parentheses.
 - **The claim** is a POST, cross-origin-checked like any other (`sign-in`), and it stores no
   address. It needs a valid bootstrap token and the browser's address (`sign-in`). Using up the
   token and creating the owner are one atomic step, and the owner session it starts follows
-  `sign-in`'s cookies. (zondarr) The legacy app's ten-minute, single-use, same-site-strict browser
-  authorisation from its setup link is not kept: the token is checked when the claim is submitted.
+  `sign-in`'s cookies. Claim attempts are rate-limited (`sign-in`). (zondarr) The legacy app's
+  ten-minute, single-use, same-site-strict browser authorisation from its setup link is not kept:
+  the token is checked when the claim is submitted.
 - **The referrer policy,** among the security headers, is `same-origin` or
   `strict-origin-when-cross-origin`, never `no-referrer` (which makes browsers send `Origin: null`
   on the app's own form posts). (zondarr) On the join page this replaces the legacy app's suppressed
@@ -201,8 +199,8 @@ rest of that bullet, and "(zondarr: …)" only its own parentheses.
   switch something off.
 - **Environment locks** (zondarr; obzorarr is the reference, AGENTS.md Shared groundwork). A setting
   the environment supplies wins: its field is read-only and says that the deployment's configuration
-  owns the value. zondarr's are the sync interval (`sync`) and each provider's server address and
-  key (`servers`).
+  owns the value. zondarr's are the sync interval (`sync`), each provider's server address and key
+  (`servers`), and the public invite address (`invitations`).
 - **Logging** (zondarr). Every error response carries a correlation id that the matching log entries
   carry too, and an upstream failure shown to the owner names it. A request's log entry records its
   method, path, content type and parameters, redacted like every entry, never its body, headers or
@@ -250,13 +248,13 @@ rest of that bullet, and "(zondarr: …)" only its own parentheses.
   stripped `Origin`, they get a 403 that says so (the "Access denied" page, or a JSON error for JSON
   callers). OIDC sign-in (and Plex sign-in, where the app has it) keeps the address in the flow's
   state. The OIDC callback address is saved when the owner configures OIDC, and must match. Links
-  shown on GET pages for copying, such as the OIDC callback to register (zondarr: and invite links),
-  are built in the browser from the address the user is on, or from `ORIGIN` when it is set. App
-  code never uses `event.url.origin` or `event.url.protocol` for security, cookies or rendered URLs,
-  which a test that searches the code enforces, and redirects stay relative. (zondarr) Plex sign-in
-  starts from the browser for the invitee on the join page (`redemption`) and for the owner when
-  linking in `/admin/settings` (Account) or signing in on owner sign-in (`owner-plex-sign-in`); each
-  follows this rule.
+  shown on GET pages for copying, such as the OIDC callback to register (zondarr: and invite links
+  while no public invite address is set, `invitations`), are built in the browser from the address
+  the user is on, or from `ORIGIN` when it is set. App code never uses `event.url.origin` or
+  `event.url.protocol` for security, cookies or rendered URLs, which a test that searches the code
+  enforces, and redirects stay relative. (zondarr) Plex sign-in starts from the browser for the
+  invitee on the join page (`redemption`) and for the owner when linking in `/admin/settings`
+  (Account) or signing in on owner sign-in (`owner-plex-sign-in`); each follows this rule.
 - **The address hint:** when `ORIGIN` is set and doesn't match the address the browser is on, or
   when `ORIGIN` is unset and that address's host and port don't match the `Host` header, the claim
   and owner sign-in pages suggest setting `ORIGIN=<that address>` (or removing a wrong `ORIGIN`) or
@@ -271,9 +269,11 @@ rest of that bullet, and "(zondarr: …)" only its own parentheses.
   so the container image's entrypoint unsets an empty `ORIGIN` and its templates leave it out (the
   image's work, not this repo's). (zondarr) It is an environment value, never a stored setting:
   there is no console setting for the environment to lock, and the settings page only shows it,
-  read-only. It takes the place of the legacy app's public origin. The legacy app's trusted origin,
-  with its first-run Test Origin, Save and Skip, and its secure-cookies setting are not kept,
-  because the cross-origin check stores no address and cookies follow the browser's address.
+  read-only. It is not the public invite address (`invitations`), which only builds invite links and
+  has no part in the cross-origin check, cookies or sign-in. It takes the place of the legacy app's
+  public origin. The legacy app's trusted origin, with its first-run Test Origin, Save and Skip, and
+  its secure-cookies setting are not kept, because the cross-origin check stores no address and
+  cookies follow the browser's address.
 - **When `ORIGIN` or a proxy fix is still needed:** behind a proxy that rewrites `Host`, over plain
   HTTP for every browser, and over HTTPS only for browsers without `Sec-Fetch-Site` (Safari before
   16.4, Firefox before 90, Chrome before 76). The proxy fix is `proxy_set_header Host $http_host`
@@ -306,14 +306,18 @@ rest of that bullet, and "(zondarr: …)" only its own parentheses.
   is complete, goes to `/admin` (the claim answers "not found" once an owner exists, D20).
 - **Rate limits** apply per client address. The client address comes from the connection, or from a
   header and a proxy depth (default 1) set in the environment (zondarr: set them only when every
-  request passes through that proxy). (zondarr) Signing in, recovery (D20), code validation on the
-  join page (`join`) and starting a Plex sign-in from the join page (`redemption`) are limited.
+  request passes through that proxy). (zondarr) Signing in, recovery (D20), the claim (`setup`),
+  code validation and submission on the join page (`join`), redeeming an invitation and starting a
+  Plex sign-in from the join page (`redemption`) are limited.
 - **Signing in** (zondarr). A wrong username and a wrong password give the same message. Passwords
   are hashed with a memory-hard function and hashed again at the next sign-in when its parameters
-  change.
+  change. Repeated failures slow sign-in with the delay that grows and ends by itself (Open
+  decisions each module closes, `sign-in`); only failed password attempts count.
 - **Sessions** (zondarr). Every request checks its session in the database, so a session that ends
   stops working at once. Sign-out ends only the session it comes from. Changing the password needs
-  the current one and ends every other session.
+  the current one and ends every other session. A cleanup job deletes expired sessions. It runs
+  hourly by default, no more often than once a minute, an interval set only in the environment;
+  `invitations`' expiry job runs on it too.
 - **Pages** (zondarr) load their data on the server before they show (D1), and a page whose data
   failed to load offers a retry. Apart from the log stream, the server detail's refresh and Plex
   sign-in's polling, pages refresh on navigation or after an action.
@@ -335,8 +339,8 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   code is accepted, no code from that step or an earlier one is accepted again.
 - **Turning it on** shows a QR code and the key to type in (hidden until asked for), then asks for a
   code. The secret reaches the browser only then, never afterwards. Confirming turns two-factor on
-  and issues ten single-use backup codes in `XXXX-XXXX` form, which replace any shown before; the
-  owner can copy them or download them as text.
+  and issues ten single-use backup codes in `XXXX-XXXX` form; the owner can copy them or download
+  them as text.
 - **Backup codes** ignore case and whitespace and each works once. New ones need a valid code.
 - **Failed attempts:** five block verification until fifteen minutes after the last failure; a
   success resets the count.
@@ -394,6 +398,9 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   wins and sets the type (Plex is the first guess). Success shows the detected product and the
   server's name and version (with D24's warning for an untested version); a failure is a message,
   never an error page.
+- **Editing** (row 8) saves only after a successful connection test, as adding does. The test and
+  the save reuse the stored key only while the address is unchanged; a changed address needs the key
+  typed again for both.
 - **Addresses** (D8) are `http` or `https`. Private, loopback, link-local and similar addresses, and
   host names that resolve to them, are allowed by default, because self-hosting is the normal case;
   the environment can refuse them for public hosting.
@@ -411,10 +418,12 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   it is open) and delete. It refreshes every 15 seconds while open.
 - **Library sync** matches libraries by their id on the server: new ones are added, changed names or
   types updated (counted only when something changed) and missing ones removed, with any
-  invitation's links to them. It reports the total, added, updated and removed.
+  invitation's links to them (`invitations` says when that disables an invitation). It reports the
+  total, added, updated and removed.
 - **Deleting a server** deletes its libraries, its sync runs and the local member records on it
-  (with any identity left with no users), and invitations lose their links to it and its libraries;
-  the accounts on the media server stay, and the confirmation says so.
+  (with any identity left with no users), and invitations lose their links to it and its libraries
+  (`invitations` says when that disables one); the accounts on the media server stay, and the
+  confirmation says so.
 
 #### members
 
@@ -495,6 +504,9 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   enabled), its allowed libraries (on those servers; none chosen means all of them) and optional
   pre- and post-registration wizards (enabled ones). The use count never exceeds the maximum. People
   who joined with it keep their access when it is deleted, and the confirmation says so.
+- **An invitation that loses its targets** is disabled until the owner edits it: when its last
+  target server is deleted, or when it had chosen libraries and library sync or a server's deletion
+  removes every one of them. It is never widened to all libraries (PRODUCT.md principle 4).
 - **Codes.** A custom code is 1–20 letters or digits. A generated one is 12 capital letters and
   digits without 0, O, I and L, from a cryptographic random source, tried again on a collision. A
   duplicate is reported plainly. Codes are normalised the same way when created and when looked up
@@ -508,10 +520,8 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
 - **The validation order,** for the join page and redemption: not found, expired, disabled, used up.
   Expiry comes before disabled because the expiry job disables expired invitations, and the invitee
   should see the real reason. Validating never uses a use.
-- **The expiry job** disables every enabled invitation whose expiry has passed. It runs hourly by
-  default (no more often than once a minute), an interval set only in the environment. The same
-  interval drives `sign-in`'s session cleanup and `redemption`'s cleanup of expired sign-in
-  attempts.
+- **The expiry job** disables every enabled invitation whose expiry has passed. It runs on
+  `sign-in`'s cleanup interval (hourly by default).
 - **Editing** changes enabled, the expiry, maximum uses, the access duration, the targets, the
   libraries and both wizards, at once; the code, the use count and the creation time never change. A
   field left out stays as it is, and clearing the expiry, a limit or a wizard means none. The
@@ -519,6 +529,12 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
 - **The list** is paginated as `members`' is, filtered by enabled and by expired or active, and
   sorted by created date, expiry or use count, either way. Copying the invite link, the join address
   for the code, is the main way to share an invitation.
+- **The public invite address** is optional, set in the environment, which locks it (`setup`), or in
+  the General tab of `/admin/settings`. It is used only to build invite links and has no security
+  role: it plays no part in the cross-origin check, cookies, sign-in or the browser's address
+  (`sign-in`). It must be a bare `http` or `https` origin, validated like `ORIGIN`. Without it,
+  invite links use the address the owner is on, or `ORIGIN`. The invitations page shows which
+  address its copied links use.
 
 #### join
 
@@ -549,7 +565,8 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   and returns it with a one-time redemption token; the Plex token never reaches the browser and is
   wiped once exchanged. The page shows the email it signed in with and makes a username from it
   (lowercased, starting with a letter, only letters, digits and underscores). An expired sign-in can
-  be tried again, and a job deletes expired attempts. Its spec ports obzorarr's Plex sign-in, the
+  be tried again. An attempt's Plex token is deleted when its ten-minute window ends, and a job on
+  `sign-in`'s cleanup interval deletes expired attempts. Its spec ports obzorarr's Plex sign-in, the
   reference (AGENTS.md Shared groundwork), and `sign-in`'s rule for the browser's address; where
   obzorarr's mechanics differ from this note (such as its state cookie), obzorarr's win, and zondarr
   keeps its ten-minute attempt, the opaque handle, the one-time redemption token bound to its
@@ -558,8 +575,9 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   1. exchange the redemption token, if given, for the Plex token and email, atomically and once,
      failing with the real reason when it is invalid (row 13);
   2. reserve one use atomically, only if the invitation is still enabled, unexpired and under its
-     cap; a failed reservation reports why, and a valid-looking invitation that couldn't be reserved
-     is used up, because another join took the last place;
+     cap; a failed reservation reports why and, like any later failure, makes the redemption token
+     usable again; a valid-looking invitation that couldn't be reserved is used up, because another
+     join took the last place;
   3. with a pre-registration wizard, require its signed completion token for that wizard, at most an
      hour old;
   4. for every Plex target, require a Plex token from Plex sign-in (a redemption token is bound to
