@@ -537,9 +537,10 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   (`sign-in`). It must be a bare `http` or `https` origin, validated like `ORIGIN`. While `ORIGIN`
   is set, the invite address must be empty or equal to it, because the join page's POSTs must come
   from `ORIGIN` and Plex sends the invitee back to it: saving a different one is refused, with a
-  message that says why, and when both come from the environment and differ, startup logs it.
-  Without it, invite links use the address the owner is on, or `ORIGIN`. The invitations page shows
-  which address its copied links use.
+  message that says why. If they differ anyway, whichever source set each (a saved address and a
+  later `ORIGIN`, say), startup logs it, invite links use `ORIGIN`, and the invitations page says
+  so. Without it, invite links use the address the owner is on, or `ORIGIN`. The invitations page
+  shows which address its copied links use.
 
 #### join
 
