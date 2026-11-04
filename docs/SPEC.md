@@ -551,9 +551,9 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   (lowercased, starting with a letter, only letters, digits and underscores). An expired sign-in can
   be tried again, and a job deletes expired attempts. Its spec ports obzorarr's Plex sign-in, the
   reference (AGENTS.md Shared groundwork), and `sign-in`'s rule for the browser's address; where
-  obzorarr's mechanics differ from this note (its attempt lifetime, its state cookie), obzorarr's
-  win, and zondarr keeps the opaque handle, the one-time redemption token bound to its provider and
-  the Plex token that never reaches the browser.
+  obzorarr's mechanics differ from this note (such as its state cookie), obzorarr's win, and zondarr
+  keeps its ten-minute attempt, the opaque handle, the one-time redemption token bound to its
+  provider and the Plex token that never reaches the browser.
 - **Redeeming,** in this order:
   1. exchange the redemption token, if given, for the Plex token and email, atomically and once,
      failing with the real reason when it is invalid (row 13);
@@ -577,11 +577,14 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
       and offline sync off. Failures here are only logged, because the member already has access.
 - **The receipt** shows the created accounts' usernames and, when a Plex server was a target, Open
   Plex, which opens the Plex web app, never the server's own address.
-- **A failure after the reservation** releases the reserved use and makes the redemption token
-  usable again (account creation runs outside any transaction, D6), and deletes, best effort and one
-  by one, every account already created on other servers. The invitee sees the cause (username
-  taken, server unreachable, invitation no longer valid, invalid input, or a general failure), the
-  failed server's name, which accounts had been created, and a way to try again from the right form.
+- **A failure after the reservation** undoes every local change the join made: it releases the
+  reserved use, makes the redemption token usable again, and leaves the local members and identities
+  as they were (removing stale records and creating the new ones are one short transaction after the
+  accounts exist, since account creation runs outside any transaction, D6). It also deletes, best
+  effort and one by one, every account already created on other servers. The invitee sees the cause
+  (username taken, server unreachable, invitation no longer valid, invalid input, or a general
+  failure), the failed server's name, which accounts had been created, and a way to try again from
+  the right form.
 
 #### sync
 
