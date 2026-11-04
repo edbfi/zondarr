@@ -318,7 +318,7 @@ key fail with its own clear error, and a new key means entering the stored secre
 checks the key in SvelteKit's `init` hook from its first version, so every way of running the app,
 dev and CI included, needs one. The key is restored with the database file (D16). The legacy app's
 application secret (at least 32 characters, with purpose-separated keys derived from it) goes with
-it, and so does the legacy idea of rotating it with re-encryption: a key change is handled by
+it, and so does the legacy app's idea of rotating it with re-encryption: a key change is handled by
 entering the secrets again, not by rotation. A missing, malformed or weak key's error puts the key
 the app ran with before a new one, because a lost variable or a typo in a key in use fails the same
 checks, and the key loads before any database could say whether anything is stored (owner decision,

@@ -31,14 +31,15 @@ spec of the module that relies on it (`plex-provider`, `members`, `redemption`,
 - The user list holds friends and home users, each classed by whether this server is shared with
   them, and includes an email when Plex provides one.
 - Directly shared members without a friendship may not appear in the friends list, so a later
-  library or permission edit can fail with "user not found": edits work only for people in the
-  owner's friends or home list.
+  library or permission edit could fail with "user not found": the legacy app's edits worked only
+  for people in the owner's friends or home list (D12 evaluates updating an accepted share directly).
 - A share request that times out may still have been applied by Plex.
 - A server share can be removed without removing the friendship.
 
 ## What Plex can't do
 
-- Plex has no disabled state for a member: access ends only by unsharing or removing them.
+- Plex has no native disabled state for a member; D23's disabling keeps the share with no
+  libraries, which the Plex library audit (D18) verifies.
 - Of the legacy app's four permission switches (downloads, streaming, offline sync, transcoding),
   Plex took only downloads, as "allow sync".
 - Plex sets library access at share time, and a member uses their own Plex account, so there is no
