@@ -665,9 +665,10 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
 
 ## Tech stack
 
-The stack decisions are in [decisions.md](decisions.md) (D1–D12). Versions are exact pins in
-`package.json` (Bun from its `packageManager` field) and `bun.lock`; Dependabot moves them. Every
-package is a dev dependency, so adapter-bun bundles it and `bun ./build` needs no `node_modules`.
+The stack decisions are in [decisions.md](decisions.md) (D1–D12, D26). Versions are exact pins in
+`package.json` (Bun from its `packageManager` field) and `bun.lock`; Dependabot moves them to the
+newest stable release (D26). Every package is a dev dependency, so adapter-bun bundles it and
+`bun ./build` needs no `node_modules`.
 
 | Part | Package |
 |---|---|
