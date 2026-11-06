@@ -179,8 +179,7 @@ symmetry.
   obzorarr, which comes first by priority. The map below names it once it's known.
 - **Port after the reference has built it.** Another app specifies a shared module only once the
   reference has built it, starting from the reference's spec and tests. Its `SPEC-<id>.md` names
-  the reference and what differs in its first lines. Specs copied before this rule (`secrets`) are
-  kept in step with the reference instead.
+  the reference and what differs in its first lines.
 - **Say who else needs a change.** A PR that changes a shared area names, in its body, the sibling
   apps that need the same change. Correctness and security fixes reach them soon; wording can wait.
 - **What may differ:** the environment prefix, the app name, the stored secrets, the database
@@ -231,7 +230,7 @@ docs/SPEC.md                             project spec + capability map
 docs/SPEC-<id>.md                        one per module being built or changed
 docs/decisions.md                        D<n> entries: decision + why
 docs/research/<topic>.md                 temporary research input
-docs/design/                             images (+ tokens until the first scaffold)
+docs/design/                             images
 tasks/plan.md  tasks/todo.md             the active work stream only
 .impeccable/surfaces/*.md  critique/     Impeccable-managed
 ```
