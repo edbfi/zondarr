@@ -274,12 +274,8 @@ for reference only.
 unit tests, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). Product modules
 come next, in the order of the approved capability map in `docs/SPEC.md`, each through an
 owner-approved `docs/SPEC-<id>.md`. Module 1, `secrets`
-([`docs/SPEC-secrets.md`](docs/SPEC-secrets.md)), is built and ready for consumers: a master key's
-text is read from the environment or a file, decoded and checked for weak keys, and loaded into a
-keyring of the cipher's keys. The built server loads it in the `init` hook and won't start without
-a valid key; `dev` fails every request instead. The cipher encrypts a secret bound to its table,
-field and row, and the `Secret` wrapper prints a plaintext as `[redacted]` everywhere except
-`reveal()`. Nothing stores a secret yet, and no database exists.
+([`docs/SPEC-secrets.md`](docs/SPEC-secrets.md)), is built and ready for consumers. Nothing stores
+a secret yet, and no database exists.
 
 **Commands** (what each does: [docs/SPEC.md](docs/SPEC.md#commands)): `bun ci`, then
 `bun run --bun <dev|build|preview|check|test|smoke|lint>`; `prek run --all-files --hook-stage

@@ -43,7 +43,7 @@ The mechanism the record supports:
 - **Devices:** the whole join flow must work on a phone as well as on a computer. The record makes no claim about which devices invitees actually use.
 - **What happens after joining:** the invitee leaves Zondarr for their Plex or Jellyfin apps. The completion page is a receipt with a next step such as installing a Plex player, not a member portal (route-join-code-complete brief).
 - **Background work:** Zondarr polls the media servers. Library and user sync, invitation expiry and session cleanup run unattended as in-process jobs, and there are no webhooks (D7).
-- **Project state:** the legacy app shipped and was used by its author but was never formally released. The rewrite has only its ground floor: no database, authentication, providers or product modules yet (docs/SPEC.md). Routes in the surface briefs are proposed information architecture.
+- **Project state:** the legacy app shipped and was used by its author but was never formally released. The rewrite has its ground floor and its first module, `secrets`: no database, authentication, providers or other product modules yet (docs/SPEC.md). Routes in the surface briefs are proposed information architecture.
 
 ## Product requirements
 
@@ -64,7 +64,7 @@ Golden Welcome × Velvet Premiere. A deliberate blend: Golden Welcome's warm gol
 What exists:
 
 - **The legacy app's code:** the `legacy-old/v1` branch, for reference only; nothing is ported from it (AGENTS.md).
-- **Decisions and ground-floor spec:** [docs/decisions.md](docs/decisions.md) and [docs/SPEC.md](docs/SPEC.md).
+- **Decisions and project spec:** [docs/decisions.md](docs/decisions.md) and [docs/SPEC.md](docs/SPEC.md).
 - **Upstream notes:** [docs/research/plex.md](docs/research/plex.md) and [docs/research/jellyfin.md](docs/research/jellyfin.md), how Plex and Jellyfin behaved for the legacy app, not re-verified.
 - **Design mockups:** ten generated screens in `docs/design/screens/`, `01-public-invitation.webp` through `10-recovery-and-components.webp`, covering the invitee flow, a 390px mobile board, the admin console and a states-and-components board. They are composition references; their text is illustrative, and the surface briefs' raster corrections win (DESIGN.md).
 - **Direction references:** `docs/design/references/golden-welcome.webp` and `docs/design/references/velvet-premiere.webp`, the two references the confirmed direction blends.

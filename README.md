@@ -93,4 +93,4 @@ same key alongside them. Without it, stored secrets can't be read.
 
 Start with [AGENTS.md](AGENTS.md): the house rules, the workflow and where each document lives.
 The product and design context is in [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md) and
-[docs/](docs/); the skeleton's scope is [docs/SPEC.md](docs/SPEC.md).
+[docs/](docs/); the project spec is [docs/SPEC.md](docs/SPEC.md).

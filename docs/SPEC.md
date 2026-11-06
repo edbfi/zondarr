@@ -11,7 +11,7 @@ the invitee completes the owner's welcome steps and joins the servers, and the o
 invitations, members, servers and wizards from an admin console
 ([PRODUCT.md](../PRODUCT.md)).
 
-**This spec covers only the ground floor:** an empty, production-shaped SvelteKit app that builds,
+**The ground floor:** an empty, production-shaped SvelteKit app that builds,
 type-checks, tests, lints and serves on Bun, styled from the design tokens, with the edbfi Bun web
 CI around it. It has no database, authentication, Plex, Jellyfin or product features. Its job is to
 make the first module spec cheap to build: every later PR adds behaviour, not plumbing.
@@ -736,7 +736,6 @@ export const GET: RequestHandler = () => healthResponse();
 
 - [`panda.config.ts`](../panda.config.ts) holds every design token: colours, type styles,
   spacing, radii, layout sizes, breakpoints and motion durations, under the names DESIGN.md uses.
-  It replaced the seed token files that came with the design package.
 - Colours are semantic tokens behind a colour-mode condition (`_dark`), dark by default
   (`class="dark"` on `<html>` in `src/app.html`); light values can be added later without touching
   components.
@@ -793,8 +792,8 @@ zondarr is a Bun web repo with edbfi-ci's Bun web templates:
    manual`, with no Node on `PATH`.
 2. The built server (`bun ./build`) serves `/` with the placeholder page and `/healthz` with `ok`
    when started with a valid key.
-3. `panda.config.ts` holds every design token; the seed token files are gone, and nothing in `src/`
-   uses a raw colour, size or font value.
+3. `panda.config.ts` holds every design token, and nothing in `src/` uses a raw colour, size or font
+   value.
 4. Only folders with real files exist; `#lib` resolves in app code, tests and `svelte-check`.
 5. CI on the PR runs `checks`, `smoke` and `ci-ok` green; `audit` runs outside PRs.
 
@@ -815,7 +814,7 @@ design doesn't call for anything different; choices 4 and 5 are zondarr's own.
    a CSP belong to the first module that serves real pages (`setup`, whose claim page comes before
    admin sign-in and the join flow), not the skeleton.
 4. **Where the logo lives.** SvelteKit serves static files from `static/`, so the logo is
-   `static/zondarr-logo.svg` (it was in `public/`), which the README shows and `src/app.html` uses
+   `static/zondarr-logo.svg`, which the README shows and `src/app.html` uses
    as the favicon. Where the logo lives is each app's own choice: obzorarr imports its icon from
    `src/lib/assets/` instead.
 5. **Health.** `/healthz` always answers `ok`. The module that adds the database replaces it with a
