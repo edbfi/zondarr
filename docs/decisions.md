@@ -231,7 +231,7 @@ the first one costs little. This fixes the legacy app's English-only interface a
 
 ### D22. Paraglide JS with i18next JSON v4 messages
 
-Translation (D21) uses Paraglide JS 2 (`@inlang/paraglide-js`) through its Vite plugin, SvelteKit's
+Translation (D21) uses Paraglide JS 3 (`@inlang/paraglide-js`) through its Vite plugin, SvelteKit's
 official i18n integration. Messages live in `messages/en.json` and `messages/da.json` in i18next
 JSON v4, through `@inlang/plugin-i18next` 6.2.0 or later (which fixed its plural handling), with
 plurals under CLDR suffixes. Weblate reads that format as "i18next JSON v4" (`i18nextv4`),
