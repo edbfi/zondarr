@@ -178,9 +178,9 @@ are zondarr's; each app cites its own.
   on the app's own form posts). (zondarr) On the join page this replaces the legacy app's suppressed
   referrer and still keeps the invitation code from other sites: `same-origin` sends them no
   referrer, and `strict-origin-when-cross-origin` only the app's address, never the path.
-- **Strict transport security** (zondarr: when the headers include it) is sent only over HTTPS
-  (known when `ORIGIN` is `https`, or when the browser sent `Sec-Fetch-Site` to a host that isn't
-  loopback, since browsers send it only to HTTPS and loopback addresses).
+- **One-year strict transport security** goes only over HTTPS (known when `ORIGIN` is `https`, or
+  when the browser sent `Sec-Fetch-Site` to a host that isn't loopback, since browsers send it only
+  to HTTPS and loopback addresses).
 - **The setup gate.** Until first run is complete, every page except static assets, the claim,
   sign-in and first run's own helpers sends the browser to the current first-run step. The server
   keeps one current-step pointer: the browser can't skip ahead, each step's action checks that it is
@@ -188,10 +188,12 @@ are zondarr's; each app cites its own.
   step's action completes first run. (zondarr) First run is the claim, the two-factor offer
   (`two-factor`) and the optional first server (`servers`), each later step skippable; after an
   interruption it resumes at the current step.
-- **The bootstrap token** (zondarr) is generated at each start while no owner exists, held only in
-  memory, compared in constant time, printed with the setup URL and never served over the network;
-  opening the setup URL removes the token from the address bar. The claim page has a field for the
-  token and says where to find it: the container's logs, or the console when zondarr runs directly.
+- **The bootstrap token** (D20) is 12 random lowercase letters and digits, shown as
+  `xxxx-xxxx-xxxx`, held only in memory (never logged or stored) and compared in constant time. It
+  is printed with the setup URL and is valid for 15 minutes, after which a new one is printed.
+  (zondarr) It is printed only while no owner exists and is never served over the network; opening
+  the setup URL removes the token from the address bar. The claim page has a field for the token
+  and says where to find it: the container's logs, or the console when zondarr runs directly.
 - **The owner's account** (zondarr): the claim asks for the password twice, and the username is 3–32
   characters: lowercase letters, digits and underscores, starting with a letter.
 - **Records** (zondarr) have random ids and created and updated times, stored and returned in UTC; a
@@ -784,18 +786,6 @@ zondarr is a Bun web repo with edbfi-ci's Bun web templates:
 - **Never:** a database, authentication, Plex, Jellyfin or any product feature before its module's
   approved spec builds it; a second styling tool or primitive library; Node, npm or npx anywhere,
   including CI.
-
-## Success criteria
-
-1. A fresh clone passes `bun ci`, `bun run --bun check` (zero errors and warnings), `bun run --bun
-   test`, `bun run --bun build`, `bun run --bun smoke` and `prek run --all-files --hook-stage
-   manual`, with no Node on `PATH`.
-2. The built server (`bun ./build`) serves `/` with the placeholder page and `/healthz` with `ok`
-   when started with a valid key.
-3. `panda.config.ts` holds every design token, and nothing in `src/` uses a raw colour, size or font
-   value.
-4. Only folders with real files exist; `#lib` resolves in app code, tests and `svelte-check`.
-5. CI on the PR runs `checks`, `smoke` and `ci-ok` green; `audit` runs outside PRs.
 
 ## Ground-floor choices
 

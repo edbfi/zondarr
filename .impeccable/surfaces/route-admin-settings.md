@@ -27,7 +27,7 @@ Use the shared [design system](../../DESIGN.md). Match hierarchy, density and pa
 
 ## Acceptance criteria
 
-Source lacks server editing; this screen is an explicit proposed rewrite improvement with re-test requirement, captured in handoff notes. Never expose admin settings to invitees.
+Server editing is new in the rewrite (the legacy app had none): a change saves only after a successful re-test. Never expose admin settings to invitees.
 
 - Preserve audience boundaries from [product context](../../PRODUCT.md).
 - Use canonical data in [demo fixtures](../../tests/fixtures/demo-fixtures.json); do not infer calculations from raster text.
@@ -40,7 +40,6 @@ Source lacks server editing; this screen is an explicit proposed rewrite improve
 
 Use the images for composition and visual character. Use DESIGN.md, PRODUCT.md, this brief's acceptance criteria and the demo fixtures for exact values and behavior. Body copy, chart axes, tiny icons and font glyphs remain illustrative raster renderings. Rebuild them as native accessible UI and verify them against the specification. A PNG cannot verify focus order, screen-reader announcements, permission checks or real responsiveness.
 
-- Server editing with a successful re-test is a proposed rewrite improvement, not existing shipped behavior. Reuse the edit form only after the implementation supports it.
 - Public address follows Required content: `ORIGIN` is optional and never a stored setting, so the field is never editable and its lock label shows only when `ORIGIN` is set. Don't copy the raster's caption that this is the public link for invitees: that is the separate public invite address, which only builds invite links.
 
 ## Handoff prompt

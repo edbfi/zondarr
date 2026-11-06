@@ -133,7 +133,7 @@ Primary fills use background-colored text. Secondary color marks information, li
 - **number:** IBM Plex Mono, 32px/1.2, weight 500.
 - **code:** IBM Plex Mono, 13px/1.5, weight 400.
 
-Keep prose below 70 characters per line. Titles use sentence case. Keep capitals for proper names and short codes. Operational numbers use tabular mono glyphs; a poster-sized recap number may use the display face. Font names indicate intended typefaces; image generation approximates glyphs. Use locally bundled font files and fallbacks, rather than remote font requests.
+Keep prose below 70 characters per line. Titles use sentence case. Keep capitals for proper names and short codes. Operational numbers use tabular mono glyphs. Font names indicate intended typefaces; image generation approximates glyphs. Use locally bundled font files and fallbacks, rather than remote font requests.
 
 ## Layout
 
@@ -165,7 +165,7 @@ Tables use 44px standard rows, 36px only for dense desktop operation, 14px label
 
 - Preserve this app's palette and type hierarchy across every route; do not blend the five applications into one theme.
 - Keep welcome/experience screens expressive and operational controls quiet.
-- Treat product permissions, status transitions and budget arithmetic as behavior supplied by the server.
+- Treat product permissions and status transitions as behavior supplied by the server.
 - Use [demo fixtures](tests/fixtures/demo-fixtures.json) for stable visual tests, then substitute real server data.
 - Follow each surface brief's raster corrections instead of copying accidental generated labels or extra actions.
 - Use existing project primitives and tokens. This repository's rewrite stack specifies Panda CSS and Ark UI; map these values into those systems without adding a competing component library.
