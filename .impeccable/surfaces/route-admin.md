@@ -27,7 +27,7 @@ Use the shared [design system](../../DESIGN.md). Match hierarchy, density and pa
 
 ## Acceptance criteria
 
-Admin perspective distinct from invitee screens. No playback stats, emails sent or enforced-expiry claims. No serif large hero inside operational dashboard.
+Admin perspective distinct from invitee screens. No playback stats or emails sent. No serif large hero inside operational dashboard.
 
 - Preserve audience boundaries from [product context](../../PRODUCT.md).
 - Use canonical data in [demo fixtures](../../tests/fixtures/demo-fixtures.json); do not infer calculations from raster text.
