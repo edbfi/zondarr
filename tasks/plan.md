@@ -10,8 +10,8 @@ tasks, one PR each, each test first. The tasks are in [todo.md](todo.md). Each P
 
 ## Architecture decisions
 
-- **The riskiest work comes early.** Task 1 wires Paraglide into the build, and runs or cites the
-  Weblate round trip, before any product text renders from it, so a surprise in the toolchain or
+- **The riskiest work comes early.** Task 1 wires Paraglide into the build, and runs the Weblate
+  round trip, before any product text renders from it, so a surprise in the toolchain or
   the file format changes nothing written in it. Task 2 then runs the middleware through the built
   adapter-bun server, where Paraglide issue
   [#725](https://github.com/opral/paraglide-js/issues/725) would show, and runs or cites the
@@ -29,10 +29,10 @@ tasks, one PR each, each test first. The tasks are in [todo.md](todo.md). Each P
   interaction with a real component".
 - **Each validation's evidence goes in the body of the PR that runs it:** the pinned versions with
   no Node on `PATH` and the Weblate round trip in task 1's, the concurrency check in task 2's, and
-  the full list in task 3's, which closes D22. The round trip and the concurrency check cite
-  obzorarr's #297 and #298 only when the PR body shows the match SPEC-i18n.md's "Citing obzorarr
-  instead" lists; otherwise they rerun. The temporary messages, route and scripts are never
-  committed.
+  the full list in task 3's, which closes D22. The concurrency check cites obzorarr's #298 only
+  when the PR body shows the match SPEC-i18n.md's "Citing obzorarr instead" lists, and otherwise
+  reruns; the round trip reruns in task 1, whose hooks can't match yet. The temporary messages,
+  route and scripts are never committed.
 - **Facts change in the task that changes them.** Each task updates SPEC.md's tech stack, setup
   facts, Commands and testing sections, and AGENTS.md's structure, as its files land. Task 3 does
   the rest of the spec's "Docs this module changes when built" list and the end-of-work-stream
@@ -72,7 +72,7 @@ tasks, one PR each, each test first. The tasks are in [todo.md](todo.md). Each P
 |---|---|---|
 | The middleware returns nothing in the adapter-bun build (#725) | High | Task 2's e2e tests run against the built server, before any formatter exists |
 | The CLI and the Vite plugin write different layouts into one folder | Medium | `outputStructure: "message-modules"` in the shared config; task 1 runs `check` beside `dev` |
-| Weblate writes the files in a shape Biome or the plugin refuses | Medium | Task 1's round trip, or its citation when nothing has moved, before any real message renders |
+| Weblate writes the files in a shape Biome or the plugin refuses | Medium | Task 1's round trip, before any real message renders |
 | Concurrent requests mix languages under Bun's AsyncLocalStorage | High | Task 2's 200-request check against the built server, or its citation |
 | A version or file moves after the spec, so obzorarr's evidence no longer applies | Medium | Each PR body compares the list in SPEC-i18n.md's "Citing obzorarr instead" with `7368cff`, and reruns on any difference |
 | Generated output trips Biome, Panda or the docs-set hook | Low | The two `.gitignore` lines and Panda's `exclude` land in task 1; prek runs with the output present |

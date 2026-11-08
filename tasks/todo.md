@@ -13,7 +13,7 @@ its body. Paths under `src/lib/` are shortened to `lib/`.
 **Description:** obzorarr's #297 and #301's `messages.test.ts`. Add the two packages and the inlang
 project, and compile the messages in `prepare`, `check`, dev, build and Vitest. The message files
 hold the placeholder page's text in English and Danish, which the page starts using in task 2. Add
-the message check. Run the Weblate round trip, or cite #297's.
+the message check. Run the Weblate round trip.
 
 **Acceptance criteria:**
 - [ ] `@inlang/paraglide-js` and `@inlang/plugin-i18next` are exact-pinned dev dependencies at their
@@ -39,8 +39,8 @@ the message check. Run the Weblate round trip, or cite #297's.
   with several problems reports them all; plain angle brackets in prose pass. Each rule, switched
   off in turn, fails exactly its own cases, shown in the PR body.
 - [ ] The Weblate round trip passes all four of the spec's conditions, with the script and its
-  output in the PR body, or the body shows the match with obzorarr's `7368cff` that lets it cite
-  #297 (SPEC-i18n.md, "Citing obzorarr instead"). Neither the script nor its temporary message is
+  output in the PR body. It can't cite #297: this task's hooks don't match `7368cff`'s yet
+  (SPEC-i18n.md, "Citing obzorarr instead"). Neither the script nor its temporary message is
   committed.
 
 **Verification:** `bun run --bun test`, `check`, `lint`, `build`, `smoke`, prek.
@@ -64,11 +64,13 @@ describes it, on the placeholder `/`, with the global focus rule.
 
 **Acceptance criteria:**
 - [ ] `tests/e2e/i18n.test.ts`, against the built server, written first: a `da-DK` browser gets `/`
-  in Danish with `<html lang="da">` and `Vary: Cookie, Accept-Language`; pressing "English"
-  reloads `/` in English and writes `PARAGLIDE_LOCALE=en` with `SameSite=Lax` and without `Secure`
-  over plain HTTP, and the next visit stays in English; a browser whose header says `fr-FR` and
-  whose `navigator.languages` an init script sets to `fr-FR`, `da-DK` gets English, the switcher
-  marks English as current after hydration, and no cookie is written; none logs a console error.
+  in Danish with `<html lang="da">` and `Vary: Cookie, Accept-Language`, and "Dansk" is current,
+  with `lang="da"`; pressing "English" reloads `/` in English and writes `PARAGLIDE_LOCALE=en` with
+  path `/`, `SameSite=Lax` and without `Secure` over plain HTTP, and the next visit stays in
+  English; a browser whose header says `fr-FR` and whose `navigator.languages` an init script sets
+  to `fr-FR`, `da-DK` gets English, the switcher marks English as current after hydration, no
+  cookie is written, and pressing "English" there does nothing (no reload, no cookie); none logs a
+  console error.
   `smoke.test.ts` and `secret-key.test.ts` pass unchanged.
 - [ ] The placeholder renders its messages as text, never with `{@html}`, keeps its layout and
   `<title>Zondarr</title>`, adds no wordmark, and shows the switcher above the heading. No

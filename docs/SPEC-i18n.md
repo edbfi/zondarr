@@ -90,18 +90,18 @@ filled with a name can't inject markup.
 - **No tags:** the plugin reads anything shaped like a tag (`<address>`, `<br/>`, `</b>`, `<0>`) as
   markup, and Paraglide drops it from the text without a warning: `ORIGIN=<address>` renders as
   `ORIGIN=`. A value to fill in is a placeholder (`ORIGIN={{address}}`). The check reports what the
-  plugin reads as markup, and any tag with a `name=` attribute anywhere in it, spaces around the `=`
-  included (`<a href="/help">`, `<input disabled name="x">`). Plain angle brackets in prose
+  plugin reads as markup, and also any tag with a `name=` attribute anywhere in it, spaces around
+  the `=` included (`<a href="/help">`, `<input disabled name="x">`): the plugin keeps those as
+  text, but they are HTML that would show to the viewer as raw tags. Plain angle brackets in prose
   (`1 < 2 and 3 > 2`, `<5 minutes (>1 play)`, `a<b and c>d`) pass, and so does a tag with only bare
-  attributes (`<input disabled>`), which has the same shape as that prose and which the plugin shows
-  as text rather than dropping.
+  attributes (`<input disabled>`), which has the same shape as that prose.
 - **Markup inside a message,** such as a link in a sentence, is left to the first module that needs
   it.
 
 **Not translated through the messages:**
 - the name Zondarr: on its own, as in the page's `<title>`, it isn't a message, and inside a
   message it stays "Zondarr" in both languages ("Zondarr is being rebuilt.");
-- text the owner writes (D21), such as server and invitation names and the wizards' steps, which
+- text the owner writes (D21), such as server names and the wizards' steps, which
   `wizards` translates per step with its own content-language switch (SPEC.md's Module notes).
   That switch chooses a step's content language and is separate from the language switcher, which
   chooses the interface's. Whether the defaults `wizards` pre-fills for an interaction ("I
@@ -301,13 +301,14 @@ The build runs D22's three validations, and a concurrency check, with the pinned
   started as the secrets spec requires (`bun --no-env-file ./build`, with the generated key only).
   It also closes D16's "browser interaction with a real component". It checks that:
   - a Danish browser (Playwright locale `da-DK`) gets `/` in Danish with `<html lang="da">` and
-    `Vary: Cookie, Accept-Language`;
+    `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
   - pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en` with
-    `SameSite=Lax` and without `Secure` over plain HTTP, and the next visit stays in English;
+    path `/`, `SameSite=Lax` and without `Secure` over plain HTTP, and the next visit stays in
+    English;
   - a browser with locale `fr-FR`, whose `navigator.languages` an init script sets to `fr-FR`,
     `da-DK`, gets English, the switcher marks English as current after hydration, and no cookie is
-    written. Playwright's `locale` sets both the header and `navigator.languages`, so only the
-    script can split them;
+    written; pressing "English" there does nothing, with no reload and no cookie. Playwright's
+    `locale` sets both the header and `navigator.languages`, so only the script can split them;
   - none of these logs a console error.
 
   The existing smoke test keeps passing in English, Playwright's default locale, and
@@ -329,10 +330,11 @@ The build runs D22's three validations, and a concurrency check, with the pinned
 #297 and #298 only if the build PR's body shows that all of these match obzorarr's `7368cff`: the
 versions of `@inlang/paraglide-js`, `@inlang/plugin-i18next`, `@sveltejs/kit`,
 `@sveltejs/adapter-bun`, `typescript`, Bun, Vite and Biome, and `biome.json`, `project.inlang/*` and
-`hooks.{server,client}.ts`. On 2026-11-08 the versions and `biome.json` match. If anything has
-moved, the PR reruns #297's round trip and probes and #298's concurrency script, with the output in
-its body. The pinned versions with no Node on `PATH` and adapter-bun are never cited: zondarr's own
-CI and `i18n.test.ts` show them.
+`hooks.{server,client}.ts`. If anything has moved, the PR reruns #297's round trip and probes and
+#298's concurrency script, with the output in its body. Task 1 adds no `handle` and no
+`hooks.client.ts`, so its hooks can't match `7368cff`'s, and it reruns the round trip; task 2's
+can, so it may cite #298. The pinned versions with no Node on `PATH` and adapter-bun are never
+cited: zondarr's own CI and `i18n.test.ts` show them.
 
 The temporary message, route and script aren't committed; the scripts and their output go in the
 build PR's body.
@@ -351,7 +353,7 @@ Connecting Weblate is later work (D21). The round trip fixes what the component 
 messages/en.json  messages/da.json            the messages (repo root, where Weblate reads them)
 project.inlang/settings.json                   locales and the i18next plugin
 project.inlang/paraglide.config.ts             Paraglide's options, for the CLI and the Vite plugin
-src/app.html                                   <html lang="%lang%">, with the Biome suppression
+src/app.html                                   <html lang="%lang%" class="dark">, Biome suppression
 src/hooks.server.ts                            gains `handle`: the language handle
 src/hooks.client.ts                            the browser keeps the page's language
 src/lib/shared/i18n/format.ts                  formatNumber, formatDateTime (+ format.test.ts)
@@ -409,8 +411,8 @@ overwriteGetLocale(() => locale);
     machine's, and that its type refuses a call without `timeZone`.
 - **e2e (Playwright, against the built server):** `i18n.test.ts` as listed under
   [Validation](#validation); `smoke.test.ts` and `secret-key.test.ts` unchanged.
-- **One-off evidence in the PR body:** the Weblate round trip and the concurrency check, or the
-  match with obzorarr's `7368cff` that lets them be cited.
+- **One-off evidence in the PR body:** the Weblate round trip, and the concurrency check or the
+  match with obzorarr's `7368cff` that lets it be cited.
 
 ## Commands
 
@@ -436,7 +438,8 @@ the messages, so a fresh clone type-checks without a dev server having run.
   - the `i18n` line of "Open decisions each module closes" goes;
   - the tech-stack table gains both packages;
   - the setup fact on `prepare` and `check` gains the compile;
-  - the Commands rows for `bun ci` and `check` gain the compile;
+  - the Commands rows for `bun ci` and `check` gain the compile, and the `smoke` row the language
+    tests;
   - the testing section gains the new tests;
   - the Design tokens section gains the global focus rule.
 - **`docs/decisions.md`:** D22's "Still to validate" paragraph goes, with the outcome in the PR
