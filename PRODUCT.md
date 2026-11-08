@@ -43,7 +43,7 @@ The mechanism the record supports:
 - **Devices:** the whole join flow must work on a phone as well as on a computer. The record makes no claim about which devices invitees actually use.
 - **What happens after joining:** the invitee leaves Zondarr for their Plex or Jellyfin apps. The completion page is a receipt with a next step such as installing a Plex player, not a member portal (route-join-code-complete brief).
 - **Background work:** Zondarr polls the media servers. Library and user sync, invitation expiry and session cleanup run unattended as in-process jobs, and there are no webhooks (D7).
-- **Project state:** the legacy app shipped and was used by its author but was never formally released. The rewrite has its ground floor and its first module, `secrets`: no database, authentication, providers or other product modules yet (docs/SPEC.md). Routes in the surface briefs are proposed information architecture.
+- **Project state:** the legacy app shipped and was used by its author but was never formally released. The rewrite has its ground floor and its first two modules, `secrets` and `i18n` (English and Danish, with a language switcher): no database, authentication, providers or other product modules yet (docs/SPEC.md). Routes in the surface briefs are proposed information architecture.
 
 ## Product requirements
 

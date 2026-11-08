@@ -1,10 +1,11 @@
 # Spec: `i18n`
 
-**Status:** specified, approved by the owner (2026-11-08). Module 2 of the capability map
-([docs/SPEC.md](SPEC.md)); D21 and D22 hold the decisions. obzorarr is the reference app for `i18n`
-([Shared groundwork](../AGENTS.md#shared-groundwork)): this spec ports obzorarr's
-`f41c712:docs/SPEC-i18n.md`, with the message-check rules #301 added, and its code and tests at
-`7368cff`. **What differs from obzorarr:**
+**Status:** built (2026-11-08), module 2 of the capability map ([docs/SPEC.md](SPEC.md)); D21 and
+D22 hold the decisions. obzorarr is the reference app for `i18n`
+([Shared groundwork](../AGENTS.md#shared-groundwork)): this spec ported obzorarr's, with the
+message-check rules its #301 added, and its code and tests at `7368cff`. This file keeps what the
+code and tests can't say. The full text before this cut is `50a41c0:docs/SPEC-i18n.md`. **What
+differs from obzorarr:**
 - the placeholder's English and Danish text (`src/routes/(public)/+page.svelte`), and the name
   Zondarr instead of Obzorarr;
 - where the switcher shows: the placeholder `/` only, since zondarr has no landing page; the admin
@@ -18,43 +19,34 @@
 
 Everything else is the same as obzorarr's, the cookie name included, so a language chosen in one
 edbfi app carries over to the others on the same host. The global `:focus-visible` rule, which
-obzorarr left to each app's first focusable control, is the same rule as obzorarr's and lands with
+obzorarr left to each app's first focusable control, is the same rule as obzorarr's and landed with
 the switcher, zondarr's first focusable control.
 
 ## Objective
 
-Every later module writes its user-facing text as messages in English and Danish, and shows numbers
-and dates formatted for the viewer's language (D21). `i18n` builds that groundwork, and no product
-text beyond the placeholder page:
-1. **Messages** in `messages/en.json` and `messages/da.json`, which Paraglide JS compiles into typed
-   message functions (D22).
-2. **Choosing the language:** each request uses the viewer's choice, then the browser's preferred
-   languages, then English. The browser keeps the language the server chose for the page.
-3. **The language switcher.**
-4. **Formatting** numbers, dates and times for the viewer's language.
-5. **The message check:** every message exists in both languages, with the same placeholders and
-   the plural forms each language needs.
+Every later module writes its user-facing text as messages in English and Danish, compiled by
+Paraglide JS into typed message functions, and shows numbers and dates formatted for the viewer's
+language (D21, D22). Each request uses the viewer's choice, then the browser's preferred languages,
+then English, and the browser keeps the language the server chose for the page.
 
-It also runs the validations D22 lists.
+The one-off validations D22 asked for (the pinned versions with no Node on `PATH`, the Weblate round
+trip, the adapter-bun build and the concurrency check) passed in zondarr's own runs. Their scripts
+and output are in the bodies of #342 and #343, and #344 lists each with its evidence.
 
 ## Versions
 
-`@inlang/paraglide-js` 3.2.1 and `@inlang/plugin-i18next` 6.5.3, exact-pinned dev dependencies. A
-new dependency joins at its newest stable release (D26), so the build takes whatever is newest when
-it lands. The owner approved both packages for
-every edbfi app on 2026-10-29, and Paraglide JS 3 on 2026-11-06 (D22). Version 3's breaking changes
-touch nothing here: the `additionalFiles` option and the middleware's locale splitting are gone, and
-Vite builds default to a new output layout, which the config below sets explicitly. TypeScript stays
-on 6.x (D2): Paraglide 3 writes its declarations itself and needs no TypeScript.
+`@inlang/paraglide-js` 3 and `@inlang/plugin-i18next` 6, exact-pinned dev dependencies. The owner
+approved both packages for every edbfi app on 2026-10-29, and Paraglide JS 3 on 2026-11-06 (D22).
+TypeScript stays on 6.x (D2): Paraglide 3 writes its declarations itself and needs no TypeScript.
 
 ## Messages
 
 **The files** are i18next JSON v4 (D22): one flat object per language, formatted by Biome like the
-rest of the repo. Every language the project has has exactly one file, `messages/<locale>.json`,
-and there is no file for another language, which Paraglide would ignore without a word.
+rest of the repo. Every language the project has has exactly one file, and there is no file for
+another language, which Paraglide would ignore without a word.
 
-**Message names** match `^[a-z][a-z0-9]*(_[a-z0-9]+)+$`: snake_case, starting with the module or
-surface that owns them (`placeholder_title`, `error_not_found_title`). So each is a JavaScript name,
+**Message names** are snake_case, starting with the module or surface that owns them
+(`placeholder_title`, `error_not_found_title`). So each is a JavaScript name,
 `m.placeholder_title()`, and Paraglide's escaped names and the `m["a.b"]()` form of nested keys
 never appear.
 - **Plural forms:** a key that ends in a CLDR plural category (`_zero`, `_one`, `_two`, `_few`,
@@ -101,8 +93,8 @@ filled with a name can't inject markup.
 **Not translated through the messages:**
 - the name Zondarr: on its own, as in the page's `<title>`, it isn't a message, and inside a
   message it stays "Zondarr" in both languages ("Zondarr is being rebuilt.");
-- text the owner writes (D21), such as server names and the wizards' steps, which
-  `wizards` translates per step with its own content-language switch (SPEC.md's Module notes).
+- text the owner writes (D21), such as server names and the wizards' steps, which `wizards`
+  translates per step with its own content-language switch (SPEC.md's Module notes).
   That switch chooses a step's content language and is separate from the language switcher, which
   chooses the interface's. Whether the defaults `wizards` pre-fills for an interaction ("I
   understand") are messages or content is `wizards`' to decide;
@@ -113,60 +105,36 @@ filled with a name can't inject markup.
 but doesn't approve it, and Weblate corrects it later. D21 sets no English spelling, so this spec
 adds no spelling rule, and the copy follows PRODUCT.md's copy rules.
 
-**The inlang project** is `project.inlang/settings.json`:
+**The message check,** `src/lib/shared/i18n/messages.test.ts`, holds the check and its tests. It
+sits in `src/` only because Vitest runs `src/**`, so it runs in prek's `tests` hook and in CI. It
+finds every problem in `messages/*.json` against the rules above: one file for each of the
+project's languages and no other; flat, non-empty string values; names, `_ordinal_` and one key or
+plural forms; the same messages in every language; the same placeholders, names and formats in
+every form; `number` as the only format; exactly the plural forms `Intl.PluralRules` gives each
+language, each with `{{count, number}}`; and no tags.
 
-```json
-{
-	"$schema": "https://inlang.com/schema/project-settings",
-	"baseLocale": "en",
-	"locales": ["en", "da"],
-	"modules": ["./node_modules/@inlang/plugin-i18next/dist/index.js"],
-	"plugin.inlang.i18next": { "pathPattern": "./messages/{locale}.json", "contextValues": [] }
-}
-```
+## The toolchain
 
-- **The plugin loads from disk,** so nothing is fetched at build time or in CI.
+`project.inlang/settings.json` holds the locales and the i18next plugin, and
+`project.inlang/paraglide.config.ts` holds Paraglide's options, which the CLI and the Vite plugin
+both read.
+- **The plugin loads from `node_modules`,** so nothing is fetched at build time or in CI.
 - `"contextValues": []` turns off the plugin's guess at i18next contexts, which would read a key
   such as `title_short` next to `title` as a variant of `title`.
+- `outputStructure: "message-modules"` is set because the CLI and the Vite plugin would otherwise
+  write different layouts into the same folder: the Vite plugin's default (`virtual-modules`) is one
+  the CLI can't write. Running `check` beside `dev` would then rewrite the folder under the dev
+  server.
+- `project.inlang/cache/` is gitignored because Paraglide 3 writes no `.gitignore` of its own there,
+  and without the line `lint` fails on the cache files.
 
-**Paraglide's options** are in `project.inlang/paraglide.config.ts`, which both the CLI and the Vite
-plugin read, so they are kept in one place:
-
-```ts
-import { defineConfig } from "@inlang/paraglide-js";
-
-export default defineConfig({
-	outdir: "./src/lib/paraglide",
-	strategy: ["cookie", "preferredLanguage", "baseLocale"],
-	cookieSameSite: "lax",
-	cookieSecure: "auto",
-	emitTsDeclarations: true,
-	outputStructure: "message-modules",
-});
-```
-
-- `outputStructure` is set because the CLI and the Vite plugin would otherwise write different
-  layouts into the same folder: the Vite plugin's default (`virtual-modules`) is one the CLI can't
-  write. Running `check` beside `dev` would then rewrite the folder under the dev server.
-- The plugin is added to `vite.config.ts` as `paraglideVitePlugin({ project: "./project.inlang" })`,
-  with nothing else.
-- `tsconfig.json` includes `project.inlang/*.ts`, so `check` type-checks the config.
-
-**Generated files** are gitignored by two root `.gitignore` lines, which Biome also honours:
-- `src/lib/paraglide/`, the compiled output;
-- `project.inlang/cache/`, where Paraglide 3 keeps its compile cache. It writes no `.gitignore` of
-  its own there, and without the line `lint` fails on the cache files.
-
-**The compiled output** compiles in `prepare` and in `check` (the CLI, before `svelte-check`), and
-through the Vite plugin in dev, build and Vitest. Panda's `exclude` skips it.
+**The compiled output** (`src/lib/paraglide/`, gitignored):
 - **`#lib/paraglide/messages.js` and `#lib/paraglide/runtime.js`** are browser-safe.
 - **`#lib/paraglide/server.js`,** the middleware, loads `async_hooks` for AsyncLocalStorage. In app
-  code only `src/hooks.server.ts` imports it; `format.test.ts` uses it to set each request's
-  language.
+  code only `src/hooks.server.ts` imports it.
 - **The import rules:** the output is generated code that imports nothing from the app. It isn't one
   of the app's layers, so `lib/shared/`, components, services and routes import it as they import
   `#styled-system`.
-- **A message that doesn't exist** is a type error that `check` reports.
 
 ## Choosing the language
 
@@ -175,16 +143,13 @@ through the Vite plugin in dev, build and Vitest. Panda's `exclude` skips it.
 - **The order:** the `PARAGLIDE_LOCALE` cookie when it holds `en` or `da`; any other value is
   ignored. Then the best match in `Accept-Language` (`da-DK` gives `da`). Then English. There are no
   URL prefixes.
-- **One request, one language:** the language is held in AsyncLocalStorage for that request, so
-  concurrent requests can't mix.
 - **The request:** the middleware's copy of the request is passed on a copy of the event, because
   `event.request` is read-only in SvelteKit 3. The event is a plain object, so the copy keeps every
   field, and form actions read their body from it.
 - **`<html lang>`:** `transformPageChunk` writes the language into `src/app.html`'s
-  `<html lang="%lang%" class="dark">`. That attribute needs a Biome suppression comment
-  (`lint/a11y/useValidLang`) just above it. The comment must not contain the `%lang%` token itself:
-  `replace` swaps only the first occurrence, so the token in the comment would be filled in and the
-  attribute left as it was.
+  `<html lang="%lang%" class="dark">`. The Biome suppression comment just above it must not contain
+  the `%lang%` token itself: `replace` swaps only the first occurrence, so the token in the comment
+  would be filled in and the attribute left as it was.
 - **Caching:** the middleware adds `Vary: Cookie, Accept-Language` to every response. No page is
   prerendered, since a prerendered page would have one language for everyone.
 - **First in `handle`:** the language handle refuses nothing and never reads the body. Later modules
@@ -219,11 +184,9 @@ language, styled only with tokens. The group's label is a message. The owner cho
 `<select>` for obzorarr (2026-11-06), and the reason holds here: in Chrome and Edge on Windows and
 Linux, an arrow key on a closed `<select>` fires `change`, so a keyboard user looking at the options
 would be switched and lose focus (WCAG 2.2, 3.2.2 On Input).
-- **The buttons:** each names its language in that language ("English", "Dansk"), with `lang` on
-  the button. The current language's button has `aria-current="true"`, and pressing it does
-  nothing. The names come from `Intl.DisplayNames`, with the first letter upper-cased in that
-  language, through a helper private to the component. They are the same in every language, so they
-  aren't messages, and a viewer who can't read the current language still finds their own.
+- **The names:** each button names its language in that language ("English", "Dansk"), from
+  `Intl.DisplayNames`. They are the same in every language, so they aren't messages, and a viewer
+  who can't read the current language still finds their own.
 - **Pressing another language** calls Paraglide's `setLocale`, which writes `PARAGLIDE_LOCALE` and
   reloads the page in the new language. The cookie has path `/`, lasts about 400 days (Paraglide's
   default) and is `SameSite=Lax`. It is `Secure` exactly when the page is on `https`
@@ -235,12 +198,11 @@ would be switched and lose focus (WCAG 2.2, 3.2.2 On Input).
   another app wrote that isn't `en` or `da` is ignored.
 - **Without JavaScript** the switcher does nothing, and the browser's preferred languages still
   apply.
-- **Keyboard focus** is one global rule in Panda's `globalCss`: DESIGN.md's 2px `secondary` ring
-  with a 2px offset on every `:focus-visible` element. The switcher's buttons are the app's first
-  focusable controls, a per-component outline would need a 2px offset that no spacing token has
-  (`strictTokens` refuses it), and one rule keeps the ring the same on every later control.
-- **Where it shows:** on the placeholder `/`, above the heading. zondarr has no landing page
-  and no brief for `/`, so no brief gains it in this module. Each shell places it when that shell is
+- **Keyboard focus** is one global rule in Panda's `globalCss` (SPEC.md's Design tokens): a
+  per-component outline would need a 2px offset that no spacing token has (`strictTokens` refuses
+  it), and one rule keeps the ring the same on every later control.
+- **Where it shows:** on the placeholder `/`, above the heading. zondarr has no landing page and no
+  brief for `/`, so no brief gained it in this module. Each shell places it when that shell is
   built, and its module's spec updates the shell's briefs: the admin shell (`sign-in`) and the
   public join shell (`join`, the `route-join-code*.md` briefs), where it stays apart from the
   wizard's content-language switch. It needs no brief of its own.
@@ -253,171 +215,27 @@ the browser's region, so server and browser always agree: `da` formats as `da`, 
 (the owner's choice, 2026-11-06, for every edbfi app), with the day first and a 24-hour clock
 ("05/11/2026, 23:30"). A message's `{{name, number}}` formats as `en`, which groups numbers the same
 way.
-- `formatNumber(value: number, options?: Intl.NumberFormatOptions)`: `Intl.NumberFormat`.
-- `formatDateTime(value: Date, options: Intl.DateTimeFormatOptions & { timeZone: string })`:
-  `Intl.DateTimeFormat`.
+- `formatNumber(value, options?)`: `Intl.NumberFormat`.
+- `formatDateTime(value, options & { timeZone: string })`: `Intl.DateTimeFormat`.
   - **The zone is required,** so nothing is formatted in the server's or the browser's own zone,
     which differ from each other and give a server-rendered page and its hydrated copy different
     text.
   - **Which zone:** zondarr has no instance zone, and every caller passes a zone explicitly.
     Callers pass `"UTC"` for a calendar value, such as a month's name or a date with no time of day.
-    The zone a point in time is shown in (a sync run, a log entry) is decided in the spec
-    of the first module that shows one; if that needs a setting, that module asks the owner. That
-    records are stored in UTC (`setup`'s Module notes) doesn't decide how they are shown.
+    The zone a point in time is shown in (a sync run, a log entry) is decided in the spec of the
+    first module that shows one; if that needs a setting, that module asks the owner. That records
+    are stored in UTC (`setup`'s Module notes) doesn't decide how they are shown.
 
 Counts and quantities inside a message use `{{name, number}}` instead. Other formatters (relative
 times, lists) come with the first module that needs one.
 
-## The message check
-
-`src/lib/shared/i18n/messages.test.ts` holds the check and its tests. It sits in `src/` only because
-Vitest runs `src/**`. The check finds every problem in a set of message files, for the project's
-languages and its base language as Paraglide's runtime gives them, and the tests run it on
-`messages/*.json` and on small in-memory files that break each rule once. It checks that:
-- every language the project has has its file, and no file is for another language;
-- each file is one JSON object, and every value is a non-empty string (only whitespace counts as
-  empty), so the files stay flat;
-- every message name fits the rule above, no key contains `_ordinal_`, and no message is both one
-  key and plural forms;
-- English and Danish have the same messages;
-- every form of a message, in both languages, has the same placeholders, names and formats;
-- no placeholder has a format other than `number`;
-- each plural message has exactly the forms `Intl.PluralRules(locale)` gives for each language, and
-  every form contains `{{count, number}}`;
-- no value holds anything shaped like a tag, as "No tags" defines it.
-
-Each clause has an in-memory pair that breaks only it, and the test asserts the exact list of
-problems, so nothing else is reported; a pair with several problems reports them all. Plain angle
-brackets in prose are cases that must pass. It runs in the existing `tests` hook and in CI, so no
-new hook is needed.
-
-## Validation
-
-The build runs D22's three validations, and a concurrency check, with the pinned versions:
-- **The pinned versions with SvelteKit 3, TypeScript 6 and Bun:** `check`, `test`, `build`,
-  `smoke` and prek pass with no Node on `PATH` (zondarr's own CI, whose jobs run with failing
-  `node`, `npm` and `npx` first on `PATH`).
-- **Building and serving through adapter-bun:** `tests/e2e/i18n.test.ts`, against the built server
-  started as the secrets spec requires (`bun --no-env-file ./build`, with the generated key only).
-  It also closes D16's "browser interaction with a real component". It checks that:
-  - a Danish browser (Playwright locale `da-DK`) gets `/` in Danish with `<html lang="da">` and
-    `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
-  - pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en` with
-    path `/`, `SameSite=Lax` and without `Secure` over plain HTTP, and the next visit stays in
-    English;
-  - a browser with locale `fr-FR`, whose `navigator.languages` an init script sets to `fr-FR`,
-    `da-DK`, gets English, the switcher marks English as current after hydration, and no cookie is
-    written; pressing "English" there does nothing, with no reload and no cookie. Playwright's
-    `locale` sets both the header and `navigator.languages`, so only the script can split them;
-  - none of these logs a console error.
-
-  The existing smoke test keeps passing in English, Playwright's default locale, and
-  `secret-key.test.ts` is unchanged.
-- **A Weblate round trip:** a one-off `uv run --script` with translate-toolkit's `I18NextV4File`.
-  It reads `messages/da.json` with a temporary plural message that has `{{count, number}}` and
-  another placeholder, changes it, and writes it back with one tab of indentation. Weblate's
-  `json_indent: 1` with `json_indent_style: tabs` sets exactly that on the same class
-  (`weblate/trans/file_format_params.py`). It passes when:
-  - the file parses to the same JSON before the edit;
-  - Biome finds nothing to reformat;
-  - Paraglide compiles the result;
-  - both plural forms render.
-- **Concurrency:** it passes when 200 concurrent requests in both languages against the built
-  server, through a temporary route that awaits a random delay in its `load`, each render in their
-  own language.
-
-**Citing obzorarr instead:** the Weblate round trip and the concurrency check may cite obzorarr's
-#297 and #298 only if the build PR's body shows that all of these match obzorarr's `7368cff`: the
-versions of `@inlang/paraglide-js`, `@inlang/plugin-i18next`, `@sveltejs/kit`,
-`@sveltejs/adapter-bun`, `typescript`, Bun, Vite and Biome, and `biome.json`, `project.inlang/*` and
-`hooks.{server,client}.ts`. If anything has moved, the PR reruns #297's round trip and probes and
-#298's concurrency script, with the output in its body. Task 1 adds no `handle` and no
-`hooks.client.ts`, so its hooks can't match `7368cff`'s, and it reruns the round trip; task 2's
-can, so it may cite #298. The pinned versions with no Node on `PATH` and adapter-bun are never
-cited: zondarr's own CI and `i18n.test.ts` show them.
-
-The temporary message, route and script aren't committed; the scripts and their output go in the
-build PR's body.
-
 ## Weblate
 
-Connecting Weblate is later work (D21). The round trip fixes what the component needs:
+Connecting Weblate is later work (D21). The round trip in #342 fixed what the component needs:
 - format `i18nextv4`, monolingual;
 - file mask `messages/*.json`, with `messages/en.json` as the base file;
 - file format parameters `json_indent: 1` and `json_indent_style: tabs`, with keys left unsorted,
   so its commits pass Biome.
-
-## Project structure
-
-```text
-messages/en.json  messages/da.json            the messages (repo root, where Weblate reads them)
-project.inlang/settings.json                   locales and the i18next plugin
-project.inlang/paraglide.config.ts             Paraglide's options, for the CLI and the Vite plugin
-src/app.html                                   <html lang="%lang%" class="dark">, Biome suppression
-src/hooks.server.ts                            gains `handle`: the language handle
-src/hooks.client.ts                            the browser keeps the page's language
-src/lib/shared/i18n/format.ts                  formatNumber, formatDateTime (+ format.test.ts)
-src/lib/shared/i18n/messages.test.ts           the message check
-src/lib/components/layout/LanguageSwitcher.svelte
-src/routes/(public)/+page.svelte               the placeholder's text as messages, and the switcher
-tests/e2e/i18n.test.ts                         serving both languages, the switcher
-```
-
-The placeholder's text, as messages: "Zondarr is being rebuilt." and "The invitation pages and the
-admin console are on their way back. Invitation links don't open yet.", in English as today and in
-an agent's Danish. The page keeps its layout: the switcher goes above the heading, with no
-wordmark added, and `<title>Zondarr</title>` stays as it is.
-
-The build also changes:
-- `package.json`: the two packages, and the Paraglide compile in `prepare` and `check`, after
-  `svelte-kit sync` and before Panda's codegen;
-- `vite.config.ts`: the plugin;
-- `tsconfig.json`: `project.inlang/*.ts`;
-- `panda.config.ts`: `exclude`, and the global `:focus-visible` rule;
-- `.gitignore`: the two generated folders.
-
-## Code style
-
-As in [docs/SPEC.md](SPEC.md#code-style). The hooks stay thin:
-
-```ts
-// src/hooks.server.ts (the `init` hook stays as it is)
-export const handle: Handle = ({ event, resolve }) =>
-	paraglideMiddleware(event.request, ({ request, locale }) =>
-		resolve(
-			{ ...event, request },
-			{ transformPageChunk: ({ html }) => html.replace("%lang%", locale) },
-		),
-	);
-```
-
-```ts
-// src/hooks.client.ts
-import { baseLocale, isLocale, overwriteGetLocale } from "#lib/paraglide/runtime.js";
-
-// The page keeps the language the server chose for it (SPEC-i18n.md, "Choosing the language").
-const lang = document.documentElement.lang;
-const locale = isLocale(lang) ? lang : baseLocale;
-overwriteGetLocale(() => locale);
-```
-
-## Testing strategy
-
-- **Unit (Vitest):**
-  - the message check;
-  - `format.test.ts`, which runs the formatters inside `paraglideMiddleware` with a request for each
-    language (the language comes from the request, as in the app), and checks that English dates
-    format as `en-GB` and that `formatDateTime` follows the time zone it is given, not the
-    machine's, and that its type refuses a call without `timeZone`.
-- **e2e (Playwright, against the built server):** `i18n.test.ts` as listed under
-  [Validation](#validation); `smoke.test.ts` and `secret-key.test.ts` unchanged.
-- **One-off evidence in the PR body:** the Weblate round trip, and the concurrency check or the
-  match with obzorarr's `7368cff` that lets it be cited.
-
-## Commands
-
-The ground floor's commands ([docs/SPEC.md](SPEC.md#commands)). `prepare` and `check` also compile
-the messages, so a fresh clone type-checks without a dev server having run.
 
 ## Boundaries
 
@@ -430,30 +248,3 @@ the messages, so a fresh clone type-checks without a dev server having run.
 - **Never:** text written into a component or service; `{{name, datetime}}` or a tag in a message;
   a prerendered page with translated text; the server writing the language cookie; connecting
   Weblate in this module.
-
-## Docs this module changes when built
-
-- **`docs/SPEC.md`:**
-  - the status line, and row 2 of the capability map marked **Built.**;
-  - the `i18n` line of "Open decisions each module closes" goes;
-  - the tech-stack table gains both packages;
-  - the setup fact on `prepare` and `check` gains the compile;
-  - the Commands rows for `bun ci` and `check` gain the compile, and the `smoke` row the language
-    tests;
-  - the testing section gains the new tests;
-  - the Design tokens section gains the global focus rule.
-- **`docs/decisions.md`:** D22's "Still to validate" paragraph goes, with the outcome in the PR
-  body; D16 drops browser interaction with a real component.
-- **"The viewer's locale"** becomes "the viewer's language" in D21 and in SPEC.md's capability-map
-  note and row 2.
-- **AGENTS.md:** the status and the structure tree.
-- **PRODUCT.md:** the project state names `i18n` among the built modules.
-
-## Success criteria
-
-1. The tests above pass, with `check`, `lint`, `build`, `smoke` and prek, and CI's `checks`,
-   `smoke` and `ci-ok` pass.
-2. The built server serves `/` in Danish to a Danish browser and in English otherwise, and the
-   switcher changes it. `/healthz` is unchanged.
-3. The validations have passed, with their evidence in the build PRs' bodies.
-4. The docs listed above say what was built.
