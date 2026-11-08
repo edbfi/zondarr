@@ -752,8 +752,8 @@ export const GET: RequestHandler = () => healthResponse();
   `cache-control: no-store`), the `secrets` module (`config/secret-key.test.ts`, and
   `key-text.test.ts`, `keyring.test.ts`, `cipher.test.ts` and `secret.test.ts` in
   `security/secrets/`, under `src/lib/server/`), and `src/lib/shared/i18n/messages.test.ts`, the
-  message check, which finds every problem in `messages/*.json`, and breaks each of its rules once
-  in small files held in memory, to show that each is reported.
+  message check, which finds every problem in `messages/*.json`; its tests break each rule once in
+  small files held in memory, to show that each is reported.
 
   Component tests use happy-dom when components exist; never jsdom.
 - **e2e (Playwright, Chromium, under Bun):** against the built adapter-bun server, with a master key
