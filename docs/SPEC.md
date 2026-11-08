@@ -710,7 +710,7 @@ Setup facts for this stack:
 | `bun run --bun preview` | runs the built server (`bun ./build`; `PORT`, default 3000, and `HOST`); without a valid key it exits before listening |
 | `bun run --bun check` | `svelte-kit sync`, the message compile, Panda codegen, then `svelte-check` failing on any error or warning |
 | `bun run --bun test` | Vitest unit tests, once (no watch) |
-| `bun run --bun smoke` | Playwright e2e: the browser smoke test and the startup tests, with a key it generates, never a developer's `.env` or exported key; it starts the built server, so `build` comes first, and Chromium comes from `bunx --bun playwright install chromium` |
+| `bun run --bun smoke` | Playwright e2e: the browser smoke test, the language tests and the startup tests, with a key it generates, never a developer's `.env` or exported key; it starts the built server, so `build` comes first, and Chromium comes from `bunx --bun playwright install chromium` |
 | `bun run --bun lint` | `biome ci`, read-only; `biome.json` lists the file extensions Biome checks |
 | `prek run --all-files --hook-stage manual` | everything CI's `checks` job runs |
 
@@ -742,6 +742,8 @@ export const GET: RequestHandler = () => healthResponse();
 - Only `@pandacss/preset-base` is loaded (utilities and conditions), so no preset palette competes
   with the app's tokens, and `strictTokens` makes a raw value in `css()` a type error that `check`
   reports.
+- Keyboard focus is one global rule in `globalCss`: DESIGN.md's 2px `secondary` ring with a 2px
+  offset on every `:focus-visible` element, so controls don't each restyle it.
 - The placeholder page uses only Panda tokens: no raw colour, size or font values in components. Its
   heading uses the `h1` style (Outfit); DM Serif Display stays reserved for the public welcome and
   success surfaces.
@@ -763,6 +765,14 @@ export const GET: RequestHandler = () => healthResponse();
     background token and `h1` text style and logs no console errors, and that `/healthz` returns
     `ok`.
   - `secret-key.test.ts` checks that the built server refuses to start without a valid key.
+  - `i18n.test.ts` checks that a Danish browser gets `/` in Danish with `<html lang="da">` and
+    `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
+    that pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en`
+    with path `/`, `SameSite=Lax` and without `Secure` over plain HTTP, and keeps the next visit in
+    English; and that a browser whose `Accept-Language` says `fr-FR` but whose
+    `navigator.languages` lists `da-DK` gets English, the switcher marks English as current after
+    hydration, pressing it does nothing, and no cookie is written. None logs a console error. The
+    smoke test runs in English, Playwright's default.
 - prek runs the unit tests (`tests` hook); CI's `smoke` job builds with no key and runs `smoke`.
 
 ## CI and repo tooling

@@ -1,4 +1,5 @@
 {
 	"placeholder_title": "Zondarr is being rebuilt.",
-	"placeholder_status": "The invitation pages and the admin console are on their way back. Invitation links don't open yet."
+	"placeholder_status": "The invitation pages and the admin console are on their way back. Invitation links don't open yet.",
+	"language_switcher_label": "Language"
 }
