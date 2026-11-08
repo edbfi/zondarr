@@ -2,7 +2,8 @@
 
 **Status:** the ground floor (skeleton) is specified here, approved by the orchestrator
 (2026-10-18) and built. The capability map below is approved; module 1, `secrets`, is built
-([SPEC-secrets.md](SPEC-secrets.md)).
+([SPEC-secrets.md](SPEC-secrets.md)), and module 2, `i18n`, is specified, approved by the owner
+(2026-11-08) ([SPEC-i18n.md](SPEC-i18n.md)).
 
 ## Objective
 
@@ -68,13 +69,14 @@ something they can use, so everything before it is the shortest path there.
 ### Where modules live
 
 Paths are under `src/lib/server/`, except those starting with `routes/` (under `src/`) or `lib/`
-(under `src/`), and `hooks.server.ts` (`src/hooks.server.ts`). They follow the
+(under `src/`), the hooks (`src/hooks.server.ts`, `src/hooks.client.ts`), and `messages/` and
+`project.inlang/` (the repo root). They follow the
 [Code structure](../AGENTS.md#code-structure) layout:
 
 | Module | Main homes |
 |---|---|
 | `secrets` | `security/secrets/` (key checks, keyring, cipher, `Secret`), `config/secret-key.ts`, `src/env.ts` and the `init` hook in `hooks.server.ts` |
-| `i18n` | `messages/en.json` and `messages/da.json`, `project.inlang/` (Paraglide's settings), `lib/shared/i18n/` (formatting); `paraglideMiddleware` in `hooks.server.ts` |
+| `i18n` | `messages/en.json` and `messages/da.json`, `project.inlang/` (the inlang project and Paraglide's options), `lib/shared/i18n/` (formatting and the message check), `lib/components/layout/LanguageSwitcher.svelte`; the language handle in `hooks.server.ts`, and `hooks.client.ts` |
 | `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`, `security/headers.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate and the headers in `hooks.server.ts` |
 | `sign-in` | `services/sign-in/` (sessions and their storage, recovery), `db/` session schema, `jobs/session-cleanup.ts`, `security/` (session-token and password hashing, rate limiting, the cross-origin check), `vite.config.ts` (SvelteKit's own form check off); the sign-in at the claim in `routes/setup/`, `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
 | `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/`; the offer in `routes/setup/`, the challenge page beside the sign-in page, its section in `routes/(admin)/admin/settings/`, and the reminder in `lib/components/layout/` |
@@ -153,17 +155,11 @@ app and adapted to the decisions. It is behaviour to keep unless the module's ap
 decision changes it. Layout, placement, visuals and exact wording are not behaviour: where a note
 describes them, DESIGN.md and the surface's brief win, and for a surface with no brief yet the note
 is only a starting point for that brief. Each block moves into its module's `SPEC-<id>.md` when that
-module is specced. Rate limits are listed once, under `sign-in`. `i18n`, `setup`, `sign-in` and
+module is specced. Rate limits are listed once, under `sign-in`. `setup`, `sign-in` and
 `two-factor` are shared with the other edbfi apps (D20): a bullet or clause marked "(zondarr)" is
 this app's own, and the rest is the shared wording; a "(zondarr)" mark inside a bullet covers the
 rest of that bullet, and "(zondarr: …)" only its own parentheses. Decision numbers in these blocks
 are zondarr's; each app cites its own.
-
-#### i18n
-
-- A number in a message that states how the app behaves (a limit, a duration, a count) is passed in
-  as a parameter from the constant the logic uses, never written into the text, so the copy can't
-  drift from the behaviour.
 
 #### setup
 
@@ -223,9 +219,9 @@ are zondarr's; each app cites its own.
   check before `handle` is the remote-function one, which nothing uses. The cross-origin check
   replaces SvelteKit's form check.
 - **The cross-origin check** asks the browser, so the app doesn't need to know its own address and
-  stores none. It runs first in `handle` for every method except GET, HEAD and OPTIONS, and for
-  every content type (form, JSON, multipart, `text/plain`, empty). Internal `event.fetch`
-  subrequests (`event.isSubRequest`) skip it.
+  stores none. It is the first check in `handle`, after only the language (`i18n`), for every
+  method except GET, HEAD and OPTIONS, and for every content type (form, JSON, multipart,
+  `text/plain`, empty). Internal `event.fetch` subrequests (`event.isSubRequest`) skip it.
   - An `Origin` header, whenever it is present, must parse as one bare `http` or `https` origin;
     `null`, a malformed value or several values are refused. This applies on every branch below.
   - With `ORIGIN` set, a present `Origin` must equal `ORIGIN`, compared as parsed origins. Without
