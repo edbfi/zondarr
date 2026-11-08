@@ -1,9 +1,9 @@
 # Spec: zondarr
 
 **Status:** the ground floor (skeleton) is specified here, approved by the orchestrator
-(2026-10-18) and built. The capability map below is approved; module 1, `secrets`, is built
-([SPEC-secrets.md](SPEC-secrets.md)), and module 2, `i18n`, is specified, approved by the owner
-(2026-11-08) ([SPEC-i18n.md](SPEC-i18n.md)).
+(2026-10-18) and built. The capability map below is approved; module 1, `secrets`
+([SPEC-secrets.md](SPEC-secrets.md)), and module 2, `i18n` ([SPEC-i18n.md](SPEC-i18n.md)), are
+built.
 
 ## Objective
 
@@ -34,12 +34,12 @@ adds in that layout, and review checks them. In short:
 - Tests sit next to their source.
 
 **Every module writes its text in English and Danish** through `i18n` (D21): no user-facing text in
-components or services, and dates and numbers formatted for the viewer's locale.
+components or services, and dates and numbers formatted for the viewer's language.
 
 | # | Module id | Responsibility | Depends on | Surfaces |
 |---|---|---|---|---|
 | 1 | `secrets` | **Built.** Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20, D25), and the secret wrapper that shows only a redaction marker and opens at one named call | — | — |
-| 2 | `i18n` | The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's locale, and a check that every message exists in both languages | — | the language switcher in each shell |
+| 2 | `i18n` | **Built.** The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's language, and a check that every message exists in both languages | — | the language switcher in each shell |
 | 3 | `setup` | Startup checks, database and migrations, settings, structured logging with redaction, security headers and CSP (ground-floor choice 3), the setup gate, the bootstrap token, printed to the console and never through the stored logs, and claiming the instance for its one owner. zondarr adds environment locks on settings and the referrer policy among the headers, and replaces `/healthz` with the fuller health of ground-floor choice 5 | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
 | 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out (POST only), rate limits on sign-in and the claim, the cross-origin check (it asks the browser, stores no address and takes `ORIGIN` as an optional override), app-named cookies that work over plain HTTP at home and behind an HTTPS proxy, password change, error pages, recovery (D20), and the admin shell. zondarr adds the session cleanup job, whose interval later jobs share, the lockout on sign-in, rate limits on the join page (code validation and submission, redeeming and starting a Plex sign-in, listed under `sign-in`), and the origin test, which only diagnoses: it compares the address the browser uses with the `Host` the app receives and `ORIGIN` when set, suggests `ORIGIN=<address>` or the proxy line `proxy_set_header Host $http_host`, and saves nothing; its suggestion also shows on the claim and owner sign-in pages, so someone without a session can recover | `setup` | owner sign-in (no brief yet); the origin test's hint on the claim and owner sign-in pages; the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections (`invitations` adds the public invite address to General); the password section of `/admin/settings` (Account) |
 | 5 | `two-factor` | Optional but strongly recommended (D20): authenticator codes, backup codes and the challenge after every way of signing in (except the optional OIDC skip, D20), with replay protection and the attempt limit. Recovery turns it off. Adds the offer to first-run setup, right after the owner account is created and before any connection step, and the reminder in the admin shell while it is off | `sign-in` | the two-factor offer in first-run setup; the two-factor section of `/admin/settings` (Account); the reminder in the admin shell |
@@ -97,8 +97,6 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 
 ### Open decisions each module closes
 
-- `i18n`: the validation that D22 lists (pinned versions, the adapter-bun build, a Weblate round
-  trip).
 - `setup`: D15 (Drizzle and Turso pair) and the logging library half of D14.
 - `sign-in`: how long an owner session lasts.
 - `sign-in`: the password rules: the minimum length, whether a list of common passwords is refused,
@@ -753,9 +751,12 @@ export const GET: RequestHandler = () => healthResponse();
 - **Unit (Vitest, `node` environment):** the `/healthz` handler (status 200, body `ok`,
   `cache-control: no-store`), the `secrets` module (`config/secret-key.test.ts`, and
   `key-text.test.ts`, `keyring.test.ts`, `cipher.test.ts` and `secret.test.ts` in
-  `security/secrets/`, under `src/lib/server/`), and `src/lib/shared/i18n/messages.test.ts`, the
-  message check, which finds every problem in `messages/*.json`; its tests break each rule once in
-  small files held in memory, to show that each is reported.
+  `security/secrets/`, under `src/lib/server/`), and in `src/lib/shared/i18n/`:
+  - `format.test.ts` runs the formatters inside `paraglideMiddleware` with a request for each
+    language and checks that English formats as `en-GB` and that `formatDateTime` follows the zone
+    it is given, not the machine's;
+  - `messages.test.ts`, the message check, finds every problem in `messages/*.json`; its tests
+    break each rule once in small files held in memory, to show that each is reported.
 
   Component tests use happy-dom when components exist; never jsdom.
 - **e2e (Playwright, Chromium, under Bun):** against the built adapter-bun server, with a master key

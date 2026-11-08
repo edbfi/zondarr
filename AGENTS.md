@@ -274,7 +274,9 @@ unit tests, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). P
 come next, in the order of the approved capability map in `docs/SPEC.md`, each through an
 owner-approved `docs/SPEC-<id>.md`. Module 1, `secrets`
 ([`docs/SPEC-secrets.md`](docs/SPEC-secrets.md)), is built and ready for consumers. Nothing stores
-a secret yet, and no database exists.
+a secret yet, and no database exists. Module 2, `i18n` ([`docs/SPEC-i18n.md`](docs/SPEC-i18n.md)),
+is built: pages are served in English or Danish, with a language switcher, number and date
+formatters, and a check of the message files.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -332,8 +334,9 @@ src/
                                  one native button per language, named in that language
     paraglide/                   the compiled messages (generated, gitignored)
     shared/                      browser-safe shared code
-      i18n/messages.test.ts      the message check: both languages, the same placeholders, the
-                                 plural forms each language needs
+      i18n/                      format.ts: numbers and dates in the current language, always in
+                                 a given time zone; messages.test.ts: the message check, both
+                                 languages, the same placeholders, the plural forms each needs
 static/                          served as is (zondarr-logo.svg, also the favicon)
 tests/
   e2e/smoke.test.ts              Playwright smoke against the built server
