@@ -1,6 +1,6 @@
 # Spec: `i18n`
 
-**Status:** specified, awaiting the owner's approval. Module 2 of the capability map
+**Status:** specified, approved by the owner (2026-11-08). Module 2 of the capability map
 ([docs/SPEC.md](SPEC.md)); D21 and D22 hold the decisions. obzorarr is the reference app for `i18n`
 ([Shared groundwork](../AGENTS.md#shared-groundwork)): this spec ports obzorarr's
 `f41c712:docs/SPEC-i18n.md`, with the message-check rules #301 added, and its code and tests at

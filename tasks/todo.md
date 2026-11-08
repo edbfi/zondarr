@@ -45,7 +45,7 @@ the message check. Run the Weblate round trip.
 
 **Verification:** `bun run --bun test`, `check`, `lint`, `build`, `smoke`, prek.
 
-**Dependencies:** the owner's approval of the spec and this task list.
+**Dependencies:** none; the spec and this task list were approved by the owner (2026-11-08).
 
 **Files:** `package.json`, `bun.lock`, `project.inlang/settings.json`,
 `project.inlang/paraglide.config.ts`, `messages/en.json`, `messages/da.json`, `vite.config.ts`,

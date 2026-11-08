@@ -80,5 +80,5 @@ tasks, one PR each, each test first. The tasks are in [todo.md](todo.md). Each P
 
 ## Open questions
 
-None for the build. The owner approves the spec and this plan before task 1 starts; the choices the
-port made in their absence are in the spec PR's body under "Decided by council".
+None for the build. The spec and this plan were approved by the owner (2026-11-08), with the choices
+the port made in their absence, in the spec PR's body under "Decided by council".
