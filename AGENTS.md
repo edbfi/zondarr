@@ -324,16 +324,25 @@ src/
                                  secret bound to its table, field and row, and decrypts it only
                                  there
     components/                  later: ui/ (Ark wrappers), layout/, <feature>/
-    shared/                      later: browser-safe shared code
+    paraglide/                   the compiled messages (generated, gitignored)
+    shared/                      browser-safe shared code
+      i18n/messages.test.ts      the message check: both languages, the same placeholders, the
+                                 plural forms each language needs
 static/                          served as is (zondarr-logo.svg, also the favicon)
 tests/
   e2e/smoke.test.ts              Playwright smoke against the built server
   e2e/secret-key.test.ts         the built server refuses to start without a valid key
   fixtures/demo-fixtures.json    design fixtures
+messages/en.json  messages/da.json
+                                 the messages, flat i18next JSON v4, at the root where Weblate
+                                 reads them
+project.inlang/                  settings.json: the locales and the i18next plugin;
+                                 paraglide.config.ts: Paraglide's options, which the CLI and the
+                                 Vite plugin both read
 drizzle/                         later: reviewed migrations
 panda.config.ts                  every design token; components use them through
                                  `#styled-system/<module>` (generated, gitignored)
-vite.config.ts                   SvelteKit (all its configuration), Panda and Vitest
+vite.config.ts                   SvelteKit (all its configuration), Panda, Paraglide and Vitest
 playwright.config.ts  tsconfig.json  package.json  bun.lock
 ```
 

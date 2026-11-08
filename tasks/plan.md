@@ -44,7 +44,7 @@ tasks, one PR each, each test first. The tasks are in [todo.md](todo.md). Each P
 
 ### Phase 1: the toolchain
 
-- [ ] Task 1: Paraglide compiles the messages, and the message check
+- [x] Task 1: Paraglide compiles the messages, and the message check
 
 ### Phase 2: each page in the viewer's language
 
