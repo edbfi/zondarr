@@ -17,7 +17,7 @@ the message check. Run the Weblate round trip.
 
 **Acceptance criteria:**
 - [ ] `@inlang/paraglide-js` and `@inlang/plugin-i18next` are exact-pinned dev dependencies at their
-  newest stable releases (D26; 3.2.1 and 6.5.3 on 2026-11-08). `project.inlang/settings.json` and
+  newest stable releases (D26; SPEC-i18n.md, "Versions"). `project.inlang/settings.json` and
   `project.inlang/paraglide.config.ts` are as the spec gives them, and the Vite plugin is added
   with nothing else.
 - [ ] `prepare` and `check` compile the messages after `svelte-kit sync` and before Panda's

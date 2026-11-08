@@ -39,9 +39,9 @@ It also runs the validations D22 lists.
 
 ## Versions
 
-`@inlang/paraglide-js` 3.2.1 and `@inlang/plugin-i18next` 6.5.3, the newest stable releases on
-2026-11-08, exact-pinned dev dependencies: a new dependency joins at its newest stable release
-(D26), so the build takes whatever is newest when it lands. The owner approved both packages for
+`@inlang/paraglide-js` 3.2.1 and `@inlang/plugin-i18next` 6.5.3, exact-pinned dev dependencies. A
+new dependency joins at its newest stable release (D26), so the build takes whatever is newest when
+it lands. The owner approved both packages for
 every edbfi app on 2026-10-29, and Paraglide JS 3 on 2026-11-06 (D22). Version 3's breaking changes
 touch nothing here: the `additionalFiles` option and the middleware's locale splitting are gone, and
 Vite builds default to a new output layout, which the config below sets explicitly. TypeScript stays
@@ -188,8 +188,8 @@ through the Vite plugin in dev, build and Vitest. Panda's `exclude` skips it.
 - **Caching:** the middleware adds `Vary: Cookie, Accept-Language` to every response. No page is
   prerendered, since a prerendered page would have one language for everyone.
 - **First in `handle`:** the language handle refuses nothing and never reads the body. Later modules
-  add their stages after it with `sequence`, the cross-origin check (`sign-in`) first among them.
-  Errors thrown while rendering a route reach `+error.svelte` in the viewer's language.
+  add their stages after it with `sequence`. Errors thrown while rendering a route reach
+  `+error.svelte` in the viewer's language.
 
 **A later stage that refuses a request returns its response; it never throws.** An error thrown out
 of a `handle` stage, `error(403)` included, leaves the middleware. SvelteKit then renders its
