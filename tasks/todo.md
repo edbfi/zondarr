@@ -16,29 +16,29 @@ hold the placeholder page's text in English and Danish, which the page starts us
 the message check. Run the Weblate round trip.
 
 **Acceptance criteria:**
-- [ ] `@inlang/paraglide-js` and `@inlang/plugin-i18next` are exact-pinned dev dependencies at their
+- [x] `@inlang/paraglide-js` and `@inlang/plugin-i18next` are exact-pinned dev dependencies at their
   newest stable releases (D26; SPEC-i18n.md, "Versions"). `project.inlang/settings.json` and
   `project.inlang/paraglide.config.ts` are as the spec gives them, and the Vite plugin is added
   with nothing else.
-- [ ] `prepare` and `check` compile the messages after `svelte-kit sync` and before Panda's
+- [x] `prepare` and `check` compile the messages after `svelte-kit sync` and before Panda's
   codegen, calling the CLI as `bun --bun <bin>`, so a fresh clone's `bun ci` compiles them, and
   `check` then type-checks `project.inlang/*.ts`. Everything passes with no Node on `PATH` (CI's
   shims). Running `check` while `dev` is up doesn't rewrite the output under the dev server.
-- [ ] A call to a message that doesn't exist fails `check`, shown with a probe that isn't
+- [x] A call to a message that doesn't exist fails `check`, shown with a probe that isn't
   committed, its output in the PR body.
-- [ ] `src/lib/paraglide/` and `project.inlang/cache/` are gitignored, Panda's `exclude` skips the
+- [x] `src/lib/paraglide/` and `project.inlang/cache/` are gitignored, Panda's `exclude` skips the
   output, and `lint` and prek pass with it present.
-- [ ] The message files are flat and Biome-formatted, their names fit the spec's rule, and the name
+- [x] The message files are flat and Biome-formatted, their names fit the spec's rule, and the name
   Zondarr inside a message stays "Zondarr" in both languages. The page's text stays as it is until
   task 2.
-- [ ] **Test first:** once the toolchain compiles, `messages.test.ts` is written with
+- [x] **Test first:** once the toolchain compiles, `messages.test.ts` is written with
   `checkMessages` stubbed to return `[]`, and every case that breaks a rule fails (the real files
   and the valid pair pass), as in #301; the output is in the PR body.
-- [ ] The check passes on `messages/*.json`. Every rule in the spec's list, each clause on its own,
+- [x] The check passes on `messages/*.json`. Every rule in the spec's list, each clause on its own,
   has an in-memory file that breaks only it and is reported with the exact list of problems; a file
   with several problems reports them all; plain angle brackets in prose pass. Each rule, switched
   off in turn, fails exactly its own cases, shown in the PR body.
-- [ ] The Weblate round trip passes all four of the spec's conditions, with the script and its
+- [x] The Weblate round trip passes all four of the spec's conditions, with the script and its
   output in the PR body. It can't cite #297: this task's hooks don't match `7368cff`'s yet
   (SPEC-i18n.md, "Citing obzorarr instead"). Neither the script nor its temporary message is
   committed.

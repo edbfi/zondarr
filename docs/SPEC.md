@@ -677,6 +677,7 @@ newest stable release (D26). Every package is a dev dependency, so adapter-bun b
 | Adapter | `@sveltejs/adapter-bun` |
 | Styling | `@pandacss/dev`, `@pandacss/vite` (its Vite plugin), `@pandacss/preset-base` |
 | Primitives | `@ark-ui/svelte` |
+| Translation | `@inlang/paraglide-js` (compiles the messages), `@inlang/plugin-i18next` (reads their i18next JSON v4 files) |
 | Type check | `svelte-check` |
 | Unit tests | `vitest` (`node` environment); `happy-dom` joins with the first component test |
 | e2e | `@playwright/test` (Chromium) |
@@ -688,7 +689,8 @@ Setup facts for this stack:
 - Package subpath imports replace `$lib` and need explicit file targets: `#lib/*` maps to
   `./src/lib/*` and imports name the file with its extension (`#lib/server/services/health.ts`);
   `#styled-system/*` maps to the generated `./styled-system/*/index.js`.
-- `svelte-kit sync` runs before Panda's codegen, in `prepare` and in `check`.
+- `prepare` and `check` run `svelte-kit sync`, then Paraglide's compile, then Panda's codegen.
+  Dev, build and Vitest compile the messages through Paraglide's Vite plugin.
 - The Panda Vite plugin appends the generated CSS to the stylesheet that declares the layer order
   (`src/app.css`), and `transform: true` turns static `css()` calls into class strings at build
   time.
@@ -702,11 +704,11 @@ Setup facts for this stack:
 
 | Command | Does |
 |---|---|
-| `bun ci` | frozen install; `prepare` runs `svelte-kit sync` and Panda codegen |
+| `bun ci` | frozen install; `prepare` runs `svelte-kit sync`, the message compile and Panda codegen |
 | `bun run --bun dev` | Vite dev server; needs a key in `.env` or the environment, and without one every request fails with the key error |
 | `bun run --bun build` | production build through adapter-bun into `build/`; needs no key and never embeds one |
 | `bun run --bun preview` | runs the built server (`bun ./build`; `PORT`, default 3000, and `HOST`); without a valid key it exits before listening |
-| `bun run --bun check` | `svelte-kit sync`, Panda codegen, then `svelte-check` failing on any error or warning |
+| `bun run --bun check` | `svelte-kit sync`, the message compile, Panda codegen, then `svelte-check` failing on any error or warning |
 | `bun run --bun test` | Vitest unit tests, once (no watch) |
 | `bun run --bun smoke` | Playwright e2e: the browser smoke test and the startup tests, with a key it generates, never a developer's `.env` or exported key; it starts the built server, so `build` comes first, and Chromium comes from `bunx --bun playwright install chromium` |
 | `bun run --bun lint` | `biome ci`, read-only; `biome.json` lists the file extensions Biome checks |
@@ -747,10 +749,13 @@ export const GET: RequestHandler = () => healthResponse();
 ## Testing strategy
 
 - **Unit (Vitest, `node` environment):** the `/healthz` handler (status 200, body `ok`,
-  `cache-control: no-store`) and the `secrets` module (`config/secret-key.test.ts`, and
+  `cache-control: no-store`), the `secrets` module (`config/secret-key.test.ts`, and
   `key-text.test.ts`, `keyring.test.ts`, `cipher.test.ts` and `secret.test.ts` in
-  `security/secrets/`, under `src/lib/server/`). Component tests use happy-dom when components
-  exist; never jsdom.
+  `security/secrets/`, under `src/lib/server/`), and `src/lib/shared/i18n/messages.test.ts`, the
+  message check, which finds every problem in `messages/*.json`; its tests break each rule once in
+  small files held in memory, to show that each is reported.
+
+  Component tests use happy-dom when components exist; never jsdom.
 - **e2e (Playwright, Chromium, under Bun):** against the built adapter-bun server, with a master key
   Playwright generates for each run, so CI needs no stored secret.
   - `smoke.test.ts` checks that `/` returns 200, shows the placeholder heading, hydrates (it waits
