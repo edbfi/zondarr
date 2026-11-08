@@ -1,4 +1,6 @@
 <script lang="ts">
+import LanguageSwitcher from "#lib/components/layout/LanguageSwitcher.svelte";
+import { m } from "#lib/paraglide/messages.js";
 import { css } from "#styled-system/css";
 </script>
 
@@ -15,9 +17,11 @@ import { css } from "#styled-system/css";
 		paddingInline: { base: "mobileGutter", tablet: "tabletGutter", desktop: "desktopGutter" },
 	})}
 >
-	<h1 class={css({ textStyle: "h1", textWrap: "balance" })}>Zondarr is being rebuilt.</h1>
+	<LanguageSwitcher />
+	<h1 class={css({ textStyle: "h1", marginBlockStart: "xxl", textWrap: "balance" })}>
+		{m.placeholder_title()}
+	</h1>
 	<p class={css({ marginBlockStart: "lg", color: "muted", textWrap: "pretty" })}>
-		The invitation pages and the admin console are on their way back. Invitation links don't open
-		yet.
+		{m.placeholder_status()}
 	</p>
 </main>

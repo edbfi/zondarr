@@ -48,13 +48,13 @@ tasks, one PR each, each test first. The tasks are in [todo.md](todo.md). Each P
 
 ### Phase 2: each page in the viewer's language
 
-- [ ] Task 2: each request gets the viewer's language, the browser keeps it, and the switcher
+- [x] Task 2: each request gets the viewer's language, the browser keeps it, and the switcher
 
 ### Checkpoint: after task 2
 
-- [ ] `check`, `test`, `lint`, `build`, `smoke` and prek pass; CI's `checks`, `smoke` and `ci-ok`
+- [x] `check`, `test`, `lint`, `build`, `smoke` and prek pass; CI's `checks`, `smoke` and `ci-ok`
   pass.
-- [ ] The built server serves `/` in Danish to a Danish browser and in English otherwise, the
+- [x] The built server serves `/` in Danish to a Danish browser and in English otherwise, the
   switcher changes it, and `/healthz` is unchanged.
 
 ### Phase 3: the tools later modules write through
