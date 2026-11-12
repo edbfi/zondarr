@@ -71,7 +71,7 @@ What exists:
 - **Surface briefs:** nine proposed briefs in `.impeccable/surfaces/`, one per route, five admin and four invitee.
 - **Demo data:** [tests/fixtures/demo-fixtures.json](tests/fixtures/demo-fixtures.json) is fictional. It and the names in the briefs are the canonical demo content.
 - **Identity asset:** `static/zondarr-logo.svg`, used in the README and as the favicon.
-- **Licence:** AGPL-3.0, in `LICENSE`.
+- **Licence:** see [README](README.md#license) for the grant and scope.
 
 What does not exist, and must not be fabricated:
 
