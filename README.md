@@ -1,19 +1,18 @@
 <p align="center">
-  <img src="static/zondarr-logo.svg" alt="Zondarr Logo" width="256" height="256">
+  <img src="static/zondarr-logo.svg" alt="zondarr logo" width="256" height="249">
 </p>
 
-<h1 align="center">Zondarr</h1>
+<h1 align="center">zondarr</h1>
 
 <p align="center">
-  <strong>Unified invitation and user management for Plex and Jellyfin media servers</strong>
+  <strong>Unified invitations and user management for Plex and Jellyfin</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/edbfi/zondarr/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/Bun-%23000000.svg?logo=bun&logoColor=white" alt="Bun">
-  <img src="https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white" alt="SvelteKit">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Turso-4FF8D2?logo=turso&logoColor=black" alt="Turso">
+  <a href="https://github.com/edbfi/zondarr/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg?style=flat" alt="License: AGPL-3.0-only"></a>
+  <a href="https://github.com/oven-sh/bun" title="Bun source"><img src="https://img.shields.io/badge/Bun-000000.svg?style=flat&amp;logo=bun&amp;logoColor=white" alt="Bun"></a>
+  <a href="https://github.com/sveltejs/kit" title="SvelteKit source"><img src="https://img.shields.io/badge/SvelteKit-FF3E00.svg?style=flat&amp;logo=svelte&amp;logoColor=white" alt="SvelteKit"></a>
+  <a href="https://github.com/microsoft/TypeScript" title="TypeScript source"><img src="https://img.shields.io/badge/TypeScript-3178C6.svg?style=flat&amp;logo=typescript&amp;logoColor=white" alt="TypeScript"></a>
 </p>
 
 > [!IMPORTANT]
