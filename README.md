@@ -13,6 +13,7 @@
   <a href="https://github.com/oven-sh/bun" title="Bun source"><img src="https://img.shields.io/badge/Bun-000000.svg?style=flat&amp;logo=bun&amp;logoColor=white" alt="Bun"></a>
   <a href="https://github.com/sveltejs/kit" title="SvelteKit source"><img src="https://img.shields.io/badge/SvelteKit-FF3E00.svg?style=flat&amp;logo=svelte&amp;logoColor=white" alt="SvelteKit"></a>
   <a href="https://github.com/microsoft/TypeScript" title="TypeScript source"><img src="https://img.shields.io/badge/TypeScript-3178C6.svg?style=flat&amp;logo=typescript&amp;logoColor=white" alt="TypeScript"></a>
+  <a href="https://github.com/edbfi/zondarr/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/edbfi/zondarr/ci.yml?branch=main&amp;event=push&amp;label=CI&amp;style=flat" alt="CI"></a>
 </p>
 
 > [!IMPORTANT]
