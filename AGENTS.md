@@ -279,7 +279,8 @@ is built: pages are served in English or Danish, with a language switcher, numbe
 formatters, and a check of the message files. Module 3, `setup`
 ([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
 [`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
-empty `owner` table); nothing claims the instance yet.
+empty `owner` table), and logs are redacted JSON lines, unexpected errors included; nothing claims
+the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -308,10 +309,12 @@ src/
                                  and `handle` writes the request's language into `<html lang>`
   app.css                        Panda layer order; the Vite plugin appends the generated CSS
   app.d.ts                       SvelteKit ambient types
-  env.ts                         declares `ZONDARR_SECRET_KEY`, `ZONDARR_SECRET_KEY_FILE` and
-                                 `ZONDARR_DATABASE_PATH`: private, read at runtime, optional
+  env.ts                         declares `ZONDARR_SECRET_KEY`, `ZONDARR_SECRET_KEY_FILE`,
+                                 `ZONDARR_DATABASE_PATH` and `ZONDARR_LOG_DEBUG`: private, read at
+                                 runtime, optional
   hooks.server.ts                the `init` hook: runs startup, except while building;
-                                 `handle`: each request's language, through Paraglide's middleware
+                                 `handle`: each request's language, through Paraglide's middleware;
+                                 `handleError`: logs an unexpected error
   hooks.client.ts                the browser keeps the language the server chose for the page
   routes/
     +layout.svelte               loads app.css; marks <html data-hydrated> once mounted
@@ -322,14 +325,17 @@ src/
   lib/                           imported as `#lib/<path>.<ext>`, e.g.
                                  `#lib/server/services/health.ts`
     server/                      server-only: services/health.ts; later providers/<plex|jellyfin>/,
-                                 services/<domain>/, jobs/, http/ (SSRF-safe fetch), logging/
+                                 services/<domain>/, jobs/, http/ (SSRF-safe fetch)
       config/                    each variable's reader, checked at startup: secret-key.ts (the
-                                 master key's text, no key logic), database-path.ts;
+                                 master key's text, no key logic), database-path.ts, log-debug.ts;
                                  config-error.ts: the error every check throws, naming the
                                  variable, never its value; error-code.ts: a system error's code
       db/                        client.ts: opens the one database file; migrate.ts: applies the
                                  migrations Vite bundles; settings.ts, owner.ts: one aggregate's
                                  tables (and later its named operations) per file
+      logging/                   logger.ts: one JSON line per entry on standard output;
+                                 redact.ts: removes credentials before an entry is written;
+                                 unexpected-error.ts: the entry `handleError` writes
       services/setup/startup.ts  startup's steps: the key, the configuration, the database
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives

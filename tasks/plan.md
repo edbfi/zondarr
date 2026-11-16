@@ -73,7 +73,7 @@ tests at `b59b909`, rebuilt for zondarr's names, decisions and design. The split
 ### Phase 1: the foundations
 
 - [x] Task 1: the database (D15)
-- [ ] Task 2: logging with redaction, and `handleError`
+- [x] Task 2: logging with redaction, and `handleError`
 - [ ] Task 3: shutdown
 - [ ] Task 4: health
 

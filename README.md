@@ -110,6 +110,17 @@ binding for your platform, as `bun ci` installs it:
 `node_modules/@tursodatabase/database-linux-x64-gnu` (or `-linux-arm64-gnu`). Start the server with
 `bun --no-install ./build`, so a missing package stops it instead of being downloaded.
 
+## Logs
+
+Zondarr writes its log to standard output, one JSON entry per line, where your container runtime
+collects it. Credentials are removed before an entry is written: passwords, tokens, cookies and
+keys, and the credentials in URLs. An unexpected error is logged the same way, and the browser only
+ever sees "Internal Error".
+
+| Variable | Holds | Default |
+| --- | --- | --- |
+| `ZONDARR_LOG_DEBUG` | `true` to add debug entries, or `false` | `false` |
+
 ## Working on it
 
 Start with [AGENTS.md](AGENTS.md): the house rules, the workflow and where each document lives.
