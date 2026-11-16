@@ -11,6 +11,39 @@ export function configureLogging(options: { debug: boolean }): void {
 	debug = options.debug;
 }
 
+/** Entries handed to standard output whose write hasn't finished yet. */
+let writing = 0;
+const whenWritten: (() => void)[] = [];
+
+function write(line: string): void {
+	writing++;
+	// The entry stops counting once, when its callback runs (it has left the process, or failed)
+	// or when the write throws, whichever comes first.
+	let finished = false;
+	const finish = () => {
+		if (finished) return;
+		finished = true;
+		writing--;
+		if (writing === 0) for (const resolve of whenWritten.splice(0)) resolve();
+	};
+	try {
+		process.stdout.write(line, finish);
+	} catch (error) {
+		finish();
+		throw error;
+	}
+}
+
+/**
+ * Resolves once every entry written so far has left the process, so an entry written just before
+ * the process exits isn't lost. An empty write's callback isn't enough: on Bun it can run while
+ * earlier entries still wait for a slow reader.
+ */
+export function flushLogs(): Promise<void> {
+	if (writing === 0) return Promise.resolve();
+	return new Promise((resolve) => whenWritten.push(resolve));
+}
+
 /**
  * A logger for `source`. Each entry is one JSON line on standard output (D11), redacted before
  * it is written (SPEC-setup.md, "Logging").
@@ -27,7 +60,7 @@ export function createLogger(source: string): Logger {
 				message: redact(message),
 				metadata: redact(metadata),
 			});
-			process.stdout.write(`${line}\n`);
+			write(`${line}\n`);
 		};
 	return { debug: entry("debug"), info: entry("info"), warn: entry("warn"), error: entry("error") };
 }

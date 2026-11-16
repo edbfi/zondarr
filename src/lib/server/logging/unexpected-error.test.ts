@@ -5,8 +5,11 @@ let lines: string[];
 
 beforeEach(() => {
 	lines = [];
-	vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+	vi.spyOn(process.stdout, "write").mockImplementation((chunk, ...rest: unknown[]) => {
 		lines.push(String(chunk));
+		// The logger counts each entry until its write callback runs, so the mock calls it.
+		const done = rest.find((arg) => typeof arg === "function") as (() => void) | undefined;
+		done?.();
 		return true;
 	});
 });

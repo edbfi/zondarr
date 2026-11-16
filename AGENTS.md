@@ -279,8 +279,8 @@ is built: pages are served in English or Danish, with a language switcher, numbe
 formatters, and a check of the message files. Module 3, `setup`
 ([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
 [`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
-empty `owner` table), and logs are redacted JSON lines, unexpected errors included; nothing claims
-the instance yet.
+empty `owner` table), logs are redacted JSON lines, unexpected errors included, and it shuts down
+cleanly; nothing claims the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -333,10 +333,12 @@ src/
       db/                        client.ts: opens the one database file; migrate.ts: applies the
                                  migrations Vite bundles; settings.ts, owner.ts: one aggregate's
                                  tables (and later its named operations) per file
-      logging/                   logger.ts: one JSON line per entry on standard output;
+      logging/                   logger.ts: one JSON line per entry on standard output, and
+                                 `flushLogs()`, which waits until every entry has left;
                                  redact.ts: removes credentials before an entry is written;
                                  unexpected-error.ts: the entry `handleError` writes
-      services/setup/startup.ts  startup's steps: the key, the configuration, the database
+      services/setup/startup.ts  startup's steps (the key, the configuration, the database) and
+                                 shutdown: the signals, closing, and the 5-second deadline
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives
                                  the AES key and key ID; secret.ts: the `Secret` wrapper,

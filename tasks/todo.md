@@ -106,14 +106,14 @@ database, flush the logs and exit 0, or exit non-zero after the 5-second deadlin
 the built server, installed a turn after `init` resolves.
 
 **Acceptance criteria:**
-- [ ] `server/services/setup/startup.test.ts` first fails, then passes, against a stand-in
+- [x] `server/services/setup/startup.test.ts` first fails, then passes, against a stand-in
   process: `SIGHUP` passed on, exit 0 only after the cleanup, the close before the flush, a failed
   close logged and still exit 0, exit 1 when the cleanup throws and at the deadline (its own entry
   flushed for at most 250 ms), exit 1 once the deadline has fired even if the cleanup then finishes,
   and no handler in `dev`. `logger.test.ts`: `flushLogs()` waits for every entry's own write,
   through a real shell pipe whose reader is slow.
-- [ ] `setup.test.ts`: `SIGHUP` and `SIGTERM` each shut the built server down with exit code 0.
-- [ ] The README lists adapter-bun's `SHUTDOWN_TIMEOUT`, `CONNECTION_IDLE_TIMEOUT` and
+- [x] `setup.test.ts`: `SIGHUP` and `SIGTERM` each shut the built server down with exit code 0.
+- [x] The README lists adapter-bun's `SHUTDOWN_TIMEOUT`, `CONNECTION_IDLE_TIMEOUT` and
   `BODY_SIZE_LIMIT`, and says the container's stop timeout must exceed `SHUTDOWN_TIMEOUT` plus
   5 seconds.
 
