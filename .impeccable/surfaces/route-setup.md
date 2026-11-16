@@ -9,7 +9,7 @@ related_targets: []
 
 ## Status
 
-Proposed brief for `setup` ([docs/SPEC-setup.md](../../docs/SPEC-setup.md)), with no mockup. Mode: **operate**. Audience: **the person installing Zondarr**, who can read the server console or the container's logs. Route: `/setup`. It is ported from obzorarr's claim page (its `route-setup.md`), the reference for `setup`, and drawn in Zondarr's own design.
+Built in `setup`'s task 8 (2026-11-16), code-led, with no mockup; the finish review's verdict was ship. Mode: **operate**. Audience: **the person installing Zondarr**, who can read the server console or the container's logs. Route: `/setup`. It is ported from obzorarr's claim page (its `route-setup.md`), the reference for `setup`, and drawn in Zondarr's own design.
 
 ## Purpose and composition
 
@@ -37,3 +37,17 @@ Heading 'Claim this Zondarr'. One line: 'Enter the setup token from the server's
 ## Handoff prompt
 
 > Implement only this surface in Zondarr's existing application. Read PRODUCT.md, DESIGN.md, docs/SPEC-setup.md and this brief first. Reuse existing Panda CSS tokens; build native accessible form controls. Keep it quiet: this is an operational screen.
+
+## Direction contract
+
+THESIS: the console-to-browser handoff. The token from the server's output is the one unusual input, so it is set like the line it came from; everything else is the familiar account form, refusing the card-grid onboarding wizard.
+
+OWN-WORLD: the admin side of Golden Welcome × Velvet Premiere at its quietest: indigo `background`, one flat `surface` panel with a 1px `border` and the `panel` radius, Outfit throughout, `text-field` controls on `control-border`, one solid gold `primary` button with `background`-coloured text, `danger` text for errors, the lavender `secondary` focus ring. No serif display, no arched light, no imagery.
+
+STORY: the person installing Zondarr reads in one line what to do, copies the token from the console or container logs, chooses a username and password, and claims the instance in one submission; a wrong token says where to find the right one.
+
+FIRST VIEWPORT: header with the logo, the wordmark and the language switcher across the form width; below it the panel, centred within 672px: the `h1`, the one line, then the token, username and password fields with their helpers, then the full-width primary button. At 360×640 the button is above the fold.
+
+FORM: seed: none (pinned) "One quiet, centred form within the 672px form width".
+
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

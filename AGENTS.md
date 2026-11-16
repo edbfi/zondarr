@@ -282,8 +282,9 @@ formatters, and a check of the message files. Module 3, `setup`
 empty `owner` table), logs are redacted JSON lines, unexpected errors included, it shuts down
 cleanly, `/healthz` reports the database's health, every response through `handle` carries the
 security headers and every page a nonce-based CSP, a state-changing request from another site
-gets "Access denied", and an unclaimed instance prints a bootstrap token to the console; nothing
-claims the instance yet.
+gets "Access denied", an unclaimed instance prints a bootstrap token to the console, and `/setup`
+claims it, creating the owner; nothing yet sends a fresh instance to `/setup`, and nobody can sign
+in.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -321,9 +322,13 @@ src/
                                  `handleError`: logs an unexpected error
   hooks.client.ts                the browser keeps the language the server chose for the page
   routes/
-    +layout.svelte               loads app.css; marks <html data-hydrated> once mounted
+    +layout.svelte               loads app.css and the bundled fonts; marks <html data-hydrated>
+                                 once mounted
     (public)/+page.svelte        `/`: placeholder page, its text from the messages, and the
                                  language switcher
+    setup/                       `/setup`, the claim: +page.svelte (the form), +page.server.ts
+                                 (its load and the claim action), token-format.ts (the token
+                                 field's dashes as it is typed)
     healthz/                     `+server.ts`: `/healthz`, overall health; `live/`, `ready/`:
                                  liveness and readiness
     (public)/join/ (admin)/ api/ later: public join flow, admin console, JSON endpoints
@@ -346,14 +351,16 @@ src/
                                  unexpected-error.ts: the entry `handleError` writes
       services/setup/            startup.ts: startup's steps (the key, the configuration, the
                                  database, first run) and shutdown: the signals, closing, and the
-                                 5-second deadline; first-run.ts: first run's state in memory and
-                                 the bootstrap token's printing and renewal
+                                 5-second deadline; first-run.ts: first run's state in memory, the
+                                 step pointer and the bootstrap token's printing, renewal and use;
+                                 claim.ts: the claim, in its order
       security/                  headers.ts: the security headers for a response through
                                  `handle`, HSTS only over HTTPS; cross-origin.ts: the check that
                                  asks the browser where a state-changing request came from;
                                  access-denied.ts: its refusal, a page or a JSON error;
                                  bootstrap-token.ts: drawing, showing, comparing and expiring
-                                 the token
+                                 the token; password.ts: the owner's credential rules, hashing
+                                 and verifying, with common-passwords.txt, the bundled list
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives
                                  the AES key and key ID; secret.ts: the `Secret` wrapper,
