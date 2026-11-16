@@ -333,10 +333,12 @@ src/
       db/                        client.ts: opens the one database file; migrate.ts: applies the
                                  migrations Vite bundles; settings.ts, owner.ts: one aggregate's
                                  tables (and later its named operations) per file
-      logging/                   logger.ts: one JSON line per entry on standard output;
+      logging/                   logger.ts: one JSON line per entry on standard output, and
+                                 `flushLogs()`, which waits until every entry has left;
                                  redact.ts: removes credentials before an entry is written;
                                  unexpected-error.ts: the entry `handleError` writes
-      services/setup/startup.ts  startup's steps: the key, the configuration, the database
+      services/setup/startup.ts  startup's steps (the key, the configuration, the database) and
+                                 shutdown: the signals, closing, and the 5-second deadline
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives
                                  the AES key and key ID; secret.ts: the `Secret` wrapper,
