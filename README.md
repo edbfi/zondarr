@@ -132,6 +132,30 @@ the `Host` header, Zondarr can't match the browser's address to the one it was a
 plain HTTP this affects every browser; over HTTPS only older ones (Safari before 16.4, Firefox
 before 90, Chrome before 76), since current browsers say where a request came from themselves.
 
+## First run
+
+A new Zondarr is claimed by whoever can read its console. Until then, every page sends you to
+`/setup`, and Zondarr prints a setup token to standard output, where your container runtime
+collects it (`docker compose logs zondarr`):
+
+```text
+Setup token: xxxx-xxxx-xxxx (valid for 15 minutes). Open /setup to claim this Zondarr.
+```
+
+With `ORIGIN` set, the line gives the full address. At `/setup`, enter the token, with or without
+its dashes, and choose the owner's username and password. The password needs 15 to 128 characters,
+may not contain "zondarr", or the username when it has 4 or more characters, and may not be a
+common password or, as a whole, a simple pattern such as `abcabcabcabcabc` or `abcdefghijklmno`.
+
+- **Who can claim:** anyone who reaches `/setup` sees the form, but only the token claims it, so
+  only someone who can read the console. The token is never stored or written to a log entry.
+- **An expired token:** each lasts 15 minutes, and a new one is printed when it expires. Use the
+  newest.
+- **Once claimed,** no token is printed again and `/setup` is gone, also after a restart. Signing
+  in comes with the next module; until then, a claimed Zondarr has no way to sign in.
+- **Health checks** (`/healthz`, `/healthz/live` and `/healthz/ready`, see [Health](#health))
+  answer before the claim too.
+
 ## Logs
 
 Zondarr writes its log to standard output, one JSON entry per line, where your container runtime

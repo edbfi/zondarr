@@ -304,17 +304,17 @@ except `/setup` and the three health paths gets a 303 to `/setup`. Playwright's 
 the instance through the form, so the smoke and language tests run on a claimed instance.
 
 **Acceptance criteria:**
-- [ ] `first-run.test.ts` gains the gate's decision for each path (`/`, an unknown page, `/setup`,
+- [x] `first-run.test.ts` gains the gate's decision for each path (`/`, an unknown page, `/setup`,
   `/setup/more`, the three health paths and `/healthz/more`), before and after the claim and after
   a restart.
-- [ ] `setup.test.ts`: every page sends a fresh instance to `/setup`, while the health paths
+- [x] `setup.test.ts`: every page sends a fresh instance to `/setup`, while the health paths
   answer; the gate's redirect carries the headers; a same-origin POST gets the 303 while unclaimed
   and the 405 once claimed; after a restart on a claimed file, `/` is served. The earlier cases
   that need a claimed server claim it first through a `claim(server)` helper that posts with
   `Origin` set to the server's address and `Accept: text/html` (SvelteKit answers a form action to
   `*/*` in JSON), without following the 303 to `/`: the headers on a 404 and
   the same-origin POST on `app.test`; the CSP check reads `/setup`.
-- [ ] `playwright.config.ts`: `wait.stdout` from the token line through "Listening on" replaces the
+- [x] `playwright.config.ts`: `wait.stdout` from the token line through "Listening on" replaces the
   `url` check, its named group putting the token in `ZONDARR_E2E_SETUP_TOKEN`;
   `tests/e2e/global-setup.ts` claims through the form; `smoke.test.ts` and `i18n.test.ts` pass
   unchanged. The README's first run is written.
