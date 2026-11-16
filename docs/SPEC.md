@@ -3,7 +3,7 @@
 **Status:** the ground floor (skeleton) is specified here, approved by the orchestrator
 (2026-10-18) and built. The capability map below is approved; module 1, `secrets`
 ([SPEC-secrets.md](SPEC-secrets.md)), and module 2, `i18n` ([SPEC-i18n.md](SPEC-i18n.md)), are
-built.
+built; module 3, `setup` ([SPEC-setup.md](SPEC-setup.md)), is specified.
 
 ## Objective
 
@@ -40,12 +40,12 @@ components or services, and dates and numbers formatted for the viewer's languag
 |---|---|---|---|---|
 | 1 | `secrets` | **Built.** Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20, D25), and the secret wrapper that shows only a redaction marker and opens at one named call | — | — |
 | 2 | `i18n` | **Built.** The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's language, and a check that every message exists in both languages | — | the language switcher in each shell |
-| 3 | `setup` | Startup checks, database and migrations, settings, structured logging with redaction, security headers and CSP (ground-floor choice 3), the setup gate, the bootstrap token, printed to the console and never through the stored logs, and claiming the instance for its one owner. zondarr adds environment locks on settings and the referrer policy among the headers, and replaces `/healthz` with the fuller health of ground-floor choice 5 | `secrets`, `i18n` | first-run setup (no brief yet); `/healthz` |
-| 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out (POST only), rate limits on sign-in and the claim, the cross-origin check (it asks the browser, stores no address and takes `ORIGIN` as an optional override), app-named cookies that work over plain HTTP at home and behind an HTTPS proxy, password change, error pages, recovery (D20), and the admin shell. zondarr adds the session cleanup job, whose interval later jobs share, the lockout on sign-in, rate limits on the join page (code validation and submission, redeeming and starting a Plex sign-in, listed under `sign-in`), and the origin test, which only diagnoses: it compares the address the browser uses with the `Host` the app receives and `ORIGIN` when set, suggests `ORIGIN=<address>` or the proxy line `proxy_set_header Host $http_host`, and saves nothing; its suggestion also shows on the claim and owner sign-in pages, so someone without a session can recover | `setup` | owner sign-in (no brief yet); the origin test's hint on the claim and owner sign-in pages; the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections (`invitations` adds the public invite address to General); the password section of `/admin/settings` (Account) |
+| 3 | `setup` | Startup checks, database and migrations, settings, structured logging with redaction, security headers and CSP (ground-floor choice 3), `ORIGIN` and the cross-origin check (it asks the browser, stores no address and takes `ORIGIN` as an optional override), the setup gate, the bootstrap token, printed to the console and never through the stored logs, and claiming the instance for its one owner, with the owner's password rules and hashing. zondarr adds the referrer policy among the headers, and replaces `/healthz` with the fuller health of ground-floor choice 5 | `secrets`, `i18n` | first-run setup (brief: `/setup`, the claim); `/healthz` |
+| 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out (POST only), rate limits on sign-in and the claim, app-named cookies that work over plain HTTP at home and behind an HTTPS proxy, password change, error pages, recovery (D20), and the admin shell. zondarr adds the session cleanup job, whose interval later jobs share, the correlation id on error responses and the request log entry, the lockout on sign-in, rate limits on the join page (code validation and submission, redeeming and starting a Plex sign-in, listed under `sign-in`), and the origin test, which only diagnoses: it compares the address the browser uses with the `Host` the app receives and `ORIGIN` when set, suggests `ORIGIN=<address>` or the proxy line `proxy_set_header Host $http_host`, and saves nothing; its suggestion also shows on the claim and owner sign-in pages, so someone without a session can recover | `setup` | owner sign-in (no brief yet); the origin test's hint on the claim and owner sign-in pages; the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections (`invitations` adds the public invite address to General); the password section of `/admin/settings` (Account) |
 | 5 | `two-factor` | Optional but strongly recommended (D20): authenticator codes, backup codes and the challenge after every way of signing in (except the optional OIDC skip, D20), with replay protection and the attempt limit. Recovery turns it off. Adds the offer to first-run setup, right after the owner account is created and before any connection step, and the reminder in the admin shell while it is off | `sign-in` | the two-factor offer in first-run setup; the two-factor section of `/admin/settings` (Account); the reminder in the admin shell |
 | 6 | `plex-provider` | The Plex provider (D12, D18): connection test, server info, libraries, the user list with relationship types, direct share, friend and home accounts, removal stepped by relationship, disabling as a share with no libraries (D23), library access, permissions and PIN sign-in. Reconciles shares by machine id and account id after every write | `setup` | — |
 | 7 | `jellyfin-provider` | The Jellyfin provider (D19): connection test, server info, libraries, the user list with administrators flagged, create with password, delete, enable and disable, library access and permissions | `setup` | — |
-| 8 | `servers` | Adding a server with the mandatory connection test and type detection, the list and detail, editing with a re-test that reuses the stored key only while the address is unchanged, deleting with defined cascade rules, the per-provider environment overrides, library sync, and the optional first-server step after `setup` and the two-factor offer | `sign-in`, `plex-provider`, `jellyfin-provider` | `/admin/servers` (no brief yet); the Servers tab of `/admin/settings` |
+| 8 | `servers` | Adding a server with the mandatory connection test and type detection, the list and detail, editing with a re-test that reuses the stored key only while the address is unchanged, deleting with defined cascade rules, the per-provider environment overrides with the environment locks on settings, which `sync` and `invitations` reuse, library sync, and the optional first-server step after `setup` and the two-factor offer | `sign-in`, `plex-provider`, `jellyfin-provider` | `/admin/servers` (no brief yet); the Servers tab of `/admin/settings` |
 | 9 | `members` | Identities and their per-server users, the members list with search and filters, the detail with linked users, enable and disable (on Plex, a share with no libraries, D23), permissions loaded from the server, and delete stepped by relationship | `servers` | `/admin/members/[id]` |
 | 10 | `wizards` | Wizards, steps, interactions and translations, the content allow-list, keyboard reordering, the preview, and the server-side step check: signed progress and completion tokens, the quiz cool-down and a timer started on the server. A disabled or empty wizard counts as none | `sign-in` | `/admin/wizards/[id]`; the wizard list (no brief yet) |
 | 11 | `invitations` | Invitations with target servers, libraries, expiry, max uses, access duration and wizards; generated and normalised codes, the validation order, clear errors for max uses below the use count, the copy link with the optional public invite address, disabling an invitation that loses its last server or every chosen library, and the invitation expiry job | `servers`, `wizards` | `/admin/invitations` |
@@ -77,8 +77,8 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 |---|---|
 | `secrets` | `security/secrets/` (key checks, keyring, cipher, `Secret`), `config/secret-key.ts`, `src/env.ts` and the `init` hook in `hooks.server.ts` |
 | `i18n` | `messages/en.json` and `messages/da.json`, `project.inlang/` (the inlang project and Paraglide's options), `lib/shared/i18n/` (formatting and the message check), `lib/components/layout/LanguageSwitcher.svelte`; the language handle in `hooks.server.ts`, and `hooks.client.ts` |
-| `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/`, `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`, `security/headers.ts`; `routes/setup/`, `routes/healthz/`, and the setup gate and the headers in `hooks.server.ts` |
-| `sign-in` | `services/sign-in/` (sessions and their storage, recovery), `db/` session schema, `jobs/session-cleanup.ts`, `security/` (session-token and password hashing, rate limiting, the cross-origin check), `vite.config.ts` (SvelteKit's own form check off); the sign-in at the claim in `routes/setup/`, `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
+| `setup` | `db/` (client, migrations, settings and owner schema), `config/`, `logging/` (with redaction), `services/setup/`, `services/health.ts`, `security/bootstrap-token.ts`, `security/headers.ts`, `security/password.ts`, `security/cross-origin.ts`, `security/access-denied.ts`, `vite.config.ts` (SvelteKit's own form check off, the CSP); `routes/setup/`, `routes/healthz/`, and the cross-origin check, the setup gate and the headers in `hooks.server.ts` |
+| `sign-in` | `services/sign-in/` (sessions and their storage, recovery), `db/` session schema, `jobs/session-cleanup.ts`, `security/` (session-token hashing, rate limiting); the sign-in at the claim in `routes/setup/`, `routes/(admin)/` layout and sign-in page, `routes/(admin)/admin/settings/`, `lib/components/layout/` |
 | `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/`; the offer in `routes/setup/`, the challenge page beside the sign-in page, its section in `routes/(admin)/admin/settings/`, and the reminder in `lib/components/layout/` |
 | `plex-provider` | `providers/plex/`, `providers/media-server.ts` (the contract, if first), `http/` (if first) |
 | `jellyfin-provider` | `providers/jellyfin/`, `providers/media-server.ts` and `http/` (if first) |
@@ -99,11 +99,11 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 
 - `setup`: D15 (Drizzle and Turso pair) and the logging library half of D14.
 - `sign-in`: how long an owner session lasts.
-- `sign-in`: the password rules: the minimum length, whether a list of common passwords is refused,
-  and how repeated failed sign-ins are slowed beyond the rate limits (backoff, or a lockout where
-  the app's approved docs allow one). zondarr's row promises a lockout on sign-in: one that grows
-  with repeated failures from a client address and ends by itself, never one that keeps the owner
-  out until recovery.
+- `sign-in`: how repeated failed sign-ins are slowed beyond the rate limits (backoff, or a lockout
+  where the app's approved docs allow one). zondarr's row promises a lockout on sign-in: one that
+  grows with repeated failures from a client address and ends by itself, never one that keeps the
+  owner out until recovery. The password rules are `setup`'s, since the claim sets the first
+  password ([SPEC-setup.md](SPEC-setup.md#first-run)).
 - `sign-in` closes the job half of D14: its session cleanup is the first background job.
 - `plex-provider`: D18, including whether Plex keeps a share with no libraries (D23).
   `jellyfin-provider`: D19.
@@ -141,9 +141,9 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 
 ### Surfaces with no brief yet
 
-First-run setup, owner sign-in, `/admin/servers`, the wizard list and `/admin/logs` are needed (the
-last three are in PRODUCT.md's admin shell; each has its behaviour in the Module notes) but have no
-brief. The `/join/[code]/account` brief covers only Plex; the Jellyfin account form joins it. Each
+First-run setup's steps after the claim, owner sign-in, `/admin/servers`, the wizard list and
+`/admin/logs` are needed (the last three are in PRODUCT.md's admin shell; each has its behaviour in
+the Module notes) but have no brief. The `/join/[code]/account` brief covers only Plex; the Jellyfin account form joins it. Each
 gets its brief before its module is specced.
 
 ### Module notes
@@ -153,89 +153,14 @@ app and adapted to the decisions. It is behaviour to keep unless the module's ap
 decision changes it. Layout, placement, visuals and exact wording are not behaviour: where a note
 describes them, DESIGN.md and the surface's brief win, and for a surface with no brief yet the note
 is only a starting point for that brief. Each block moves into its module's `SPEC-<id>.md` when that
-module is specced. Rate limits are listed once, under `sign-in`. `setup`, `sign-in` and
-`two-factor` are shared with the other edbfi apps (D20): a bullet or clause marked "(zondarr)" is
-this app's own, and the rest is the shared wording; a "(zondarr)" mark inside a bullet covers the
-rest of that bullet, and "(zondarr: …)" only its own parentheses. Decision numbers in these blocks
-are zondarr's; each app cites its own.
-
-#### setup
-
-- **The claim** is a POST, cross-origin-checked like any other (`sign-in`), and it stores no
-  address. It needs a valid bootstrap token and the browser's address (`sign-in`). Using up the
-  token and creating the owner are one atomic step, and the owner session it starts follows
-  `sign-in`'s cookies. Claim attempts are rate-limited (`sign-in`). (zondarr) The legacy app's
-  ten-minute, single-use, same-site-strict browser authorisation from its setup link is not kept:
-  the token is checked when the claim is submitted.
-- **The referrer policy,** among the security headers, is `same-origin` or
-  `strict-origin-when-cross-origin`, never `no-referrer` (which makes browsers send `Origin: null`
-  on the app's own form posts). (zondarr) On the join page this replaces the legacy app's suppressed
-  referrer and still keeps the invitation code from other sites: `same-origin` sends them no
-  referrer, and `strict-origin-when-cross-origin` only the app's address, never the path.
-- **One-year strict transport security** goes only over HTTPS (known when `ORIGIN` is `https`, or
-  when the browser sent `Sec-Fetch-Site` to a host that isn't loopback, since browsers send it only
-  to HTTPS and loopback addresses).
-- **The setup gate.** Until first run is complete, every page except static assets, the claim,
-  sign-in and first run's own helpers sends the browser to the current first-run step. The server
-  keeps one current-step pointer: the browser can't skip ahead, each step's action checks that it is
-  the current step, and a step that offers Previous only moves the pointer back. Only the last
-  step's action completes first run. (zondarr) First run is the claim, the two-factor offer
-  (`two-factor`) and the optional first server (`servers`), each later step skippable; after an
-  interruption it resumes at the current step.
-- **The bootstrap token** (D20) is 12 random lowercase letters and digits, shown as
-  `xxxx-xxxx-xxxx`, held only in memory (never logged or stored) and compared in constant time. It
-  is printed with the setup URL and is valid for 15 minutes, after which a new one is printed.
-  (zondarr) It is printed only while no owner exists and is never served over the network; opening
-  the setup URL removes the token from the address bar. The claim page has a field for the token
-  and says where to find it: the container's logs, or the console when zondarr runs directly.
-- **The owner's account** (zondarr): the claim asks for the password twice, and the username is 3–32
-  characters: lowercase letters, digits and underscores, starting with a letter.
-- **Records** (zondarr) have random ids and created and updated times, stored and returned in UTC; a
-  time given without a zone is UTC. Nothing is soft-deleted: disabling is the only reversible way to
-  switch something off.
-- **Environment locks** (zondarr; obzorarr is the reference, AGENTS.md Shared groundwork). A setting
-  the environment supplies wins: its field is read-only and says that the deployment's configuration
-  owns the value. zondarr's are the sync interval (`sync`), each provider's server address and key
-  (`servers`), and the public invite address (`invitations`).
-- **Logging** (zondarr). Every error response carries a correlation id that the matching log entries
-  carry too, and an upstream failure shown to the owner names it. A request's log entry records its
-  method, path, content type and parameters, redacted like every entry, never its body, headers or
-  cookies.
-- **Startup and shutdown.** Startup runs once, before any request is served: migrations (D5), then
-  each module's startup work, then starting the jobs. Shutdown stops the jobs, flushes the logs and
-  drains open requests and live streams for a bounded time, then exits even if an upstream call is
-  still outstanding. Streams it closes end cleanly, so browsers reconnect, and a hang-up counts as a
-  stop. The environment sets the drain time (default 30 seconds, kept below the container's stop
-  timeout). (zondarr) Jobs get up to ten seconds to finish. The environment also sets the idle
-  timeout (default 10 seconds, live streams exempt) and the request body limit (default 512 KB).
+module is specced (`setup`'s is in [SPEC-setup.md](SPEC-setup.md)). Rate limits are listed once,
+under `sign-in`. `sign-in` and `two-factor` are shared with the other edbfi apps (D20): a bullet or
+clause marked "(zondarr)" is this app's own, and the rest is the shared wording; a "(zondarr)" mark
+inside a bullet covers the rest of that bullet, and "(zondarr: …)" only its own parentheses.
+Decision numbers in these blocks are zondarr's; each app cites its own.
 
 #### sign-in
 
-- **SvelteKit's own form check is off:** `sveltekit({ csrf: { trustedOrigins: ['*'] } })` in
-  `vite.config.ts` (SvelteKit 3 takes its options in the `sveltekit()` call, with no `kit:`
-  wrapper). Remote functions stay off. A config test asserts both, so SvelteKit's only remaining
-  check before `handle` is the remote-function one, which nothing uses. The cross-origin check
-  replaces SvelteKit's form check.
-- **The cross-origin check** asks the browser, so the app doesn't need to know its own address and
-  stores none. It is the first check in `handle`, after only the language (`i18n`), for every
-  method except GET, HEAD and OPTIONS, and for every content type (form, JSON, multipart,
-  `text/plain`, empty). Internal `event.fetch` subrequests (`event.isSubRequest`) skip it.
-  - An `Origin` header, whenever it is present, must parse as one bare `http` or `https` origin;
-    `null`, a malformed value or several values are refused. This applies on every branch below.
-  - With `ORIGIN` set, a present `Origin` must equal `ORIGIN`, compared as parsed origins. Without
-    `Origin`, `Sec-Fetch-Site` must be `same-origin` or `none`.
-  - With `ORIGIN` unset, a present `Sec-Fetch-Site` passes only as `same-origin` or `none`
-    (`same-site` and `cross-site` are refused). Otherwise `Origin`'s host and port must equal the
-    `Host` header, with default ports normalised. Browsers send `Sec-Fetch-Site` only to HTTPS,
-    `localhost` and loopback addresses, so over plain HTTP outside loopback every browser gets this
-    comparison.
-  - A request with neither `Origin` nor `Sec-Fetch-Site` doesn't come from a browser. It passes only
-    on an explicit list of machine routes (zondarr: none, so it refuses every such request): the
-    API-key endpoints and other machine routes the app's approved docs already name, each with the
-    credentials those docs require. The session cookie is never honoured on it: such a request that
-    carries only a session cookie gets a 403.
-  - A refusal is a 403 with the app's own "Access denied" page, or a JSON error for JSON callers,
-    with the security headers and in the viewer's language.
 - **The browser's address** is `ORIGIN` when it is set, and otherwise the validated `Origin` of the
   POST that passed the cross-origin check. It decides the cookies' `Secure` flag, the OIDC
   `redirect_uri` and, where the app has Plex sign-in, Plex's forward URL. Every POST that sets or
@@ -256,35 +181,6 @@ are zondarr's; each app cites its own.
   and owner sign-in pages suggest setting `ORIGIN=<that address>` (or removing a wrong `ORIGIN`) or
   adding the proxy line `proxy_set_header Host $http_host`, so someone without a session can
   recover. (zondarr) The origin test adds it, with the check behind it.
-- **`ORIGIN`** is optional and never required. It is plain `ORIGIN`, not an app-prefixed name (an
-  app prefix would mean setting adapter-bun's `envPrefix`, which would then reject the master key's
-  variable). When set, it must be a bare `http` or `https` origin (a trailing `/` is fine; no path,
-  query, fragment or credentials), compared as a parsed origin, or startup stops with an error that
-  doesn't echo the value. adapter-bun 1.0.0 ignores `ORIGIN`; from 1.0.1 a set `ORIGIN` also
-  corrects SvelteKit's `event.url`, and an empty `ORIGIN=""` throws with the value in the message,
-  so the container image's entrypoint unsets an empty `ORIGIN` and its templates leave it out (the
-  image's work, not this repo's). (zondarr) It is an environment value, never a stored setting:
-  there is no console setting for the environment to lock, and the settings page only shows it,
-  read-only. It is not the public invite address (`invitations`), which only builds invite links and
-  has no part in the cross-origin check, cookies or sign-in. It takes the place of the legacy app's
-  public origin. The legacy app's trusted origin, with its first-run Test Origin, Save and Skip, and
-  its secure-cookies setting are not kept, because the cross-origin check stores no address and
-  cookies follow the browser's address.
-- **When `ORIGIN` or a proxy fix is still needed:** behind a proxy that rewrites `Host`, over plain
-  HTTP for every browser, and over HTTPS only for browsers without `Sec-Fetch-Site` (Safari before
-  16.4, Firefox before 90, Chrome before 76). The proxy fix is `proxy_set_header Host $http_host`
-  (not `$host`, which drops a non-default port). Remote functions would need it too; they stay off.
-- **Accepted residual risks.** Over plain HTTP, the `Origin` and `Host` comparison can't tell `http`
-  from `https`, which is harmless on a port that speaks only HTTP; over HTTPS it affects only
-  browsers without `Sec-Fetch-Site`, and only against a network attacker, and HSTS or `ORIGIN`
-  closes it. DNS rebinding reaches only actions that need no sign-in, because cookies don't follow a
-  rebind, and those are gated by a console token or rate-limited (zondarr: the join flow's actions
-  also need a valid invitation code).
-- **Tests:** the cross-origin check is one pure module, unit-tested against a matrix of headers and
-  copied to each app as D20 shares the opening modules. One Playwright test against the built server
-  (`bun ./build`) checks that a cross-site form POST is refused and that a same-origin POST carrying
-  no `Sec-Fetch-*` headers passes, both on `localhost` and on a plain-HTTP host name that isn't
-  loopback (such as Chromium's `--host-resolver-rules="MAP app.test 127.0.0.1"`).
 - **Cookies:** session cookies are named after the app (zondarr: `zondarr_session` for the owner
   session), because cookies ignore ports and apps on one address would otherwise sign each other
   out. They are host-only, `HttpOnly` and `SameSite=Lax`. Every cookie is `Secure` exactly when the
@@ -317,6 +213,10 @@ are zondarr's; each app cites its own.
 - **Pages** (zondarr) load their data on the server before they show (D1), and a page whose data
   failed to load offers a retry. Apart from the log stream, the server detail's refresh and Plex
   sign-in's polling, pages refresh on navigation or after an action.
+- **Logging** (zondarr; moved from `setup`). Every error response carries a correlation id that the
+  matching log entries carry too, and an upstream failure shown to the owner names it. A request's
+  log entry records its method, path, content type and parameters, redacted like every entry
+  ([SPEC-setup.md](SPEC-setup.md#logging)), never its body, headers or cookies.
 - **Errors:** an unexpected error is logged and the user sees "Something went wrong. Try again.";
   expected errors pass through (zondarr: in plain words, such as a taken username, an unreachable
   server or an invitation that is no longer valid); network failures map to fixed phrases; stack
@@ -405,6 +305,11 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
 - **On add,** the key is encrypted (`secrets`) and two best-effort syncs run immediately, one after
   the other, libraries and then a user import, recorded as onboarding runs (`sync`); their failure
   doesn't fail the add. Adding the first server completes first run's server step.
+- **Environment locks** (zondarr; moved from `setup`; obzorarr is the reference, AGENTS.md Shared
+  groundwork, and builds them in its `plex-connection`, which this module ports). A setting the
+  environment supplies wins: its field is read-only and says that the deployment's configuration
+  owns the value. zondarr's are each provider's server address and key (below), the sync interval
+  (`sync`) and the public invite address (`invitations`).
 - **Environment overrides.** Per provider type, an address or a key in the environment overrides the
   stored one for every server of that type, field by field, and those fields are locked. No key,
   stored or from the environment, reaches the browser: the provider detection sends only whether
@@ -527,8 +432,8 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
 - **The list** is paginated as `members`' is, filtered by enabled and by expired or active, and
   sorted by created date, expiry or use count, either way. Copying the invite link, the join address
   for the code, is the main way to share an invitation.
-- **The public invite address** is optional, set in the environment, which locks it (`setup`), or in
-  the General tab of `/admin/settings`. It is used only to build invite links and has no security
+- **The public invite address** is optional, set in the environment, which locks it (`servers`), or
+  in the General tab of `/admin/settings`. It is used only to build invite links and has no security
   role: it plays no part in the cross-origin check, cookies, sign-in or the browser's address
   (`sign-in`). It must be a bare `http` or `https` origin, validated like `ORIGIN`. While `ORIGIN`
   is set, the invite address must be empty or equal to it, because the join page's POSTs must come
@@ -812,9 +717,9 @@ design doesn't call for anything different; choices 4 and 5 are zondarr's own.
    that needs one.
 3. **Security headers and CSP.** The legacy app's join page suppressed the referrer; the rewrite
    keeps the invitation code out of other sites' referrers with a policy that still lets the app's
-   own form posts carry `Origin` (`setup`'s Module notes). Security headers, the referrer policy and
-   a CSP belong to the first module that serves real pages (`setup`, whose claim page comes before
-   admin sign-in and the join flow), not the skeleton.
+   own form posts carry `Origin` ([SPEC-setup.md](SPEC-setup.md#security-headers-and-csp)).
+   Security headers, the referrer policy and a CSP belong to the first module that serves real pages
+   (`setup`, whose claim page comes before admin sign-in and the join flow), not the skeleton.
 4. **Where the logo lives.** SvelteKit serves static files from `static/`, so the logo is
    `static/zondarr-logo.svg`, which the README shows and `src/app.html` uses
    as the favicon. Where the logo lives is each app's own choice: obzorarr imports its icon from

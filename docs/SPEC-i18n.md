@@ -226,7 +226,8 @@ way.
     Callers pass `"UTC"` for a calendar value, such as a month's name or a date with no time of day.
     The zone a point in time is shown in (a sync run, a log entry) is decided in the spec of the
     first module that shows one; if that needs a setting, that module asks the owner. That records
-    are stored in UTC (`setup`'s Module notes) doesn't decide how they are shown.
+    are stored in UTC ([SPEC-setup.md](SPEC-setup.md#the-database)) doesn't decide how they are
+    shown.
 
 Counts and quantities inside a message use `{{name, number}}` instead. Other formatters (relative
 times, lists) come with the first module that needs one.

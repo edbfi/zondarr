@@ -36,7 +36,7 @@ The mechanism the record supports:
 
 ## Operating Context
 
-- **Deployment:** one self-hosted instance per owner, run as one container, one process and one HTTP port, with the database file on a persistent volume; container packaging lives in the separate `zondarr-docker` repository (D4, D5). It runs on a trusted network or behind a reverse proxy; if a proxy rewrites the host, `sign-in`'s Module notes in [docs/SPEC.md](docs/SPEC.md) explain when `ORIGIN` or a proxy fix is needed.
+- **Deployment:** one self-hosted instance per owner, run as one container, one process and one HTTP port, with the database file on a persistent volume; container packaging lives in the separate `zondarr-docker` repository (D4, D5). It runs on a trusted network or behind a reverse proxy; if a proxy rewrites the host, [docs/SPEC-setup.md](docs/SPEC-setup.md) explains when `ORIGIN` or a proxy fix is needed.
 - **Scale:** one owner's servers (typically one to a few), hundreds to low thousands of members and dozens of invitations.
 - **Roles:** one owner account, the only administrator (there are no co-administrators), invitees who only ever see the public join page, and the operator who deploys the instance and whose environment settings lock the matching console settings.
 - **How an invitation travels:** the admin copies the invite link and shares it out of band, since Zondarr sends no email. Codes are also read aloud and typed by hand, which is why generated codes avoid ambiguous characters (route-admin-invitations brief).
@@ -68,7 +68,7 @@ What exists:
 - **Upstream notes:** [docs/research/plex.md](docs/research/plex.md) and [docs/research/jellyfin.md](docs/research/jellyfin.md), how Plex and Jellyfin behaved for the legacy app, not re-verified.
 - **Design mockups:** ten generated screens in `docs/design/screens/`, `01-public-invitation.webp` through `10-recovery-and-components.webp`, covering the invitee flow, a 390px mobile board, the admin console and a states-and-components board. They are composition references; their text is illustrative, and the surface briefs' raster corrections win (DESIGN.md).
 - **Direction references:** `docs/design/references/golden-welcome.webp` and `docs/design/references/velvet-premiere.webp`, the two references the confirmed direction blends.
-- **Surface briefs:** nine proposed briefs in `.impeccable/surfaces/`, one per route, five admin and four invitee.
+- **Surface briefs:** ten proposed briefs in `.impeccable/surfaces/`, one per route: the first-run claim, five admin and four invitee.
 - **Demo data:** [tests/fixtures/demo-fixtures.json](tests/fixtures/demo-fixtures.json) is fictional. It and the names in the briefs are the canonical demo content.
 - **Identity asset:** `static/zondarr-logo.svg`, used in the README and as the favicon.
 - **Licence:** see [README](README.md#license) for the grant and scope.
