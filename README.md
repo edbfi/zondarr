@@ -112,7 +112,9 @@ binding for your platform, as `bun ci` installs it:
 
 ## The address browsers use
 
-`ORIGIN` is optional. It tells Zondarr the address browsers use, as a bare origin with no path:
+Zondarr asks each browser where a form or other change came from, and refuses one sent from
+another site with "Access denied". So it needs no address of its own: `ORIGIN` is optional, and
+tells Zondarr the address browsers use, as a bare origin with no path:
 
 | Variable | Holds | Default |
 | --- | --- | --- |
@@ -122,6 +124,13 @@ Zondarr won't start if `ORIGIN` is empty or holds a path, a query, a fragment or
 leave it out instead. When `ORIGIN` is `https`, or, without it, when the browser reaches Zondarr
 over HTTPS, pages ask browsers to keep using HTTPS. `ORIGIN` is set only here, in the environment:
 there is no setting for it in the console, and it isn't the public invite address.
+
+**When Zondarr refuses its own forms with "Access denied":** behind a reverse proxy that rewrites
+the `Host` header, Zondarr can't match the browser's address to the one it was asked for. Set
+`ORIGIN` to the address browsers use, or have the proxy pass the browser's `Host` on: in nginx,
+`proxy_set_header Host $http_host;` (not `$host`, which drops a port that isn't the default). Over
+plain HTTP this affects every browser; over HTTPS only older ones (Safari before 16.4, Firefox
+before 90, Chrome before 76), since current browsers say where a request came from themselves.
 
 ## Logs
 

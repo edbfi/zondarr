@@ -280,8 +280,9 @@ formatters, and a check of the message files. Module 3, `setup`
 ([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
 [`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
 empty `owner` table), logs are redacted JSON lines, unexpected errors included, it shuts down
-cleanly, `/healthz` reports the database's health, and every response through `handle` carries
-the security headers and every page a nonce-based CSP; nothing claims the instance yet.
+cleanly, `/healthz` reports the database's health, every response through `handle` carries the
+security headers and every page a nonce-based CSP, and a state-changing request from another site
+gets "Access denied"; nothing claims the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -315,7 +316,7 @@ src/
                                  private, read at runtime, optional
   hooks.server.ts                the `init` hook: runs startup, except while building;
                                  `handle`: each request's language, through Paraglide's middleware,
-                                 then the security headers;
+                                 then the security headers, then the cross-origin check;
                                  `handleError`: logs an unexpected error
   hooks.client.ts                the browser keeps the language the server chose for the page
   routes/
@@ -345,8 +346,10 @@ src/
                                  unexpected-error.ts: the entry `handleError` writes
       services/setup/startup.ts  startup's steps (the key, the configuration, the database) and
                                  shutdown: the signals, closing, and the 5-second deadline
-      security/headers.ts        the security headers for a response through `handle`; HSTS only
-                                 over HTTPS
+      security/                  headers.ts: the security headers for a response through
+                                 `handle`, HSTS only over HTTPS; cross-origin.ts: the check that
+                                 asks the browser where a state-changing request came from;
+                                 access-denied.ts: its refusal, a page or a JSON error
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives
                                  the AES key and key ID; secret.ts: the `Secret` wrapper,
@@ -380,8 +383,9 @@ drizzle/                         the reviewed migrations, one folder each, gener
                                  `db:generate` (drizzle.config.ts)
 panda.config.ts                  every design token; components use them through
                                  `#styled-system/<module>` (generated, gitignored)
-vite.config.ts                   SvelteKit (all its configuration, the CSP included), Panda,
-                                 Paraglide and Vitest
+vite.config.ts                   SvelteKit (all its configuration, the CSP included, its own form
+                                 check off), Panda, Paraglide and Vitest; vite.config.test.ts
+                                 checks the form check and remote functions stay off
 playwright.config.ts  tsconfig.json  package.json  bun.lock
 ```
 
