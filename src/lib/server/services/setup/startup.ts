@@ -120,7 +120,7 @@ export async function closeServices(): Promise<void> {
 	try {
 		await db?.$client.close();
 	} catch (error) {
-		log.error("closing the database failed", { error });
+		note(() => log.error("closing the database failed", { error }));
 	}
 	await flushLogs();
 }

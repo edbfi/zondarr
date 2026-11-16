@@ -311,6 +311,16 @@ describe("startUp's shutdown", () => {
 		});
 	});
 
+	it("closeServices still finishes after a failed close when standard output throws", async () => {
+		vi.spyOn(Database.prototype, "close").mockRejectedValueOnce(new Error("disk went away"));
+		const path = join(root, "close-fails-no-stdout", "app.db");
+		await startUp({ ZONDARR_SECRET_KEY: key(), ZONDARR_DATABASE_PATH: path }, { dev: true });
+		vi.mocked(process.stdout.write).mockImplementation(() => {
+			throw new Error("EPIPE");
+		});
+		await expect(closeServices()).resolves.toBeUndefined();
+	});
+
 	it("closeServices finishes the close before it flushes, and the flush before it returns", async () => {
 		const path = join(root, "order", "app.db");
 		await startUp({ ZONDARR_SECRET_KEY: key(), ZONDARR_DATABASE_PATH: path }, { dev: true });
