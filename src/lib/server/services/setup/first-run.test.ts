@@ -89,6 +89,27 @@ describe("first run's bootstrap token", () => {
 		expect(printed[0]).toContain(" https://zondarr.example/setup ");
 	});
 
+	// A console that fails mustn't stop the renewals, or the token just drawn would be the last.
+	it("keeps renewing, and doesn't throw, when printing the line fails", async () => {
+		let attempts = 0;
+		const db = await newDatabase();
+		fakeClock();
+		await expect(
+			startFirstRun({
+				db,
+				origin: undefined,
+				print: () => {
+					attempts++;
+					throw new Error("EPIPE");
+				},
+				lifetimeMs: 40,
+			}),
+		).resolves.toBeUndefined();
+		expect(attempts).toBe(1);
+		vi.advanceTimersByTime(40);
+		expect(attempts).toBe(2);
+	});
+
 	it("prints no more once stopped, as shutdown does", async () => {
 		const printed: string[] = [];
 		const db = await newDatabase();

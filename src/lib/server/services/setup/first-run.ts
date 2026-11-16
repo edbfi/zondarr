@@ -58,11 +58,16 @@ function renewToken(): void {
 	if (settings === undefined || claimed) return;
 	clearTimeout(timer);
 	token = issueToken(Date.now(), settings.lifetimeMs);
-	const address = `${settings.origin ?? ""}/setup`;
-	const minutes = Math.round(settings.lifetimeMs / 60_000);
-	settings.print(
-		`Setup token: ${formatToken(token.value)} (valid for ${minutes} minutes). Open ${address} to claim this Zondarr.`,
-	);
+	// The next renewal is set before printing, so a console that fails can't stop the renewals.
 	timer = setTimeout(renewToken, settings.lifetimeMs);
 	timer.unref?.();
+	const address = `${settings.origin ?? ""}/setup`;
+	const minutes = Math.round(settings.lifetimeMs / 60_000);
+	try {
+		settings.print(
+			`Setup token: ${formatToken(token.value)} (valid for ${minutes} minutes). Open ${address} to claim this Zondarr.`,
+		);
+	} catch {
+		// Nowhere to show it; the next renewal prints a new one.
+	}
 }

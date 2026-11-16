@@ -228,8 +228,8 @@ memory at startup.
 
 **Acceptance criteria:**
 - [x] `server/security/bootstrap-token.test.ts` first fails, then passes: the format and alphabet,
-  biased bytes drawn again (a mocked byte stream), display, accepted and refused entries, constant
-  time comparison, and the 15-minute boundary.
+  biased bytes drawn again (a mocked byte stream), display, accepted and refused entries, and the
+  15-minute boundary; the constant-time comparison (`timingSafeEqual`) is checked by review.
 - [x] `server/services/setup/first-run.test.ts`, with a faked clock: a token and a new one at
   expiry (none at 59 ms of a 60 ms life, one at 60 ms); the full address with `ORIGIN`; none after
   stopping or once an owner exists. `db/owner.ts` gains `ownerExists`; `owner.test.ts` checks it
