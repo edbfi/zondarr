@@ -58,7 +58,8 @@ export async function startUp(env: StartupEnv, options: { dev: boolean }): Promi
 
 /** The database startup opened; it throws before startup has opened it, or after shutdown. */
 export function currentDatabase(): Database {
-	if (database === undefined) throw new Error("the database is used before startup opened it");
+	if (database === undefined)
+		throw new Error("the database isn't open: startup hasn't opened it, or shutdown closed it");
 	return database;
 }
 
