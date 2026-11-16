@@ -274,9 +274,12 @@ unit tests, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). P
 come next, in the order of the approved capability map in `docs/SPEC.md`, each through an
 owner-approved `docs/SPEC-<id>.md`. Module 1, `secrets`
 ([`docs/SPEC-secrets.md`](docs/SPEC-secrets.md)), is built and ready for consumers. Nothing stores
-a secret yet, and no database exists. Module 2, `i18n` ([`docs/SPEC-i18n.md`](docs/SPEC-i18n.md)),
+a secret yet. Module 2, `i18n` ([`docs/SPEC-i18n.md`](docs/SPEC-i18n.md)),
 is built: pages are served in English or Danish, with a language switcher, number and date
-formatters, and a check of the message files.
+formatters, and a check of the message files. Module 3, `setup`
+([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
+[`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
+empty `owner` table); nothing claims the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -305,9 +308,9 @@ src/
                                  and `handle` writes the request's language into `<html lang>`
   app.css                        Panda layer order; the Vite plugin appends the generated CSS
   app.d.ts                       SvelteKit ambient types
-  env.ts                         declares `ZONDARR_SECRET_KEY` and `ZONDARR_SECRET_KEY_FILE`:
-                                 private, read at runtime, optional
-  hooks.server.ts                the `init` hook: loads the keyring, except while building;
+  env.ts                         declares `ZONDARR_SECRET_KEY`, `ZONDARR_SECRET_KEY_FILE` and
+                                 `ZONDARR_DATABASE_PATH`: private, read at runtime, optional
+  hooks.server.ts                the `init` hook: runs startup, except while building;
                                  `handle`: each request's language, through Paraglide's middleware
   hooks.client.ts                the browser keeps the language the server chose for the page
   routes/
@@ -318,11 +321,16 @@ src/
     (public)/join/ (admin)/ api/ later: public join flow, admin console, JSON endpoints
   lib/                           imported as `#lib/<path>.<ext>`, e.g.
                                  `#lib/server/services/health.ts`
-    server/                      server-only: services/health.ts; later db/ (schema per aggregate),
-                                 providers/<plex|jellyfin>/, services/<domain>/, jobs/,
-                                 http/ (SSRF-safe fetch), logging/
-      config/secret-key.ts       the master key's text from `ZONDARR_SECRET_KEY` or the file
-                                 `ZONDARR_SECRET_KEY_FILE` names; no key logic
+    server/                      server-only: services/health.ts; later providers/<plex|jellyfin>/,
+                                 services/<domain>/, jobs/, http/ (SSRF-safe fetch), logging/
+      config/                    each variable's reader, checked at startup: secret-key.ts (the
+                                 master key's text, no key logic), database-path.ts;
+                                 config-error.ts: the error every check throws, naming the
+                                 variable, never its value; error-code.ts: a system error's code
+      db/                        client.ts: opens the one database file; migrate.ts: applies the
+                                 migrations Vite bundles; settings.ts, owner.ts: one aggregate's
+                                 tables (and later its named operations) per file
+      services/setup/startup.ts  startup's steps: the key, the configuration, the database
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives
                                  the AES key and key ID; secret.ts: the `Secret` wrapper,
@@ -341,6 +349,8 @@ static/                          served as is (zondarr-logo.svg, also the favico
 tests/
   e2e/smoke.test.ts              Playwright smoke against the built server
   e2e/secret-key.test.ts         the built server refuses to start without a valid key
+  e2e/setup.test.ts              first run and the request checks, each test on its own built
+                                 server and temporary database
   e2e/i18n.test.ts               the built server serves each viewer's language, the browser
                                  keeps it, and the switcher changes it
   fixtures/demo-fixtures.json    design fixtures
@@ -350,7 +360,8 @@ messages/en.json  messages/da.json
 project.inlang/                  settings.json: the locales and the i18next plugin;
                                  paraglide.config.ts: Paraglide's options, which the CLI and the
                                  Vite plugin both read
-drizzle/                         later: reviewed migrations
+drizzle/                         the reviewed migrations, one folder each, generated by
+                                 `db:generate` (drizzle.config.ts)
 panda.config.ts                  every design token; components use them through
                                  `#styled-system/<module>` (generated, gitignored)
 vite.config.ts                   SvelteKit (all its configuration), Panda, Paraglide and Vitest
