@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type Database, openDatabase } from "./client.ts";
+import { type Database, openDatabase, pingDatabase } from "./client.ts";
 import { migrateDatabase } from "./migrate.ts";
 import { settings } from "./settings.ts";
 
@@ -63,5 +63,14 @@ describe("openDatabase", () => {
 		expect(await transaction).toBe("roll back");
 		expect(await outside).toBe("written");
 		expect(await keys()).toEqual(["outside"]);
+	});
+});
+
+describe("pingDatabase", () => {
+	it("answers on an open database, and fails once it is closed", async () => {
+		const other = await openDatabase(join(root, "ping.db"));
+		await expect(pingDatabase(other)).resolves.toBeUndefined();
+		other.$client.close();
+		await expect(pingDatabase(other)).rejects.toThrow();
 	});
 });

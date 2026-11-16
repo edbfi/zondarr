@@ -121,6 +121,19 @@ ever sees "Internal Error".
 | --- | --- | --- |
 | `ZONDARR_LOG_DEBUG` | `true` to add debug entries, or `false` | `false` |
 
+## Health
+
+Three public addresses answer in JSON, never cached and never with a version:
+
+| Path | Answers |
+| --- | --- |
+| `/healthz` | `healthy` with 200, or `degraded` with 503 when the database doesn't answer |
+| `/healthz/live` | `alive` with 200 while Zondarr serves requests |
+| `/healthz/ready` | `ready` with 200, or `not ready` with 503 when the database doesn't answer |
+
+Point a container's health check at `/healthz/live`, so a database fault shows as degraded instead
+of restarting Zondarr over and over; watch `/healthz` from your monitoring.
+
 ## Stopping and the server's limits
 
 Zondarr stops cleanly on `SIGTERM`, `SIGINT` or `SIGHUP`: it lets the requests in progress finish,

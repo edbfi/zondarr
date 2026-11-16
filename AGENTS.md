@@ -269,7 +269,7 @@ Jellyfin account; the owner manages invitations, members, servers and welcome wi
 console. It is being rewritten from scratch; the previous version is on the `legacy-old/v1` branch,
 for reference only.
 
-**Status:** the ground floor is built: an empty SvelteKit app on Bun with Panda tokens, `/healthz`,
+**Status:** the ground floor is built: an empty SvelteKit app on Bun with Panda tokens, health,
 unit tests, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). Product modules
 come next, in the order of the approved capability map in `docs/SPEC.md`, each through an
 owner-approved `docs/SPEC-<id>.md`. Module 1, `secrets`
@@ -279,8 +279,8 @@ is built: pages are served in English or Danish, with a language switcher, numbe
 formatters, and a check of the message files. Module 3, `setup`
 ([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
 [`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
-empty `owner` table), logs are redacted JSON lines, unexpected errors included, and it shuts down
-cleanly; nothing claims the instance yet.
+empty `owner` table), logs are redacted JSON lines, unexpected errors included, it shuts down
+cleanly, and `/healthz` reports the database's health; nothing claims the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -320,19 +320,22 @@ src/
     +layout.svelte               loads app.css; marks <html data-hydrated> once mounted
     (public)/+page.svelte        `/`: placeholder page, its text from the messages, and the
                                  language switcher
-    healthz/+server.ts           `/healthz`: public one-word status
+    healthz/                     `+server.ts`: `/healthz`, overall health; `live/`, `ready/`:
+                                 liveness and readiness
     (public)/join/ (admin)/ api/ later: public join flow, admin console, JSON endpoints
   lib/                           imported as `#lib/<path>.<ext>`, e.g.
                                  `#lib/server/services/health.ts`
-    server/                      server-only: services/health.ts; later providers/<plex|jellyfin>/,
-                                 services/<domain>/, jobs/, http/ (SSRF-safe fetch)
+    server/                      server-only: services/health.ts (the three health answers);
+                                 later providers/<plex|jellyfin>/, services/<domain>/, jobs/,
+                                 http/ (SSRF-safe fetch)
       config/                    each variable's reader, checked at startup: secret-key.ts (the
                                  master key's text, no key logic), database-path.ts, log-debug.ts;
                                  config-error.ts: the error every check throws, naming the
                                  variable, never its value; error-code.ts: a system error's code
-      db/                        client.ts: opens the one database file; migrate.ts: applies the
-                                 migrations Vite bundles; settings.ts, owner.ts: one aggregate's
-                                 tables (and later its named operations) per file
+      db/                        client.ts: opens the one database file, and the health query;
+                                 migrate.ts: applies the migrations Vite bundles; settings.ts,
+                                 owner.ts: one aggregate's tables (and later its named
+                                 operations) per file
       logging/                   logger.ts: one JSON line per entry on standard output, and
                                  `flushLogs()`, which waits until every entry has left;
                                  redact.ts: removes credentials before an entry is written;
