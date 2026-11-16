@@ -134,11 +134,11 @@ the built server, installed a turn after `init` resolves.
 join it, as the spec's table says: JSON, `no-store`, no version, no error text.
 
 **Acceptance criteria:**
-- [ ] `server/services/health.test.ts` first fails, then passes: each answer with a working and a
+- [x] `server/services/health.test.ts` first fails, then passes: each answer with a working and a
   failing (and a slow, time-limited) database check, and a failure logged.
-- [ ] Each route test (`server.test.ts` beside each `+server.ts`) checks its status, body and
+- [x] Each route test (`server.test.ts` beside each `+server.ts`) checks its status, body and
   `cache-control`.
-- [ ] `smoke.test.ts` and `setup.test.ts` read the new answers; the README says the container
+- [x] `smoke.test.ts` and `setup.test.ts` read the new answers; the README says the container
   probes `/healthz/live`.
 
 **Verification:** the gates.
@@ -153,7 +153,7 @@ join it, as the spec's table says: JSON, `no-store`, no version, no error text.
 
 ## Checkpoint: after task 4
 
-- [ ] As in [plan.md](plan.md#checkpoint-after-task-4).
+- [x] As in [plan.md](plan.md#checkpoint-after-task-4).
 
 ## Task 5: `ORIGIN`, the security headers and the CSP
 

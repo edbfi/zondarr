@@ -658,22 +658,25 @@ export const GET: RequestHandler = () => healthResponse();
 
 ## Testing strategy
 
-- **Unit (Vitest, `node` environment):** the `/healthz` handler (status 200, body `ok`,
-  `cache-control: no-store`), the `secrets` module (`config/secret-key.test.ts`, and
-  `key-text.test.ts`, `keyring.test.ts`, `cipher.test.ts` and `secret.test.ts` in
-  `security/secrets/`, under `src/lib/server/`), `setup`'s (under `src/lib/server/`:
-  `config/database-path.test.ts`, `config/log-debug.test.ts`; `logging/logger.test.ts`, with
-  `flushLogs()` through a real shell pipe whose reader is slow, and after a write that threw;
-  `logging/redact.test.ts`, each redaction rule, the allowlist, encoded nested URLs and a growth
-  check that a quadratic scan fails; `logging/unexpected-error.test.ts`, what `handleError` logs and
-  that it returns nothing; `db/client.test.ts`, D5's rollback isolation, which fails on Drizzle
-  `1.0.0-rc.4`; `db/migrate.test.ts`, the bundled migrations against Drizzle Kit's own migrator and
-  the owner table's one row; `services/setup/startup.test.ts`, a database path Turso can't open
-  refused without the path, a failed step logged before it is thrown, and a bad `ZONDARR_LOG_DEBUG`
-  refused before the database folder exists; shutdown against a stand-in process: `SIGHUP` passed on
-  as `SIGTERM`, exit 0 only after the cleanup, exit 1 when it throws or at the 5-second deadline,
-  even if it finishes during the deadline's bounded flush, no handlers in `dev`, and the database
-  closed before the logs are flushed), and in `src/lib/shared/i18n/`:
+- **Unit (Vitest, `node` environment):** the three health routes (`server.test.ts` under
+  `routes/healthz/`: degraded and not ready before the database is open, healthy and ready after,
+  alive without touching the database, never cached), the `secrets` module
+  (`config/secret-key.test.ts`, and `key-text.test.ts`, `keyring.test.ts`, `cipher.test.ts` and
+  `secret.test.ts` in `security/secrets/`, under `src/lib/server/`), `setup`'s (under
+  `src/lib/server/`: `config/database-path.test.ts`, `config/log-debug.test.ts`;
+  `logging/logger.test.ts`, with `flushLogs()` through a real shell pipe whose reader is slow, and
+  after a write that threw; `logging/redact.test.ts`, each redaction rule, the allowlist, encoded
+  nested URLs and a growth check that a quadratic scan fails; `logging/unexpected-error.test.ts`,
+  what `handleError` logs and that it returns nothing; `db/client.test.ts`, D5's rollback isolation,
+  which fails on Drizzle `1.0.0-rc.4`, and the health query; `services/health.test.ts`, each answer,
+  and a failed or slow database check logged, redacted; `db/migrate.test.ts`, the bundled migrations
+  against Drizzle Kit's own migrator and the owner table's one row;
+  `services/setup/startup.test.ts`, a database path Turso can't open refused without the path, a
+  failed step logged before it is thrown, and a bad `ZONDARR_LOG_DEBUG` refused before the database
+  folder exists; shutdown against a stand-in process: `SIGHUP` passed on as `SIGTERM`, exit 0 only
+  after the cleanup, exit 1 when it throws or at the 5-second deadline, even if it finishes during
+  the deadline's bounded flush, no handlers in `dev`, and the database closed before the logs are
+  flushed), and in `src/lib/shared/i18n/`:
   - `format.test.ts` runs the formatters inside `paraglideMiddleware` with a request for each
     language and checks that English formats as `en-GB` and that `formatDateTime` follows the zone
     it is given, not the machine's;
@@ -685,8 +688,8 @@ export const GET: RequestHandler = () => healthResponse();
   Playwright generates for each run, so CI needs no stored secret.
   - `smoke.test.ts` checks that `/` returns 200, shows the placeholder heading, hydrates (it waits
     for the `data-hydrated` attribute the root layout sets when mounted), applies the Panda
-    background token and `h1` text style and logs no console errors, and that `/healthz` returns
-    `ok`.
+    background token and `h1` text style and logs no console errors, and that `/healthz`,
+    `/healthz/live` and `/healthz/ready` answer healthy, alive and ready, never cached.
   - `secret-key.test.ts` checks that the built server refuses to start without a valid key.
   - `setup.test.ts` starts its own built servers, each with a temporary database: a new file is
     migrated and a second start applies nothing, the default is `data/zondarr.db` in the working
@@ -746,6 +749,5 @@ design doesn't call for anything different; choices 4 and 5 are zondarr's own.
    `static/zondarr-logo.svg`, which the README shows and `src/app.html` uses
    as the favicon. Where the logo lives is each app's own choice: obzorarr imports its icon from
    `src/lib/assets/` instead.
-5. **Health.** `/healthz` always answers `ok`. The module that adds the database replaces it with a
-   fuller health: overall (healthy, or degraded by a persistence check), liveness and readiness,
-   unauthenticated, and never showing a version (D24).
+5. **Health.** Closed: `setup` replaced the ground floor's one-word `/healthz` with overall health,
+   liveness and readiness ([SPEC-setup.md](SPEC-setup.md#health)).

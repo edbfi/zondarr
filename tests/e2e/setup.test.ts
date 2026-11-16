@@ -99,7 +99,7 @@ test.describe("the database", () => {
 		for (const start of ["first", "second"]) {
 			const server = await startServer(root, env);
 			const response = await fetch(`${server.url}/healthz`);
-			expect(await response.text(), `${start} start`).toBe("ok");
+			expect(await response.json(), `${start} start`).toMatchObject({ status: "healthy" });
 			await server.stop();
 		}
 
@@ -205,7 +205,7 @@ test.describe("shutdown", () => {
 			const server = await startServer(root, {
 				ZONDARR_DATABASE_PATH: join(root, "data", "zondarr.db"),
 			});
-			expect(await (await fetch(`${server.url}/healthz`)).text()).toBe("ok");
+			expect((await fetch(`${server.url}/healthz`)).status).toBe(200);
 
 			expect(await server.stop(signal)).toBe(0);
 			const stopping = server

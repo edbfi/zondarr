@@ -6,7 +6,13 @@ import { Database } from "@tursodatabase/database";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigError } from "#lib/server/config/config-error.ts";
 import { createLogger } from "#lib/server/logging/logger.ts";
-import { closeServices, handleShutdown, type ShutdownTarget, startUp } from "./startup.ts";
+import {
+	closeServices,
+	currentDatabase,
+	handleShutdown,
+	type ShutdownTarget,
+	startUp,
+} from "./startup.ts";
 
 let root: string;
 
@@ -59,7 +65,10 @@ describe("startUp", () => {
 		const path = join(root, "data", "app.db");
 		await startUp({ ZONDARR_SECRET_KEY: key(), ZONDARR_DATABASE_PATH: path }, { dev: true });
 		expect(await Bun.file(path).exists()).toBe(true);
+		expect(currentDatabase()).toBeDefined();
 		await closeServices();
+		// After shutdown the message mustn't blame startup.
+		expect(() => currentDatabase()).toThrow("startup hasn't opened it, or shutdown closed it");
 	});
 
 	// Turso's own messages hold the path, so startup replaces them.

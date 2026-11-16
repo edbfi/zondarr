@@ -75,13 +75,13 @@ tests at `b59b909`, rebuilt for zondarr's names, decisions and design. The split
 - [x] Task 1: the database (D15)
 - [x] Task 2: logging with redaction, and `handleError`
 - [x] Task 3: shutdown
-- [ ] Task 4: health
+- [x] Task 4: health
 
 ### Checkpoint: after task 4
 
-- [ ] `check`, `test`, `lint`, `build`, `smoke` and prek pass; CI's `checks`, `smoke` and `ci-ok`
+- [x] `check`, `test`, `lint`, `build`, `smoke` and prek pass; CI's `checks`, `smoke` and `ci-ok`
   pass.
-- [ ] The built server migrates a new database, logs JSON lines, refuses a bad configuration with
+- [x] The built server migrates a new database, logs JSON lines, refuses a bad configuration with
   one line, answers the three health paths, and exits 0 on `SIGTERM` and `SIGHUP`.
 
 ### Phase 2: the request checks

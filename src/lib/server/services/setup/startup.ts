@@ -56,6 +56,13 @@ export async function startUp(env: StartupEnv, options: { dev: boolean }): Promi
 	if (!options.dev) setImmediate(() => handleShutdown(process, closeServices));
 }
 
+/** The database startup opened; it throws before startup has opened it, or after shutdown. */
+export function currentDatabase(): Database {
+	if (database === undefined)
+		throw new Error("the database isn't open: startup hasn't opened it, or shutdown closed it");
+	return database;
+}
+
 /**
  * Shutdown on top of adapter-bun 1.0.1, which drains requests on `SIGTERM` and `SIGINT`, then
  * emits `sveltekit:shutdown` without waiting for its listeners or exiting:

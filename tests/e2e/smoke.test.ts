@@ -23,8 +23,16 @@ test("/ serves the placeholder page, hydrated and styled, without console errors
 	expect(errors).toEqual([]);
 });
 
-test("/healthz answers ok", async ({ request }) => {
-	const response = await request.get("/healthz");
-	expect(response.status()).toBe(200);
-	expect(await response.text()).toBe("ok");
+test("the health paths answer healthy, alive and ready, with no version", async ({ request }) => {
+	const answers = {
+		"/healthz": { status: "healthy", checks: { database: "ok" } },
+		"/healthz/live": { status: "alive" },
+		"/healthz/ready": { status: "ready" },
+	};
+	for (const [path, body] of Object.entries(answers)) {
+		const response = await request.get(path);
+		expect(response.status(), path).toBe(200);
+		expect(response.headers()["cache-control"], path).toBe("no-store");
+		expect(await response.json(), path).toEqual(body);
+	}
 });
