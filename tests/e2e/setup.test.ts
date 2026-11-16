@@ -498,6 +498,14 @@ test.describe("the claim", () => {
 			await expect(page.locator("#token")).toHaveValue("");
 			await expect(page.locator("#password")).toHaveValue("");
 
+			// A field error marks its field and moves focus there, leaving the token unused.
+			await page.locator("#token").fill(token);
+			await page.locator("#password").fill("too short");
+			await page.getByRole("button", { name: "Claim and create owner" }).click();
+			await expect(page.locator("#password")).toHaveAttribute("aria-invalid", "true");
+			await expect(page.locator("#password")).toBeFocused();
+			await expect(page.locator("#password-error")).toHaveText("Use at least 15 characters.");
+
 			await page.locator("#token").fill(token.toUpperCase().replaceAll("-", ""));
 			await page.locator("#password").fill(PASSWORD);
 			await page.getByRole("button", { name: "Claim and create owner" }).click();
