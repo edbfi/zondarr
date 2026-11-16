@@ -277,13 +277,13 @@ owner-approved `docs/SPEC-<id>.md`. Module 1, `secrets`
 a secret yet. Module 2, `i18n` ([`docs/SPEC-i18n.md`](docs/SPEC-i18n.md)),
 is built: pages are served in English or Danish, with a language switcher, number and date
 formatters, and a check of the message files. Module 3, `setup`
-([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
-[`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
-empty `owner` table), logs are redacted JSON lines, unexpected errors included, it shuts down
-cleanly, `/healthz` reports the database's health, every response through `handle` carries the
-security headers and every page a nonce-based CSP, a state-changing request from another site
-gets "Access denied", an unclaimed instance prints a bootstrap token to the console and sends
-every page to `/setup`, and `/setup` claims it, creating the owner; nobody can sign in yet.
+([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is built: startup opens and migrates the database
+(`settings` and the `owner` table), logs are redacted JSON lines, unexpected errors included, it
+shuts down cleanly, `/healthz` reports the database's health, every response through `handle`
+carries the security headers and every page a nonce-based CSP, a state-changing request from
+another site gets "Access denied", an unclaimed instance prints a bootstrap token to the console and
+sends every page to `/setup`, and `/setup` claims it, creating the owner. Nobody can sign in yet:
+module 4, `sign-in`, comes next.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
