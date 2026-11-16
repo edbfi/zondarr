@@ -17,19 +17,21 @@ const whenWritten: (() => void)[] = [];
 
 function write(line: string): void {
 	writing++;
-	// The callback runs once the entry has left the process, or with an error; either way it no
-	// longer waits. A write that throws never calls it, so it stops counting at once.
+	// The entry stops counting once, when its callback runs (it has left the process, or failed)
+	// or when the write throws, whichever comes first.
+	let finished = false;
+	const finish = () => {
+		if (finished) return;
+		finished = true;
+		writing--;
+		if (writing === 0) for (const resolve of whenWritten.splice(0)) resolve();
+	};
 	try {
-		process.stdout.write(line, written);
+		process.stdout.write(line, finish);
 	} catch (error) {
-		written();
+		finish();
 		throw error;
 	}
-}
-
-function written(): void {
-	writing--;
-	if (writing === 0) for (const resolve of whenWritten.splice(0)) resolve();
 }
 
 /**

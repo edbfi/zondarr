@@ -71,7 +71,7 @@ export function handleShutdown(
 ): void {
 	target.on("SIGHUP", () => target.kill(target.pid, "SIGTERM"));
 	for (const signal of ["SIGTERM", "SIGINT"]) {
-		target.on(signal, () => log.info("stopping", { signal }));
+		target.on(signal, () => note(() => log.info("stopping", { signal })));
 	}
 	target.once("sveltekit:shutdown", () => {
 		let timer: ReturnType<typeof setTimeout> | undefined;
@@ -80,7 +80,7 @@ export function handleShutdown(
 		const deadline = new Promise<number>((resolve) => {
 			timer = setTimeout(() => {
 				late = true;
-				log.error("shutdown didn't finish in time", { deadlineMs });
+				note(() => log.error("shutdown didn't finish in time", { deadlineMs }));
 				const bounded = new Promise((done) => setTimeout(done, DEADLINE_FLUSH_MS));
 				void Promise.race([flushLogs(), bounded]).then(() => resolve(1));
 			}, deadlineMs);
@@ -88,7 +88,7 @@ export function handleShutdown(
 		const finished = cleanup().then(
 			() => 0,
 			async (error: unknown) => {
-				log.error("shutdown failed", { error });
+				note(() => log.error("shutdown failed", { error }));
 				await flushLogs();
 				return 1;
 			},
@@ -98,6 +98,15 @@ export function handleShutdown(
 			target.exit(late ? 1 : code);
 		});
 	});
+}
+
+/** Writes a shutdown entry; a broken standard output must never stop the process from exiting. */
+function note(write: () => void): void {
+	try {
+		write();
+	} catch {
+		// Nowhere left to write; the exit still happens.
+	}
 }
 
 /**

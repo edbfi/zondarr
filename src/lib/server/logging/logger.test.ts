@@ -84,6 +84,17 @@ describe("createLogger", () => {
 		await expect(flushLogs()).resolves.toBeUndefined();
 	});
 
+	it("counts a write that throws and then calls back only once", async () => {
+		vi.mocked(process.stdout.write).mockImplementationOnce((_chunk, ...rest: unknown[]) => {
+			const done = rest.find((arg) => typeof arg === "function") as (() => void) | undefined;
+			done?.();
+			throw new Error("EPIPE");
+		});
+		expect(() => createLogger("startup").info("lost")).toThrow("EPIPE");
+		createLogger("startup").info("kept");
+		await expect(flushLogs()).resolves.toBeUndefined();
+	});
+
 	it("keeps a newline inside a message on one line", () => {
 		createLogger("startup").error("first\nsecond");
 		expect(lines).toHaveLength(1);

@@ -279,8 +279,8 @@ is built: pages are served in English or Danish, with a language switcher, numbe
 formatters, and a check of the message files. Module 3, `setup`
 ([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
 [`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
-empty `owner` table), and logs are redacted JSON lines, unexpected errors included; nothing claims
-the instance yet.
+empty `owner` table), logs are redacted JSON lines, unexpected errors included, and it shuts down
+cleanly; nothing claims the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).

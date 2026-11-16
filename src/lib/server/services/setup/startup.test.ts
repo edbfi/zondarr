@@ -245,6 +245,22 @@ describe("handleShutdown", () => {
 		await settle(100);
 		expect(fake.exitCode()).toBe(1);
 	});
+
+	// A broken standard output must never stop the process from exiting.
+	it.each<[string, () => Promise<void>, number]>([
+		["the cleanup fails", async () => Promise.reject(new Error("close failed")), 1],
+		["the deadline fires", () => new Promise<void>(() => {}), 1],
+	])("still exits when %s and standard output throws", async (_, cleanup, code) => {
+		vi.mocked(process.stdout.write).mockImplementation(() => {
+			throw new Error("EPIPE");
+		});
+		const fake = fakeProcess();
+		handleShutdown(fake.target, cleanup, 50);
+		expect(() => fake.events.emit("SIGTERM")).not.toThrow();
+		fake.events.emit("sveltekit:shutdown", "SIGTERM");
+		await settle(400);
+		expect(fake.exitCode()).toBe(code);
+	});
 });
 
 describe("startUp's shutdown", () => {
