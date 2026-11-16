@@ -616,7 +616,7 @@ Setup facts for this stack:
 | `bun run --bun build` | production build through adapter-bun into `build/`; needs no key and never embeds one |
 | `bun run --bun preview` | runs the built server (`bun ./build`; `PORT`, default 3000, and `HOST`); without a valid key it exits before listening |
 | `bun run --bun check` | `svelte-kit sync`, the message compile, Panda codegen, then `svelte-check` failing on any error or warning |
-| `bun run --bun test` | Vitest unit tests, once (no watch) |
+| `bun run --bun test` | Vitest unit tests (`src/**/*.test.ts` and `vite.config.test.ts`), once (no watch) |
 | `bun run --bun smoke` | Playwright e2e: the browser smoke test, the language tests, the key tests and the setup tests, with a key and a temporary database it generates, never a developer's `.env` or exported key; it starts the built server, so `build` comes first, and Chromium comes from `bunx --bun playwright install chromium` |
 | `bun run --bun lint` | `biome ci`, read-only; `biome.json` lists the file extensions Biome checks |
 | `bun run --bun db:generate` | Drizzle Kit generates a migration into `drizzle/` from the schema, then Biome formats it; review it before committing |
@@ -665,19 +665,23 @@ export const GET: RequestHandler = () => healthResponse();
   `secret.test.ts` in `security/secrets/`, under `src/lib/server/`), `setup`'s (under
   `src/lib/server/`: `config/database-path.test.ts`, `config/log-debug.test.ts`,
   `config/origin.test.ts`; `security/headers.test.ts`, the headers over HTTPS, plain HTTP and
-  loopback, and with `ORIGIN`; `logging/logger.test.ts`, with `flushLogs()` through a real shell
-  pipe whose reader is slow, and after a write that threw; `logging/redact.test.ts`, each redaction
-  rule, the allowlist, encoded nested URLs and a growth check that a quadratic scan fails;
-  `logging/unexpected-error.test.ts`, what `handleError` logs and that it returns nothing;
-  `db/client.test.ts`, D5's rollback isolation, which fails on Drizzle `1.0.0-rc.4`, and the health
-  query; `services/health.test.ts`, each answer, and a failed or slow database check logged,
-  redacted; `db/migrate.test.ts`, the bundled migrations against Drizzle Kit's own migrator and the
-  owner table's one row; `services/setup/startup.test.ts`, a database path Turso can't open refused
-  without the path, a failed step logged before it is thrown, and a bad `ZONDARR_LOG_DEBUG` refused
-  before the database folder exists; shutdown against a stand-in process: `SIGHUP` passed on as
-  `SIGTERM`, exit 0 only after the cleanup, exit 1 when it throws or at the 5-second deadline, even
-  if it finishes during the deadline's bounded flush, no handlers in `dev`, and the database closed
-  before the logs are flushed), and in `src/lib/shared/i18n/`:
+  loopback, and with `ORIGIN`; `security/cross-origin.test.ts`, the check against methods, content
+  types and `Origin`, `Sec-Fetch-Site`, `Host` and `ORIGIN` values;
+  `security/access-denied.test.ts`, the refusal page and its JSON form in both languages;
+  `logging/logger.test.ts`, with `flushLogs()` through a real shell pipe whose reader is slow, and
+  after a write that threw; `logging/redact.test.ts`, each redaction rule, the allowlist, encoded
+  nested URLs and a growth check that a quadratic scan fails; `logging/unexpected-error.test.ts`,
+  what `handleError` logs and that it returns nothing; `db/client.test.ts`, D5's rollback isolation,
+  which fails on Drizzle `1.0.0-rc.4`, and the health query; `services/health.test.ts`, each answer,
+  and a failed or slow database check logged, redacted; `db/migrate.test.ts`, the bundled migrations
+  against Drizzle Kit's own migrator and the owner table's one row;
+  `services/setup/startup.test.ts`, a database path Turso can't open refused without the path, a
+  failed step logged before it is thrown, and a bad `ZONDARR_LOG_DEBUG` refused before the database
+  folder exists; shutdown against a stand-in process: `SIGHUP` passed on as `SIGTERM`, exit 0 only
+  after the cleanup, exit 1 when it throws or at the 5-second deadline, even if it finishes during
+  the deadline's bounded flush, no handlers in `dev`, and the database closed before the logs are
+  flushed), `vite.config.test.ts` (SvelteKit's own form check and remote functions are off), and in
+  `src/lib/shared/i18n/`:
   - `format.test.ts` runs the formatters inside `paraglideMiddleware` with a request for each
     language and checks that English formats as `en-GB` and that `formatDateTime` follows the zone
     it is given, not the machine's;
@@ -699,7 +703,10 @@ export const GET: RequestHandler = () => healthResponse();
     echoes the value; `SIGTERM` and `SIGHUP` each stop it with exit code 0; every page, health
     path and 404 carries the security headers, with no HSTS over plain HTTP; a page's policy
     matches directive for directive, its scripts carry the nonce, and the browser reports no CSP
-    violation; and it refuses an `ORIGIN` with credentials or a path without echoing it.
+    violation; it refuses an `ORIGIN` with credentials or a path without echoing it; a cross-site
+    form POST gets the "Access denied" page with the headers, its own policy and the viewer's
+    language; and a same-origin POST with no `Sec-Fetch-*` headers passes, on `localhost` and on
+    a plain-HTTP host name that isn't loopback (Chromium's `--host-resolver-rules`).
   - `i18n.test.ts` checks that a Danish browser gets `/` in Danish with `<html lang="da">` and
     `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
     that pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en`

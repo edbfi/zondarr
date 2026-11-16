@@ -87,13 +87,13 @@ tests at `b59b909`, rebuilt for zondarr's names, decisions and design. The split
 ### Phase 2: the request checks
 
 - [x] Task 5: `ORIGIN`, the security headers and the CSP
-- [ ] Task 6: the cross-origin check
+- [x] Task 6: the cross-origin check
 
 ### Checkpoint: after task 6
 
-- [ ] Every page and the health paths carry the headers; pages carry the nonce CSP with no
+- [x] Every page and the health paths carry the headers; pages carry the nonce CSP with no
   violation.
-- [ ] A cross-site POST gets the "Access denied" page, in the viewer's language.
+- [x] A cross-site POST gets the "Access denied" page, in the viewer's language.
 
 ### Phase 3: first run
 
