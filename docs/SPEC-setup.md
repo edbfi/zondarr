@@ -6,8 +6,8 @@ Mono half of choice 1. obzorarr is the reference app for `setup`
 ([Shared groundwork](../AGENTS.md#shared-groundwork)): this module ports obzorarr's spec and its
 code and tests at `b59b909`. This file keeps what the code and tests can't say. The full text
 before this cut is `d56ec4d:docs/SPEC-setup.md`. **What differs from obzorarr:**
-- the names: `ZONDARR_` variables, the `data/zondarr.db` default, "zondarr" in the password rule and
-  Zondarr in the printed line and the page;
+- the names: `ZONDARR_` variables, the `data/zondarr.db` default, "zondarr" as the app name the
+  password may not contain, and Zondarr in the printed line and the page;
 - the decision numbers;
 - the health (ground-floor choice 5): `/healthz` reports a database check, and `/healthz/live` and
   `/healthz/ready` join it, where obzorarr keeps its one-word `/healthz`; the setup gate lets all
@@ -85,11 +85,12 @@ server stays up with every request failing.
 **Shutdown.** adapter-bun drains open requests for `SHUTDOWN_TIMEOUT`, exits at once on a second
 signal, and emits `sveltekit:shutdown` without waiting for its listeners. So the app stops the jobs
 and timers and closes open streams on the signal, so browsers reconnect, while the adapter drains;
-on `sveltekit:shutdown` it waits for those jobs, closes the database, flushes the logs and exits 0;
-and it exits non-zero anyway 5 seconds after `sveltekit:shutdown`, even with an upstream call still
-outstanding. `SIGHUP` counts as a stop. (zondarr) Jobs get up to ten seconds to finish: `sign-in`,
-which brings the first job and its lifecycle (D14), adds their ten seconds to this deadline, and the
-container's stop timeout grows with it.
+on `sveltekit:shutdown` it waits for those jobs, closes the database, flushes the logs and exits 0
+(a failed close is logged, and the exit is still 0); and it exits non-zero anyway 5 seconds after
+`sveltekit:shutdown`, even with an upstream call still outstanding. `SIGHUP` counts as a stop.
+(zondarr) Jobs get up to ten seconds to finish: `sign-in`, which brings the first job and its
+lifecycle (D14), adds their ten seconds to this deadline, and the container's stop timeout grows
+with it.
 
 ## The database
 
@@ -124,8 +125,8 @@ comes.
 - token, authorisation and cookie fields in payloads and headers;
 - at any depth, any metadata key that looks like a token, secret, password, cookie, session or key,
   except the few names `redact.ts` lists as holding no credential, whose values are still cleaned
-  like any other (zondarr: `keyId`, the `secrets` key ID, and `authError`; a module adds a name
-  only when no value it can hold is a credential);
+  like any other (zondarr: `keyId`, the `secrets` key ID, and `authError`, not Plex's item ids
+  or `maxTokens`; a module adds a name only when no value it can hold is a credential);
 - a `Secret` (`secrets`) is already `[redacted]`.
 
 **Unexpected errors** thrown by a load, a form action, an endpoint or a hook reach SvelteKit's
