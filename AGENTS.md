@@ -282,9 +282,8 @@ formatters, and a check of the message files. Module 3, `setup`
 empty `owner` table), logs are redacted JSON lines, unexpected errors included, it shuts down
 cleanly, `/healthz` reports the database's health, every response through `handle` carries the
 security headers and every page a nonce-based CSP, a state-changing request from another site
-gets "Access denied", an unclaimed instance prints a bootstrap token to the console, and `/setup`
-claims it, creating the owner; nothing yet sends a fresh instance to `/setup`, and nobody can sign
-in.
+gets "Access denied", an unclaimed instance prints a bootstrap token to the console and sends
+every page to `/setup`, and `/setup` claims it, creating the owner; nobody can sign in yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -318,7 +317,8 @@ src/
                                  private, read at runtime, optional
   hooks.server.ts                the `init` hook: runs startup, except while building;
                                  `handle`: each request's language, through Paraglide's middleware,
-                                 then the security headers, then the cross-origin check;
+                                 then the security headers, the cross-origin check and the setup
+                                 gate;
                                  `handleError`: logs an unexpected error
   hooks.client.ts                the browser keeps the language the server chose for the page
   routes/
@@ -352,7 +352,8 @@ src/
       services/setup/            startup.ts: startup's steps (the key, the configuration, the
                                  database, first run) and shutdown: the signals, closing, and the
                                  5-second deadline; first-run.ts: first run's state in memory, the
-                                 step pointer and the bootstrap token's printing, renewal and use;
+                                 step pointer, the gate's decision and the bootstrap token's
+                                 printing, renewal and use;
                                  claim.ts: the claim, in its order
       security/                  headers.ts: the security headers for a response through
                                  `handle`, HSTS only over HTTPS; cross-origin.ts: the check that
@@ -381,6 +382,7 @@ tests/
   e2e/secret-key.test.ts         the built server refuses to start without a valid key
   e2e/setup.test.ts              first run and the request checks, each test on its own built
                                  server and temporary database
+  e2e/global-setup.ts            claims the web server's fresh instance for the other tests
   e2e/i18n.test.ts               the built server serves each viewer's language, the browser
                                  keeps it, and the switcher changes it
   fixtures/demo-fixtures.json    design fixtures

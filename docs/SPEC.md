@@ -683,18 +683,18 @@ export const GET: RequestHandler = () => healthResponse();
   the named operations, the one-row limit and times read back in UTC;
   `services/setup/first-run.test.ts`, with a faked clock, the token printed with `/setup` (or the
   full address with `ORIGIN`) and renewed at expiry, none after stopping or once claimed, the
-  renewal held back while a claim runs, and a restart reading the claim back;
-  `services/setup/claim.test.ts`, the claim's order: a field error leaving the token unused, wrong
-  and expired tokens never reaching the hash, a second claim, two at once leaving one owner, and a
-  failed transaction printing a new token but not during shutdown; `services/setup/startup.test.ts`,
-  a database path Turso can't open refused without the path, a failed step logged before it is
-  thrown, and a bad `ZONDARR_LOG_DEBUG` refused before the database folder exists; shutdown against
-  a stand-in process: `SIGHUP` passed on as `SIGTERM`, exit 0 only after the cleanup, exit 1 when it
-  throws or at the 5-second deadline, even if it finishes during the deadline's bounded flush,
-  `SIGTERM` and `SIGINT` stopping first run's timer, no handlers in `dev`, and the database closed
-  before the logs are flushed), `routes/setup/token-format.test.ts` (the token field's dashes),
-  `vite.config.test.ts` (SvelteKit's own form check and remote functions are off), and in
-  `src/lib/shared/i18n/`:
+  renewal held back while a claim runs, a restart reading the claim back, and the setup gate's
+  decision for each path before and after the claim; `services/setup/claim.test.ts`, the claim's
+  order: a field error leaving the token unused, wrong and expired tokens never reaching the hash, a
+  second claim, two at once leaving one owner, and a failed transaction printing a new token but not
+  during shutdown; `services/setup/startup.test.ts`, a database path Turso can't open refused
+  without the path, a failed step logged before it is thrown, and a bad `ZONDARR_LOG_DEBUG` refused
+  before the database folder exists; shutdown against a stand-in process: `SIGHUP` passed on as
+  `SIGTERM`, exit 0 only after the cleanup, exit 1 when it throws or at the 5-second deadline, even
+  if it finishes during the deadline's bounded flush, `SIGTERM` and `SIGINT` stopping first run's
+  timer, no handlers in `dev`, and the database closed before the logs are flushed),
+  `routes/setup/token-format.test.ts` (the token field's dashes), `vite.config.test.ts` (SvelteKit's
+  own form check and remote functions are off), and in `src/lib/shared/i18n/`:
   - `format.test.ts` runs the formatters inside `paraglideMiddleware` with a request for each
     language and checks that English formats as `en-GB` and that `formatDateTime` follows the zone
     it is given, not the machine's;
@@ -703,28 +703,33 @@ export const GET: RequestHandler = () => healthResponse();
 
   Component tests use happy-dom when components exist; never jsdom.
 - **e2e (Playwright, Chromium, under Bun):** against the built adapter-bun server, with a master key
-  Playwright generates for each run, so CI needs no stored secret.
+  and a temporary database Playwright generates for each run, so CI needs no stored secret. The web
+  server counts as started once its output runs from the token line through "Listening on"
+  (`wait.stdout`, which captures the token), and `global-setup.ts` claims the instance through the
+  form in a browser, so the smoke and language tests run on a claimed instance.
   - `smoke.test.ts` checks that `/` returns 200, shows the placeholder heading, hydrates (it waits
     for the `data-hydrated` attribute the root layout sets when mounted), applies the Panda
     background token and `h1` text style and logs no console errors, and that `/healthz`,
     `/healthz/live` and `/healthz/ready` answer healthy, alive and ready, never cached.
   - `secret-key.test.ts` checks that the built server refuses to start without a valid key.
-  - `setup.test.ts` starts its own built servers, each with a temporary database: a new file is
-    migrated and a second start applies nothing, the default is `data/zondarr.db` in the working
-    directory, and a folder it can't create or a path it can't open stops it before it listens,
-    with one line that never holds the path; a bad `ZONDARR_LOG_DEBUG` is one JSON entry that never
-    echoes the value; `SIGTERM` and `SIGHUP` each stop it with exit code 0; every page, health
-    path and 404 carries the security headers, with no HSTS over plain HTTP; a page's policy
-    matches directive for directive, its scripts carry the nonce, and the browser reports no CSP
-    violation; it refuses an `ORIGIN` with credentials or a path without echoing it; a cross-site
-    form POST gets the "Access denied" page with the headers, its own policy and the viewer's
-    language; and a same-origin POST with no `Sec-Fetch-*` headers passes, on `localhost` and on
-    a plain-HTTP host name that isn't loopback (Chromium's `--host-resolver-rules`); and a fresh
-    server prints its bootstrap token before it listens, in no log entry or response; a wrong token
-    is refused keeping the username, the right one typed in upper case without dashes claims, and
-    `/setup` and its action then answer 404, also after a restart, with neither the token nor the
-    password in a response or log entry; and the claim page's fonts load from the app with no CSP
-    violation.
+  - `setup.test.ts` starts its own built servers, each with a temporary database, claiming those
+    that need a claimed instance first: every page sends a fresh instance to `/setup` while the
+    health paths answer, a browser asking for `/` lands on the claim, and the gate's redirect
+    carries the security headers; a new file is migrated and a second start applies nothing, the
+    default is `data/zondarr.db` in the working directory, and a folder it can't create or a path it
+    can't open stops it before it listens, with one line that never holds the path; a bad
+    `ZONDARR_LOG_DEBUG` is one JSON entry that never echoes the value; `SIGTERM` and `SIGHUP` each
+    stop it with exit code 0; every page, health path and 404 carries the security headers, with no
+    HSTS over plain HTTP; a page's policy matches directive for directive, its scripts carry the
+    nonce, and the browser reports no CSP violation; it refuses an `ORIGIN` with credentials or a
+    path without echoing it; a cross-site form POST gets the "Access denied" page with the headers,
+    its own policy and the viewer's language; and a same-origin POST with no `Sec-Fetch-*` headers
+    passes, on `localhost` and on a plain-HTTP host name that isn't loopback (Chromium's
+    `--host-resolver-rules`); a fresh server prints its bootstrap token before it listens, in no log
+    entry or response; a wrong token is refused keeping the username, the right one typed in upper
+    case without dashes claims, and `/setup` and its action then answer 404, also after a restart,
+    with neither the token nor the password in a response or log entry; and the claim page's fonts
+    load from the app with no CSP violation.
   - `i18n.test.ts` checks that a Danish browser gets `/` in Danish with `<html lang="da">` and
     `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
     that pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en`
