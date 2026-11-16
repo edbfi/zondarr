@@ -1,6 +1,7 @@
 # Spec: `setup`
 
-**Status:** drafted for the owner's approval. Module 3 of the capability map
+**Status:** approved by the owner (2026-11-16), with the changes listed in "Changes to the
+capability map" and the six packages. Module 3 of the capability map
 ([docs/SPEC.md](SPEC.md)); it closes D15 and the logging half of D14, and ground-floor choices 3
 and 5, and the Outfit and IBM Plex Mono half of choice 1. obzorarr is the reference app for `setup`
 ([Shared groundwork](../AGENTS.md#shared-groundwork)): this spec ports obzorarr's
@@ -191,6 +192,13 @@ and the entry shape is fixed here. `logs` adds the in-memory buffer when it come
 
 Name splitting and the URL scans run in linear time, so a crafted parameter name or URL can't stall
 the logger; a growth test guards it.
+
+**Unexpected errors** thrown by a load, a form action, an endpoint or a hook reach SvelteKit's
+`handleError` hook, which writes them through the logger as one redacted `error` entry, never with
+SvelteKit's default `console.error`, which is neither redacted nor a JSON line. Expected errors and
+404s for unknown paths aren't logged as errors. The browser keeps SvelteKit's generic message
+until `sign-in` builds the error pages. (obzorarr has no `handleError` yet; its `sign-in` adds one,
+and this port includes it.)
 
 Console output that is meant for whoever runs the server, such as the bootstrap token, is never a
 log entry. It still reaches the container's output, which is why the console is trusted (below).
@@ -439,7 +447,7 @@ The build runs D15's validation with the pinned versions, and records the eviden
 ```text
 src/env.ts                                  + ZONDARR_DATABASE_PATH, ORIGIN, ZONDARR_LOG_DEBUG
 src/hooks.server.ts                         init: startup; handle: language, headers,
-                                            cross-origin check, setup gate
+                                            cross-origin check, setup gate; handleError
 src/lib/server/config/config-error.ts       the error every variable check throws
 src/lib/server/config/error-code.ts         a system error's code, for the path and key checks
 src/lib/server/config/database-path.ts      the database file's path
@@ -451,6 +459,7 @@ src/lib/server/db/settings.ts               the settings table and its operation
 src/lib/server/db/owner.ts                  the owner table and its operations
 src/lib/server/logging/logger.ts            levels, entries, standard output, flushing
 src/lib/server/logging/redact.ts            the redaction rules
+src/lib/server/logging/unexpected-error.ts  the `handleError` entry for an unexpected error
 src/lib/server/security/access-denied.ts    the cross-origin refusal, page or JSON
 src/lib/server/security/bootstrap-token.ts  the token: drawing, formatting, comparing, expiry
 src/lib/server/security/cross-origin.ts     the cross-origin check
@@ -502,6 +511,8 @@ and backups, first run, logs, and stopping), and `.gitignore` (`/data/` and `*.d
   - shutdown against a stand-in process: `SIGHUP` passed on, exit 0 after cleanup, exit 1 when it
     throws and at the deadline, and no handlers in `dev`;
   - the health answers with a working and a failing database check;
+  - an unexpected error logged as one redacted JSON entry, and a 404 or an expected error not
+    logged;
   - startup with a database path that names a folder or a file that isn't a database: stopped, with
     Turso's reason kept and the path removed;
   - against a temporary database file: migrations on a new database and the migrators' rows,

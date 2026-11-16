@@ -3,7 +3,7 @@
 **Status:** the ground floor (skeleton) is specified here, approved by the orchestrator
 (2026-10-18) and built. The capability map below is approved; module 1, `secrets`
 ([SPEC-secrets.md](SPEC-secrets.md)), and module 2, `i18n` ([SPEC-i18n.md](SPEC-i18n.md)), are
-built; module 3, `setup` ([SPEC-setup.md](SPEC-setup.md)), is specified.
+built; module 3, `setup` ([SPEC-setup.md](SPEC-setup.md)), is approved.
 
 ## Objective
 
