@@ -9,7 +9,7 @@ related_targets: []
 
 ## Status
 
-Built in `setup`'s task 8 (2026-11-16), code-led, with no mockup; the finish review's verdict was ship. Mode: **operate**. Audience: **the person installing Zondarr**, who can read the server console or the container's logs. Route: `/setup`. It is ported from obzorarr's claim page (its `route-setup.md`), the reference for `setup`, and drawn in Zondarr's own design.
+Built with `setup` (2026-11-16), code-led, with no mockup; the finish review's verdict was ship. Mode: **operate**. Audience: **the person installing Zondarr**, who can read the server console or the container's logs. Route: `/setup`. It is ported from obzorarr's claim page (its `route-setup.md`), the reference for `setup`, and drawn in Zondarr's own design.
 
 ## Purpose and composition
 
