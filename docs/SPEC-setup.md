@@ -10,12 +10,10 @@ the redaction allowlist, encoded nested URLs in logs and the linear-time name sp
 from obzorarr:**
 - the names: `ZONDARR_` variables, the `data/zondarr.db` default, "zondarr" in the password rule and
   Zondarr in the printed line and the page;
-- the decision numbers: D5, D6, D7, D11, D14, D15, D17, D20, D25 (an empty variable counts as
-  unset) and D26 (the `rc` dist-tag);
+- the decision numbers: D5, D6, D11, D14, D15, D16, D17, D20, D24, D25 (an empty variable counts
+  as unset) and D26 (the `rc` dist-tag);
 - the health (ground-floor choice 5): `/healthz` reports a database check, and `/healthz/live` and
   `/healthz/ready` join it, where obzorarr keeps its one-word `/healthz`;
-- the cleanup deadline at shutdown is 10 seconds, not 5, since zondarr's jobs get up to ten seconds
-  to finish (its Module notes);
 - the owner table also has an update time, from zondarr's rule for records;
 - the redaction allowlist keeps `keyId` and `authError` and drops Plex's item ids and `maxTokens`:
   zondarr manages no media items and makes no AI requests;
@@ -63,7 +61,7 @@ line naming the variable and what is wrong, never echoing the value.
 | Variable | Default | Checked |
 |---|---|---|
 | `ZONDARR_SECRET_KEY`, `…_FILE` | — | as `secrets` checks them (D25) |
-| `ZONDARR_DATABASE_PATH` | `data/zondarr.db`, against the working directory | its folder exists or can be created, and is writable |
+| `ZONDARR_DATABASE_PATH` | `data/zondarr.db`, against the working directory | its folder exists or can be created, and is writable; the file opens as a database, and the error keeps Turso's reason but never the path |
 | `ORIGIN` | unset | below |
 | `ZONDARR_LOG_DEBUG` | off | `true` or `false` |
 
@@ -71,7 +69,7 @@ line naming the variable and what is wrong, never echoing the value.
 and messages, which may echo a malformed value; the app adds no code for them, and the README lists
 them:
 - `SHUTDOWN_TIMEOUT` (default 30 s): the drain time. The container's stop timeout must exceed it
-  plus the app's 10-second cleanup; the README says so, and the image's Compose templates set
+  plus the app's 5-second cleanup; the README says so, and the image's Compose templates set
   `stop_grace_period` (Docker's default is 10 seconds);
 - `CONNECTION_IDLE_TIMEOUT` (default 10 s, at most 255 s): the idle timeout. The adapter already
   exempts event streams, which `logs`' live stream needs;
@@ -126,9 +124,11 @@ listeners. The app adds, in the built server only (Vite never emits `sveltekit:s
 - **On `sveltekit:shutdown`:** wait for the jobs stopped on the signal, close the database, then
   flush the logs (so a closing error is written) and exit 0. A failed close is logged, and the exit
   is still 0.
-- **A deadline:** if that cleanup hasn't finished 10 seconds after `sveltekit:shutdown` (zondarr:
-  jobs get up to ten seconds to finish; obzorarr's is 5), the app exits non-zero anyway, even with
-  an upstream call still outstanding, after flushing its own entry for a bounded time.
+- **A deadline:** if that cleanup hasn't finished 5 seconds after `sveltekit:shutdown`, the app
+  exits non-zero anyway, even with an upstream call still outstanding, after flushing its own entry
+  for a bounded time. (zondarr) Jobs get up to ten seconds to finish: `sign-in`, which brings the
+  first job and its lifecycle (D14), adds their ten seconds to this deadline, and the container's
+  stop timeout grows with it.
 
 ## The database
 
@@ -163,7 +163,8 @@ starts the server with `--no-install`, and the container image copies the packag
 **Records** (zondarr) have random ids and created and updated times, stored and returned in UTC; a
 time given without a zone is UTC. Nothing is soft-deleted: disabling is the only reversible way to
 switch something off. The owner row is the exception to random ids: its fixed id is what keeps it to
-one row, and it never appears in an address. Settings are keyed by name.
+one row, and it never appears in an address. Settings are keyed by name and keep only an update
+time, since a key's first write says nothing a later one doesn't.
 
 **Backups:** Turso keeps recent writes in `zondarr.db-wal` beside the file, and closing doesn't fold
 them back, so the README says to stop Zondarr and copy the whole folder, with the master key kept
@@ -341,6 +342,9 @@ skippable; after an interruption it resumes at the current step.
   constant time;
 - once the instance is claimed, none is printed again.
 
+(zondarr) The legacy app's ten-minute, single-use, same-site-strict browser authorisation from its
+setup link is not kept: the token is checked when the claim is submitted.
+
 **The claim** is `/setup`, the first step, and a POST form action. In this order:
 1. **The fields:** after the form is read, the username and password are checked against the rules
    below, with nothing awaited. A field error leaves the token unused.
@@ -395,8 +399,8 @@ reuse:
   session follows `sign-in`'s cookies. (zondarr: `sign-in` also adds the origin test's hint to the
   claim page.)
 - **First run ends at the claim,** its only step: the claim completes first run and sends the
-  browser to `/`. `sign-in` signs the new owner in at the claim, and `two-factor` adds the first step after
-  it, from which on the claim no longer completes first run.
+  browser to `/`. `sign-in` signs the new owner in at the claim, and `two-factor` adds the first
+  step after it, from which on the claim no longer completes first run.
 
 No release is cut between `setup` and `sign-in`.
 
@@ -437,6 +441,7 @@ src/env.ts                                  + ZONDARR_DATABASE_PATH, ORIGIN, ZON
 src/hooks.server.ts                         init: startup; handle: language, headers,
                                             cross-origin check, setup gate
 src/lib/server/config/config-error.ts       the error every variable check throws
+src/lib/server/config/error-code.ts         a system error's code, for the path and key checks
 src/lib/server/config/database-path.ts      the database file's path
 src/lib/server/config/origin.ts             ORIGIN, parsed and checked
 src/lib/server/config/log-debug.ts          ZONDARR_LOG_DEBUG
@@ -470,7 +475,7 @@ tests/e2e/setup.test.ts                     first run, health and the request ch
 tests/e2e/global-setup.ts                   claims the instance for the other tests
 ```
 
-The build also changes `package.json` (the five packages and `db:generate`), `vite.config.ts` (the
+The build also changes `package.json` (the six packages and `db:generate`), `vite.config.ts` (the
 form check off, the CSP, the exported options and Vitest's `include`), `panda.config.ts` (the font
 families), `src/routes/+layout.svelte` (the font imports), `playwright.config.ts` (a temporary
 database per run, the token captured from the server's output, the global setup), `messages/`, the
@@ -482,15 +487,17 @@ stopping), and `.gitignore` (`/data/` and `*.db*`).
 - **Unit (Vitest, `node`):**
   - each `config/` reader;
   - the logger's entry shape, debug filter and flush through a slow pipe; the redaction rules, one
-    case each and nested, the allowlist, encoded nested URLs, and the linear-time growth check;
+    case each and nested, the allowlist, encoded nested URLs (a decoded value also checked as a
+    query of its own, so `u=token%3Dabc` is redacted), and the linear-time growth check;
   - the headers for HTTPS, plain HTTP, loopback and `ORIGIN`;
   - the cross-origin check against a matrix of methods, content types and `Origin`,
     `Sec-Fetch-Site`, `Host` and `ORIGIN` values; the refusal in both languages, page and JSON; and
     the config test for SvelteKit's options;
   - the token's format, alphabet, unbiased drawing, expiry and comparison; the token field's
     dashes;
-  - the credential rules at their limits, NFC and case included, the patterns, the list, and an
-    argon2id round trip;
+  - the credential rules at their limits, NFC and case included, the patterns (each code point
+    lower-cased on its own, so `ΣΣΣ…` and `İabcİabc…` are refused), the list, and an argon2id
+    round trip;
   - shutdown against a stand-in process: `SIGHUP` passed on, exit 0 after cleanup, exit 1 when it
     throws and at the deadline, and no handlers in `dev`;
   - the health answers with a working and a failing database check;
@@ -554,6 +561,9 @@ Approved with this spec, as obzorarr's own spec moved its rows:
 - **The printed setup address carries no token,** so the note that opening it removes the token
   from the address bar no longer applies: a token in an address would reach the browser's history
   and a proxy's access log.
+- **Using up the token and creating the owner are two steps,** not the one atomic step zondarr's
+  note asked for: the token is used up before the hash, so a wrong guess costs nothing, and if
+  creating the owner then fails, a new token is printed, so nobody is left without one.
 - The rest of `setup`'s Module notes moves here.
 
 ## Boundaries
@@ -561,8 +571,9 @@ Approved with this spec, as obzorarr's own spec moved its rows:
 - **Always:** startup finishes before the first request; reviewed migrations; named database
   operations and short transactions (D6); redaction before writing; the token only in memory and on
   the console; the cheap checks before the hash; refusals in `handle` returned, never thrown.
-- **Ask first:** any dependency beyond the five packages; another database engine; a logging
-  library; a second owner or any role (D20).
+- **Ask first:** any dependency beyond the six packages (`@tursodatabase/database`, `drizzle-orm`,
+  `drizzle-kit`, `@fontsource-variable/outfit`, `@fontsource/ibm-plex-mono`, `@lucide/svelte`);
+  another database engine; a logging library; a second owner or any role (D20).
 - **Never:** a token or password in a log entry, response, address or the database (only the hash);
   a stored address; a way to skip a first-run step; a claim after first run; `includeSubDomains`; a
   version in a health answer.

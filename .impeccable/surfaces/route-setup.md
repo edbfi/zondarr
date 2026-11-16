@@ -30,8 +30,8 @@ Heading 'Claim this Zondarr'. One line: 'Enter the setup token from the server's
 - The token field takes the token with or without dashes and in any case, and is set in IBM Plex Mono like the console line it came from; it is not a password field, so the person can check what they typed. Dashes are inserted as the token is typed, and without JavaScript it still takes any form.
 - The Show/Hide control is a labelled button with a 20px line eye icon at the end of the password field; it appears only once the page has script, and the form works without it.
 - No server, member, Plex or Jellyfin detail appears, and no address the server guessed.
-- Test keyboard focus, visible labels, disabled behavior and 200% zoom; target 360, 390, 768 and 1440px viewports, in English and Danish. Translated text wraps without hiding the primary action, and at 360px the button is above the fold.
-- Read reduced-motion preference before animating; the 100ms press feedback is the only motion.
+- Test keyboard focus, visible labels, disabled behavior and 200% zoom; target 360, 390, 768 and 1440px viewports, in English and Danish. Translated text wraps without hiding the primary action, and at 360×640px the button is above the fold in the initial state.
+- Read reduced-motion preference before animating; the only motion is the 100ms press feedback and the 160ms status feedback as an error appears.
 - States: initial, field errors, token refused, submitting, the claim failing on the server. After success the browser leaves the page.
 
 ## Handoff prompt

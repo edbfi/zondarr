@@ -40,7 +40,7 @@ components or services, and dates and numbers formatted for the viewer's languag
 |---|---|---|---|---|
 | 1 | `secrets` | **Built.** Encrypts stored secrets (media server API keys, two-factor secrets, the OIDC client secret) before they reach the database (D20, D25), and the secret wrapper that shows only a redaction marker and opens at one named call | — | — |
 | 2 | `i18n` | **Built.** The translation groundwork (D21) with Paraglide JS (D22): message files in English and Danish, choosing each request's language, the language switcher, formatting dates and numbers for the viewer's language, and a check that every message exists in both languages | — | the language switcher in each shell |
-| 3 | `setup` | Startup checks, database and migrations, settings, structured logging with redaction, security headers and CSP (ground-floor choice 3), `ORIGIN` and the cross-origin check (it asks the browser, stores no address and takes `ORIGIN` as an optional override), the setup gate, the bootstrap token, printed to the console and never through the stored logs, and claiming the instance for its one owner, with the owner's password rules and hashing. zondarr adds the referrer policy among the headers, and replaces `/healthz` with the fuller health of ground-floor choice 5 | `secrets`, `i18n` | first-run setup (brief: `/setup`, the claim); `/healthz` |
+| 3 | `setup` | Startup checks, database and migrations, settings, structured logging with redaction, security headers and CSP (ground-floor choice 3), `ORIGIN` and the cross-origin check (it asks the browser, stores no address and takes `ORIGIN` as an optional override), the setup gate, the bootstrap token, printed to the console and never through the stored logs, and claiming the instance for its one owner, with the owner's password rules and hashing. zondarr replaces `/healthz` with the fuller health of ground-floor choice 5 | `secrets`, `i18n` | first-run setup (brief: `/setup`, the claim); `/healthz` |
 | 4 | `sign-in` | Owner sign-in with username and password, signing the new owner in at the claim (D20), sessions, sign-out (POST only), rate limits on sign-in and the claim, app-named cookies that work over plain HTTP at home and behind an HTTPS proxy, password change, error pages, recovery (D20), and the admin shell. zondarr adds the session cleanup job, whose interval later jobs share, the correlation id on error responses and the request log entry, the lockout on sign-in, rate limits on the join page (code validation and submission, redeeming and starting a Plex sign-in, listed under `sign-in`), and the origin test, which only diagnoses: it compares the address the browser uses with the `Host` the app receives and `ORIGIN` when set, suggests `ORIGIN=<address>` or the proxy line `proxy_set_header Host $http_host`, and saves nothing; its suggestion also shows on the claim and owner sign-in pages, so someone without a session can recover | `setup` | owner sign-in (no brief yet); the origin test's hint on the claim and owner sign-in pages; the admin shell; `/admin/settings`, which it builds first with the General, Account and About tabs; later modules add their tabs and sections (`invitations` adds the public invite address to General); the password section of `/admin/settings` (Account) |
 | 5 | `two-factor` | Optional but strongly recommended (D20): authenticator codes, backup codes and the challenge after every way of signing in (except the optional OIDC skip, D20), with replay protection and the attempt limit. Recovery turns it off. Adds the offer to first-run setup, right after the owner account is created and before any connection step, and the reminder in the admin shell while it is off | `sign-in` | the two-factor offer in first-run setup; the two-factor section of `/admin/settings` (Account); the reminder in the admin shell |
 | 6 | `plex-provider` | The Plex provider (D12, D18): connection test, server info, libraries, the user list with relationship types, direct share, friend and home accounts, removal stepped by relationship, disabling as a share with no libraries (D23), library access, permissions and PIN sign-in. Reconciles shares by machine id and account id after every write | `setup` | — |
@@ -82,7 +82,7 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 | `two-factor` | `services/two-factor/`, the owner schema's two-factor fields in `db/`; the offer in `routes/setup/`, the challenge page beside the sign-in page, its section in `routes/(admin)/admin/settings/`, and the reminder in `lib/components/layout/` |
 | `plex-provider` | `providers/plex/`, `providers/media-server.ts` (the contract, if first), `http/` (if first) |
 | `jellyfin-provider` | `providers/jellyfin/`, `providers/media-server.ts` and `http/` (if first) |
-| `servers` | `services/servers/`, `db/` server and library schema; `routes/(admin)/admin/servers/` |
+| `servers` | `services/servers/`, `services/settings/` (the environment locks, as obzorarr's `plex-connection` builds them), `db/` server and library schema; `routes/(admin)/admin/servers/` |
 | `members` | `services/members/`, `db/` identity and member schema; `routes/(admin)/admin/members/` |
 | `wizards` | `services/wizards/`, `db/` wizard schema, `lib/components/wizard/` (the invitee view, shared by the preview and the join flow); `routes/(admin)/admin/wizards/` |
 | `invitations` | `services/invitations/`, `db/` invitation schema, `jobs/invitation-expiry.ts`; `routes/(admin)/admin/invitations/` |
@@ -143,8 +143,8 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 
 First-run setup's steps after the claim, owner sign-in, `/admin/servers`, the wizard list and
 `/admin/logs` are needed (the last three are in PRODUCT.md's admin shell; each has its behaviour in
-the Module notes) but have no brief. The `/join/[code]/account` brief covers only Plex; the Jellyfin account form joins it. Each
-gets its brief before its module is specced.
+the Module notes) but have no brief. The `/join/[code]/account` brief covers only Plex; the Jellyfin
+account form joins it. Each gets its brief before its module is specced.
 
 ### Module notes
 
@@ -192,10 +192,11 @@ Decision numbers in these blocks are zondarr's; each app cites its own.
   OIDC may need registering again after a move, but password sign-in always remains (D20).
 - **Who needs a session** (zondarr). The owner's session is required everywhere except static
   assets, the join flow (`join`, `redemption`), the claim, owner sign-in with its two-factor
-  challenge and its Plex and OIDC steps, recovery, and `/healthz`. Someone without a session who
-  opens an owner page goes to owner sign-in. `/` sends the owner to `/admin` and anyone else to
-  owner sign-in, and a signed-in owner who opens owner sign-in, or a first-run step once first run
-  is complete, goes to `/admin` (the claim answers "not found" once an owner exists, D20).
+  challenge and its Plex and OIDC steps, recovery, and the three health paths (`/healthz`,
+  `/healthz/live`, `/healthz/ready`). Someone without a session who opens an owner page goes to
+  owner sign-in. `/` sends the owner to `/admin` and anyone else to owner sign-in, and a signed-in
+  owner who opens owner sign-in, or a first-run step once first run is complete, goes to `/admin`
+  (the claim answers "not found" once an owner exists, D20).
 - **Rate limits** apply per client address. The client address comes from the connection, or from a
   header and a proxy depth (default 1) set in the environment (zondarr: set them only when every
   request passes through that proxy). (zondarr) Signing in, recovery (D20), the claim (`setup`),
@@ -221,7 +222,7 @@ Decision numbers in these blocks are zondarr's; each app cites its own.
   expected errors pass through (zondarr: in plain words, such as a taken username, an unreachable
   server or an invitation that is no longer valid); network failures map to fixed phrases; stack
   traces never reach the browser (zondarr: nor do file paths or database text).
-- **Forwarded headers** never set the browser's address or change the strict-transport decision.
+- **Forwarded headers** never set the browser's address.
 - **The About tab** (zondarr) of `/admin/settings` shows the owner zondarr's version, the Bun
   version, the database engine and the operating system. No public page or endpoint shows them
   (D24).
