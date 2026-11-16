@@ -58,6 +58,8 @@ never appear.
   them.
 
 **Placeholders** are `{{name}}`.
+- **No other braces:** the plugin shows a brace outside a placeholder as written, so `{name}` stays
+  `{name}` on the page and `{{{name}}}` renders as `undefined}`.
 - A count or quantity is written `{{name, number}}`, which Paraglide formats with
   `Intl.NumberFormat` in the message's language ("1,234 members", "1.234 medlemmer"). A bare
   `{{count}}` would print "1234".
@@ -111,7 +113,7 @@ finds every problem in `messages/*.json` against the rules above: one file for e
 project's languages and no other; flat, non-empty string values; names, `_ordinal_` and one key or
 plural forms; the same messages in every language; the same placeholders, names and formats in
 every form; `number` as the only format; exactly the plural forms `Intl.PluralRules` gives each
-language, each with `{{count, number}}`; and no tags.
+language, each with `{{count, number}}`; no brace outside a placeholder; and no tags.
 
 ## The toolchain
 
