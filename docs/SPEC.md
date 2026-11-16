@@ -745,9 +745,7 @@ design doesn't call for anything different; choices 4 and 5 are zondarr's own.
    pairing and `check-peers` are settled early; the first `ui/` wrapper comes with the first surface
    that needs one.
 3. **Security headers and CSP.** Closed: `setup` added the security headers, the referrer policy
-   and the nonce-based CSP ([SPEC-setup.md](SPEC-setup.md#security-headers-and-csp)). The legacy
-   app's join page suppressed the referrer; `Referrer-Policy: same-origin` keeps the invitation code
-   out of other sites' referrers while the app's own form posts still carry `Origin`.
+   and the nonce-based CSP ([SPEC-setup.md](SPEC-setup.md#security-headers-and-csp)).
 4. **Where the logo lives.** SvelteKit serves static files from `static/`, so the logo is
    `static/zondarr-logo.svg`, which the README shows and `src/app.html` uses
    as the favicon. Where the logo lives is each app's own choice: obzorarr imports its icon from

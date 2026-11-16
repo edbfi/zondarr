@@ -119,8 +119,8 @@ binding for your platform, as `bun ci` installs it:
 | `ORIGIN` | the address browsers use, such as `https://zondarr.example` or `http://192.168.1.20:3000` | unset |
 
 Zondarr won't start if `ORIGIN` is empty or holds a path, a query, a fragment or credentials;
-leave it out instead. Over HTTPS, when `ORIGIN` is `https` or the browser shows it, pages ask
-browsers to keep using HTTPS. `ORIGIN` is set only here, in the environment: there is no setting
+leave it out instead. When `ORIGIN` is `https`, or, without it, when the browser reaches Zondarr
+over HTTPS, pages ask browsers to keep using HTTPS. `ORIGIN` is set only here, in the environment: there is no setting
 for it in the console, and it isn't the public invite address.
 
 ## Logs

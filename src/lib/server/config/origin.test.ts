@@ -40,6 +40,9 @@ describe("readOrigin", () => {
 		["https://zondarr.example//", "ORIGIN must not have a path"],
 		// The parser removes dot segments, so the raw path is checked before it.
 		["https://zondarr.example/app/..", "ORIGIN must not have a path"],
+		// The URL parser reads a backslash as a slash and drops the `..`.
+		["https://zondarr.example\\app\\..", "ORIGIN must not have a path"],
+		["https://zondarr.example\\", "ORIGIN must not have a path"],
 		["https://zondarr.example/%2e", "ORIGIN must not have a path"],
 		["https://zondarr.example/.", "ORIGIN must not have a path"],
 		["https://zondarr.example/?x=1", "ORIGIN must not have a query"],
