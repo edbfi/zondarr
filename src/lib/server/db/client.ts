@@ -10,6 +10,12 @@ export async function openDatabase(path: string) {
 
 export type Database = Awaited<ReturnType<typeof openDatabase>>;
 
+/** A transaction's handle: every statement in a transaction goes through it (D6). */
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+/** What a named operation runs on: the database, or a transaction a service opened. */
+export type Executor = Database | Transaction;
+
 /** Runs one trivial query, so a health check knows the connection still answers. */
 export async function pingDatabase(db: Database): Promise<void> {
 	await db.run(sql`select 1`);

@@ -583,6 +583,7 @@ and `bun ./build` needs only one package beside it: Turso's native binding for t
 | Adapter | `@sveltejs/adapter-bun` |
 | Styling | `@pandacss/dev`, `@pandacss/vite` (its Vite plugin), `@pandacss/preset-base` |
 | Primitives | `@ark-ui/svelte` |
+| Fonts and icons | `@fontsource-variable/outfit`, `@fontsource/ibm-plex-mono` (bundled, loaded in `src/routes/+layout.svelte`), `@lucide/svelte` (DESIGN.md's line icon family) |
 | Database | `@tursodatabase/database` (embedded Turso), `drizzle-orm`, `drizzle-kit` (generates the migrations) |
 | Translation | `@inlang/paraglide-js` (compiles the messages), `@inlang/plugin-i18next` (reads their i18next JSON v4 files) |
 | Type check | `svelte-check` |
@@ -669,23 +670,31 @@ export const GET: RequestHandler = () => healthResponse();
   types and `Origin`, `Sec-Fetch-Site`, `Host` and `ORIGIN` values;
   `security/access-denied.test.ts`, the refusal page and its JSON form in both languages;
   `security/bootstrap-token.test.ts`, the token's alphabet, unbiased drawing, display, the forms it
-  is accepted in, constant-time comparison and its 15-minute life; `logging/logger.test.ts`, with
-  `flushLogs()` through a real shell pipe whose reader is slow, and after a write that threw;
+  is accepted in, constant-time comparison and its 15-minute life; `security/password.test.ts`, the
+  credential rules at their limits, NFC and case, the patterns, the app's name and the username, the
+  common-password list, and an argon2id round trip; `logging/logger.test.ts`, with `flushLogs()`
+  through a real shell pipe whose reader is slow, and after a write that threw;
   `logging/redact.test.ts`, each redaction rule, the allowlist, encoded nested URLs and a growth
   check that a quadratic scan fails; `logging/unexpected-error.test.ts`, what `handleError` logs and
   that it returns nothing; `db/client.test.ts`, D5's rollback isolation, which fails on Drizzle
   `1.0.0-rc.4`, and the health query; `services/health.test.ts`, each answer, and a failed or slow
   database check logged, redacted; `db/migrate.test.ts`, the bundled migrations against Drizzle
-  Kit's own migrator and the owner table's one row; `db/owner.test.ts`, `ownerExists` and the
-  one-row limit; `services/setup/first-run.test.ts`, with a faked clock, the token printed with
-  `/setup` (or the full address with `ORIGIN`) and renewed at expiry, none after stopping or once
-  claimed; `services/setup/startup.test.ts`, a database path Turso can't open refused without the
-  path, a failed step logged before it is thrown, and a bad `ZONDARR_LOG_DEBUG` refused before the
-  database folder exists; shutdown against a stand-in process: `SIGHUP` passed on as `SIGTERM`, exit
-  0 only after the cleanup, exit 1 when it throws or at the 5-second deadline, even if it finishes
-  during the deadline's bounded flush, `SIGTERM` and `SIGINT` stopping first run's timer, no
-  handlers in `dev`, and the database closed before the logs are flushed), `vite.config.test.ts`
-  (SvelteKit's own form check and remote functions are off), and in `src/lib/shared/i18n/`:
+  Kit's own migrator and the owner table's one row; `db/owner.test.ts` and `db/settings.test.ts`,
+  the named operations, the one-row limit and times read back in UTC;
+  `services/setup/first-run.test.ts`, with a faked clock, the token printed with `/setup` (or the
+  full address with `ORIGIN`) and renewed at expiry, none after stopping or once claimed, the
+  renewal held back while a claim runs, and a restart reading the claim back;
+  `services/setup/claim.test.ts`, the claim's order: a field error leaving the token unused, wrong
+  and expired tokens never reaching the hash, a second claim, two at once leaving one owner, and a
+  failed transaction printing a new token but not during shutdown; `services/setup/startup.test.ts`,
+  a database path Turso can't open refused without the path, a failed step logged before it is
+  thrown, and a bad `ZONDARR_LOG_DEBUG` refused before the database folder exists; shutdown against
+  a stand-in process: `SIGHUP` passed on as `SIGTERM`, exit 0 only after the cleanup, exit 1 when it
+  throws or at the 5-second deadline, even if it finishes during the deadline's bounded flush,
+  `SIGTERM` and `SIGINT` stopping first run's timer, no handlers in `dev`, and the database closed
+  before the logs are flushed), `routes/setup/token-format.test.ts` (the token field's dashes),
+  `vite.config.test.ts` (SvelteKit's own form check and remote functions are off), and in
+  `src/lib/shared/i18n/`:
   - `format.test.ts` runs the formatters inside `paraglideMiddleware` with a request for each
     language and checks that English formats as `en-GB` and that `formatDateTime` follows the zone
     it is given, not the machine's;
@@ -711,7 +720,11 @@ export const GET: RequestHandler = () => healthResponse();
     form POST gets the "Access denied" page with the headers, its own policy and the viewer's
     language; and a same-origin POST with no `Sec-Fetch-*` headers passes, on `localhost` and on
     a plain-HTTP host name that isn't loopback (Chromium's `--host-resolver-rules`); and a fresh
-    server prints its bootstrap token before it listens, in no log entry or response.
+    server prints its bootstrap token before it listens, in no log entry or response; a wrong token
+    is refused keeping the username, the right one typed in upper case without dashes claims, and
+    `/setup` and its action then answer 404, also after a restart, with neither the token nor the
+    password in a response or log entry; and the claim page's fonts load from the app with no CSP
+    violation.
   - `i18n.test.ts` checks that a Danish browser gets `/` in Danish with `<html lang="da">` and
     `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
     that pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en`
@@ -751,8 +764,9 @@ Choices 1–3 were settled for the first rewrite app's skeleton and are reused h
 design doesn't call for anything different; choices 4 and 5 are zondarr's own.
 
 1. **Fonts.** DESIGN.md wants DM Serif Display, Outfit and IBM Plex Mono bundled locally (the legacy
-   app loaded them from a hosted service). The skeleton defines the font tokens with system
-   fallbacks; the first surface adds the font files (a dependency the owner approves then).
+   app loaded them from a hosted service). `setup`'s claim page, the first surface, bundled Outfit
+   and IBM Plex Mono; DM Serif Display keeps its system fallback until the first public welcome
+   surface bundles it.
 2. **Ark UI before its first use.** The skeleton installs `@ark-ui/svelte`, so the Panda and Ark
    pairing and `check-peers` are settled early; the first `ui/` wrapper comes with the first surface
    that needs one.

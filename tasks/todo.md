@@ -258,7 +258,7 @@ run and sends the browser to `/`; then `/setup` and its action answer "not found
 page is zondarr's first surface, so it brings the fonts and icons.
 
 **Acceptance criteria:**
-- [ ] `server/security/password.test.ts` first fails, then passes: the rules at their limits, NFC
+- [x] `server/security/password.test.ts` first fails, then passes: the rules at their limits, NFC
   and case, the patterns (`ΣΣΣ…`, `İabc…` included), "zondarr" and the username (its 4-character
   floor counted as written, before lower-casing: `İab`), the list, and an argon2id round trip.
   `server/services/setup/claim.test.ts`: success; a field error leaving the token unused; wrong and
@@ -267,15 +267,15 @@ page is zondarr's first surface, so it brings the fonts and icons.
   token, but not during shutdown. `first-run.test.ts`: a restart reads the claim back, and the
   renewal waits while a claim is in progress (`withClaimInProgress`, which lands here with its first
   caller).
-- [ ] `settings.test.ts` and `owner.test.ts`: `readSetting`, `writeSetting` and `insertOwner`, a
+- [x] `settings.test.ts` and `owner.test.ts`: `readSetting`, `writeSetting` and `insertOwner`, a
   second insert refused, and the creation and update times stored and read back in UTC.
-- [ ] `setup.test.ts`: a wrong token refused with the spec's message, the username kept and the
+- [x] `setup.test.ts`: a wrong token refused with the spec's message, the username kept and the
   rest cleared; the right one, in upper case without dashes, claims and lands on `/`; `/setup` and
   its action then answer 404, also after a restart; neither the token nor the password in a
   response (every body awaited) or a log entry. On `/setup`, Outfit and IBM Plex Mono load
   (`document.fonts`) with no CSP violation. `src/routes/setup/token-format.test.ts` covers the
   dashes.
-- [ ] The page follows `route-setup.md` through `/impeccable`, every string a `setup_…` message in
+- [x] The page follows `route-setup.md` through `/impeccable`, every string a `setup_…` message in
   both languages, with the Outfit, IBM Plex Mono and `@lucide/svelte` packages added and the font
   tokens naming them. Checked at 360, 390, 768 and 1440 px, 200% zoom, the keyboard, reduced
   motion, without JavaScript, and every state the brief names, in English and Danish, with

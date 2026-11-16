@@ -37,9 +37,10 @@ export default defineConfig({
 
 		tokens: {
 			fonts: {
-				// System fallbacks until the first surface bundles the font files locally.
+				// The family names the fontsource packages register (src/routes/+layout.svelte); DM
+				// Serif Display keeps its fallback until the first public welcome surface bundles it.
 				display: { value: '"DM Serif Display", serif' },
-				body: { value: '"Outfit", system-ui, sans-serif' },
+				body: { value: '"Outfit Variable", system-ui, sans-serif' },
 				mono: { value: '"IBM Plex Mono", monospace' },
 			},
 			fontSizes: {
