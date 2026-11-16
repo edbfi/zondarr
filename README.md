@@ -120,8 +120,8 @@ binding for your platform, as `bun ci` installs it:
 
 Zondarr won't start if `ORIGIN` is empty or holds a path, a query, a fragment or credentials;
 leave it out instead. When `ORIGIN` is `https`, or, without it, when the browser reaches Zondarr
-over HTTPS, pages ask browsers to keep using HTTPS. `ORIGIN` is set only here, in the environment: there is no setting
-for it in the console, and it isn't the public invite address.
+over HTTPS, pages ask browsers to keep using HTTPS. `ORIGIN` is set only here, in the environment:
+there is no setting for it in the console, and it isn't the public invite address.
 
 ## Logs
 
