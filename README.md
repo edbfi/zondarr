@@ -153,7 +153,8 @@ common password or, as a whole, a simple pattern such as `abcabcabcabcabc` or `a
   newest.
 - **Once claimed,** no token is printed again and `/setup` is gone, also after a restart. Signing
   in comes with the next module; until then, a claimed Zondarr has no way to sign in.
-- **Health checks** (`/healthz` and the two beside it) answer before the claim too.
+- **Health checks** (`/healthz`, `/healthz/live` and `/healthz/ready`, see [Health](#health))
+  answer before the claim too.
 
 ## Logs
 

@@ -331,7 +331,7 @@ the instance through the form, so the smoke and language tests run on a claimed 
 
 ## Checkpoint: complete
 
-- [x] As in [plan.md](plan.md#checkpoint-complete).
+- [ ] As in [plan.md](plan.md#checkpoint-complete).
 
 ## Task 10: close the work stream
 
