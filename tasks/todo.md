@@ -32,7 +32,9 @@ tables go into the first migration; no operations yet.
   holds `settings` (key, value, update time) and `owner` (fixed id checked to be 1, username,
   password hash, creation and update times), reviewed and committed.
 - [x] `tests/e2e/setup.test.ts`: the built server migrates a new file, starts again on it applying
-  nothing, and refuses an unwritable folder and a path naming a folder without echoing either.
+  nothing, and refuses a folder it can't create (a regular file as its parent, so it holds as root)
+  and a path naming a folder without echoing either; the `chmod` "can't be written" case is
+  unit-only and skips as root.
   `playwright.config.ts` gives each run a temporary database, created and removed only in the
   runner process.
 - [x] D15's validation passes with its evidence in the PR body: migrations, `check`,
