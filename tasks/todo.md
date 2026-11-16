@@ -164,13 +164,13 @@ headers stage after the language; SvelteKit's `csp` option sets the nonce policy
 Ground-floor choice 3 closes.
 
 **Acceptance criteria:**
-- [ ] `server/config/origin.test.ts` first fails, then passes: every accepted form; an empty value,
+- [x] `server/config/origin.test.ts` first fails, then passes: every accepted form; an empty value,
   a path (also `/..` and `/%2e`), query, fragment or credentials refused without echoing it; checked
   before the database file is created (`startup.test.ts`).
-- [ ] `server/security/headers.test.ts`: the spec's headers for HTTPS through `ORIGIN`, HTTPS
+- [x] `server/security/headers.test.ts`: the spec's headers for HTTPS through `ORIGIN`, HTTPS
   through `Sec-Fetch-Site`, plain HTTP, `localhost`, `*.localhost` and loopback hosts, never
   `includeSubDomains`, and an immutable response copied first.
-- [ ] `setup.test.ts`: the headers on a page, the health paths and a 404, no HSTS over plain HTTP;
+- [x] `setup.test.ts`: the headers on a page, the health paths and a 404, no HSTS over plain HTTP;
   the policy directive for directive, the nonce on every script, no CSP violation; the server
   refuses `ORIGIN=https://u:p@host` and `https://host/app` without echoing either.
 

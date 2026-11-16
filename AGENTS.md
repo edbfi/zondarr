@@ -280,7 +280,8 @@ formatters, and a check of the message files. Module 3, `setup`
 ([`docs/SPEC-setup.md`](docs/SPEC-setup.md)), is being built from
 [`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
 empty `owner` table), logs are redacted JSON lines, unexpected errors included, it shuts down
-cleanly, and `/healthz` reports the database's health; nothing claims the instance yet.
+cleanly, `/healthz` reports the database's health, and every response carries the security
+headers and every page a nonce-based CSP; nothing claims the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -310,10 +311,11 @@ src/
   app.css                        Panda layer order; the Vite plugin appends the generated CSS
   app.d.ts                       SvelteKit ambient types
   env.ts                         declares `ZONDARR_SECRET_KEY`, `ZONDARR_SECRET_KEY_FILE`,
-                                 `ZONDARR_DATABASE_PATH` and `ZONDARR_LOG_DEBUG`: private, read at
-                                 runtime, optional
+                                 `ZONDARR_DATABASE_PATH`, `ZONDARR_LOG_DEBUG` and `ORIGIN`:
+                                 private, read at runtime, optional
   hooks.server.ts                the `init` hook: runs startup, except while building;
-                                 `handle`: each request's language, through Paraglide's middleware;
+                                 `handle`: each request's language, through Paraglide's middleware,
+                                 then the security headers;
                                  `handleError`: logs an unexpected error
   hooks.client.ts                the browser keeps the language the server chose for the page
   routes/
@@ -329,7 +331,8 @@ src/
                                  later providers/<plex|jellyfin>/, services/<domain>/, jobs/,
                                  http/ (SSRF-safe fetch)
       config/                    each variable's reader, checked at startup: secret-key.ts (the
-                                 master key's text, no key logic), database-path.ts, log-debug.ts;
+                                 master key's text, no key logic), database-path.ts, log-debug.ts,
+                                 origin.ts;
                                  config-error.ts: the error every check throws, naming the
                                  variable, never its value; error-code.ts: a system error's code
       db/                        client.ts: opens the one database file, and the health query;
@@ -342,6 +345,7 @@ src/
                                  unexpected-error.ts: the entry `handleError` writes
       services/setup/startup.ts  startup's steps (the key, the configuration, the database) and
                                  shutdown: the signals, closing, and the 5-second deadline
+      security/headers.ts        the security headers for a request; HSTS only over HTTPS
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives
                                  the AES key and key ID; secret.ts: the `Secret` wrapper,
@@ -375,7 +379,8 @@ drizzle/                         the reviewed migrations, one folder each, gener
                                  `db:generate` (drizzle.config.ts)
 panda.config.ts                  every design token; components use them through
                                  `#styled-system/<module>` (generated, gitignored)
-vite.config.ts                   SvelteKit (all its configuration), Panda, Paraglide and Vitest
+vite.config.ts                   SvelteKit (all its configuration, the CSP included), Panda,
+                                 Paraglide and Vitest
 playwright.config.ts  tsconfig.json  package.json  bun.lock
 ```
 

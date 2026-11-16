@@ -86,7 +86,7 @@ tests at `b59b909`, rebuilt for zondarr's names, decisions and design. The split
 
 ### Phase 2: the request checks
 
-- [ ] Task 5: `ORIGIN`, the security headers and the CSP
+- [x] Task 5: `ORIGIN`, the security headers and the CSP
 - [ ] Task 6: the cross-origin check
 
 ### Checkpoint: after task 6
