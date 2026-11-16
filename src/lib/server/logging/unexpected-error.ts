@@ -26,6 +26,10 @@ export function logUnexpectedError({ kind, error, method, path }: UnexpectedErro
 		log.error("unexpected error", { method, path, error });
 	} catch {
 		// The redactor couldn't read this error, so nothing from it is written.
-		log.error("unexpected error", { method, path, error: "[unloggable]" });
+		try {
+			log.error("unexpected error", { method, path, error: "[unloggable]" });
+		} catch {
+			// Standard output itself failed; there is nowhere left to write.
+		}
 	}
 }

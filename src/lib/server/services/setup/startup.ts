@@ -25,7 +25,11 @@ export async function startUp(env: StartupEnv): Promise<void> {
 	try {
 		await runSteps(env);
 	} catch (error) {
-		log.error("startup failed", { error });
+		try {
+			log.error("startup failed", { error });
+		} catch {
+			// Logging failed; the step's own error, thrown below, still stops startup.
+		}
 		throw error;
 	}
 }

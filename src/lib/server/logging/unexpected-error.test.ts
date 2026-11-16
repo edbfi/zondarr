@@ -83,6 +83,15 @@ describe("logUnexpectedError", () => {
 		expect(lines.join("")).not.toContain("hunter2");
 	});
 
+	it("never throws, even when standard output itself throws", () => {
+		vi.mocked(process.stdout.write).mockImplementation(() => {
+			throw new Error("EPIPE");
+		});
+		expect(() =>
+			logUnexpectedError({ kind: "unknown", error: new Error("failed"), ...request }),
+		).not.toThrow();
+	});
+
 	// The browser keeps SvelteKit's generic message: nothing is returned for the hook to show.
 	it("returns nothing, so SvelteKit answers with its generic message", () => {
 		expect(

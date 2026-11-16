@@ -82,6 +82,17 @@ describe("startUp", () => {
 		expect(lines[0]).not.toContain(root);
 	});
 
+	// A failure while logging must not hide the step's own error, which is what stops startup.
+	it("throws the failed step's own error even when logging it fails", async () => {
+		vi.mocked(process.stdout.write).mockImplementation(() => {
+			throw new Error("EPIPE");
+		});
+		const path = join(root, "unlogged-directory");
+		await mkdir(path);
+		const error = await failure(path);
+		expect(error.variable).toBe("ZONDARR_DATABASE_PATH");
+	});
+
 	it("refuses a ZONDARR_LOG_DEBUG that isn't true or false, before the database opens", async () => {
 		const path = join(root, "never-created", "app.db");
 		const error = await startUp({
