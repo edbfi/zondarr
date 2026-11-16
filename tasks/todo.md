@@ -66,20 +66,20 @@ redacted before it is written, with debug behind `ZONDARR_LOG_DEBUG`. A failed s
 logged, then thrown. `handleError` writes every unexpected error through the logger.
 
 **Acceptance criteria:**
-- [ ] `server/logging/redact.test.ts` first fails, then passes: one case for each of the spec's
+- [x] `server/logging/redact.test.ts` first fails, then passes: one case for each of the spec's
   rules and each nested; the allowlist (`keyId`, `authError`, exact match, values still cleaned);
   encoded nested URLs up to three times, including a bare decoded query (`u=token%3Dabc`); and the
   linear-time growth check, including a long run of capitals in a name.
-- [ ] `server/logging/logger.test.ts`: the entry's shape and one line per entry, even for a message
+- [x] `server/logging/logger.test.ts`: the entry's shape and one line per entry, even for a message
   holding a newline, and debug dropped unless enabled. `server/config/log-debug.test.ts`: `true`,
   `false`, empty as unset, anything else refused without echoing it. `startup.test.ts`: a bad value
   stops startup before the database folder exists (`stat`, never `Bun.file().exists()`, which is
   false for every folder).
-- [ ] `server/logging/unexpected-error.test.ts`: an unexpected error becomes one redacted `error`
+- [x] `server/logging/unexpected-error.test.ts`: an unexpected error becomes one redacted `error`
   entry (a token in its message, stack and cause removed); a 404 and an expected error write
   nothing; what the hook returns is SvelteKit's generic message, never the error's text.
   `hooks.server.ts` exports `handleError`, which only calls it.
-- [ ] A startup failure is one log entry and the thrown error; `setup.test.ts` checks a bad
+- [x] A startup failure is one log entry and the thrown error; `setup.test.ts` checks a bad
   `ZONDARR_LOG_DEBUG` prints one JSON line, and `secret-key.test.ts` still passes.
 
 **Verification:** the gates; in `preview`, a thrown error in a temporary route (not committed)

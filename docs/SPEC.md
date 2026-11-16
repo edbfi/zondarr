@@ -98,7 +98,6 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
 
 ### Open decisions each module closes
 
-- `setup`: the logging library half of D14.
 - `sign-in`: how long an owner session lasts.
 - `sign-in`: how repeated failed sign-ins are slowed beyond the rate limits (backoff, or a lockout
   where the app's approved docs allow one). zondarr's row promises a lockout on sign-in: one that
@@ -663,10 +662,14 @@ export const GET: RequestHandler = () => healthResponse();
   `cache-control: no-store`), the `secrets` module (`config/secret-key.test.ts`, and
   `key-text.test.ts`, `keyring.test.ts`, `cipher.test.ts` and `secret.test.ts` in
   `security/secrets/`, under `src/lib/server/`), `setup`'s (under `src/lib/server/`:
-  `config/database-path.test.ts`; `db/client.test.ts`, D5's rollback isolation, which fails on
-  Drizzle `1.0.0-rc.4`; `db/migrate.test.ts`, the bundled migrations against Drizzle Kit's own
-  migrator and the owner table's one row; `services/setup/startup.test.ts`, a database path Turso
-  can't open refused without the path), and in `src/lib/shared/i18n/`:
+  `config/database-path.test.ts`, `config/log-debug.test.ts`; `logging/logger.test.ts`;
+  `logging/redact.test.ts`, each redaction rule, the allowlist, encoded nested URLs and a growth
+  check that a quadratic scan fails; `logging/unexpected-error.test.ts`, what `handleError` logs and
+  that it returns nothing; `db/client.test.ts`, D5's rollback isolation, which fails on Drizzle
+  `1.0.0-rc.4`; `db/migrate.test.ts`, the bundled migrations against Drizzle Kit's own migrator and
+  the owner table's one row; `services/setup/startup.test.ts`, a database path Turso can't open
+  refused without the path, a failed step logged before it is thrown, and a bad `ZONDARR_LOG_DEBUG`
+  refused before the database folder exists), and in `src/lib/shared/i18n/`:
   - `format.test.ts` runs the formatters inside `paraglideMiddleware` with a request for each
     language and checks that English formats as `en-GB` and that `formatDateTime` follows the zone
     it is given, not the machine's;
@@ -684,7 +687,8 @@ export const GET: RequestHandler = () => healthResponse();
   - `setup.test.ts` starts its own built servers, each with a temporary database: a new file is
     migrated and a second start applies nothing, the default is `data/zondarr.db` in the working
     directory, and a folder it can't create or a path it can't open stops it before it listens,
-    with one line that never holds the path.
+    with one line that never holds the path; a bad `ZONDARR_LOG_DEBUG` is one JSON entry that never
+    echoes the value.
   - `i18n.test.ts` checks that a Danish browser gets `/` in Danish with `<html lang="da">` and
     `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
     that pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en`
