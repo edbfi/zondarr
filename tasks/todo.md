@@ -227,15 +227,15 @@ the logs, and a new one every 15 minutes; shutdown stops the timer; first run's 
 memory at startup.
 
 **Acceptance criteria:**
-- [ ] `server/security/bootstrap-token.test.ts` first fails, then passes: the format and alphabet,
+- [x] `server/security/bootstrap-token.test.ts` first fails, then passes: the format and alphabet,
   biased bytes drawn again (a mocked byte stream), display, accepted and refused entries, constant
   time comparison, and the 15-minute boundary.
-- [ ] `server/services/setup/first-run.test.ts`, with a faked clock: a token and a new one at
+- [x] `server/services/setup/first-run.test.ts`, with a faked clock: a token and a new one at
   expiry (none at 59 ms of a 60 ms life, one at 60 ms); the full address with `ORIGIN`; none after
   stopping or once an owner exists. `db/owner.ts` gains `ownerExists`; `owner.test.ts` checks it
   and the schema's one-row limit.
-- [ ] `startup.test.ts`: `SIGTERM` and `SIGINT` stop first run's timer (`stopWork`).
-- [ ] `setup.test.ts`: the token line before "Listening on"; neither form of the token in a log
+- [x] `startup.test.ts`: `SIGTERM` and `SIGINT` stop first run's timer (`stopWork`).
+- [x] `setup.test.ts`: the token line before "Listening on"; neither form of the token in a log
   entry or a response.
 
 **Verification:** the gates.
