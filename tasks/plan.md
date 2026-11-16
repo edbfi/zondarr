@@ -97,7 +97,7 @@ tests at `b59b909`, rebuilt for zondarr's names, decisions and design. The split
 
 ### Phase 3: first run
 
-- [ ] Task 7: the bootstrap token
+- [x] Task 7: the bootstrap token
 - [ ] Task 8: the claim at `/setup`
 - [ ] Task 9: the setup gate
 

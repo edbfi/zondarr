@@ -281,8 +281,9 @@ formatters, and a check of the message files. Module 3, `setup`
 [`tasks/todo.md`](tasks/todo.md): startup opens and migrates the database (`settings` and an
 empty `owner` table), logs are redacted JSON lines, unexpected errors included, it shuts down
 cleanly, `/healthz` reports the database's health, every response through `handle` carries the
-security headers and every page a nonce-based CSP, and a state-changing request from another site
-gets "Access denied"; nothing claims the instance yet.
+security headers and every page a nonce-based CSP, a state-changing request from another site
+gets "Access denied", and an unclaimed instance prints a bootstrap token to the console; nothing
+claims the instance yet.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
@@ -338,18 +339,21 @@ src/
                                  variable, never its value; error-code.ts: a system error's code
       db/                        client.ts: opens the one database file, and the health query;
                                  migrate.ts: applies the migrations Vite bundles; settings.ts,
-                                 owner.ts: one aggregate's tables (and later its named
-                                 operations) per file
+                                 owner.ts: one aggregate's tables and named operations per file
       logging/                   logger.ts: one JSON line per entry on standard output, and
                                  `flushLogs()`, which waits until every entry has left;
                                  redact.ts: removes credentials before an entry is written;
                                  unexpected-error.ts: the entry `handleError` writes
-      services/setup/startup.ts  startup's steps (the key, the configuration, the database) and
-                                 shutdown: the signals, closing, and the 5-second deadline
+      services/setup/            startup.ts: startup's steps (the key, the configuration, the
+                                 database, first run) and shutdown: the signals, closing, and the
+                                 5-second deadline; first-run.ts: first run's state in memory and
+                                 the bootstrap token's printing and renewal
       security/                  headers.ts: the security headers for a response through
                                  `handle`, HSTS only over HTTPS; cross-origin.ts: the check that
                                  asks the browser where a state-changing request came from;
-                                 access-denied.ts: its refusal, a page or a JSON error
+                                 access-denied.ts: its refusal, a page or a JSON error;
+                                 bootstrap-token.ts: drawing, showing, comparing and expiring
+                                 the token
       security/secrets/          key-text.ts: a master key's text to its 32 bytes, refusing
                                  malformed and weak keys; keyring.ts: loads the key and derives
                                  the AES key and key ID; secret.ts: the `Secret` wrapper,
