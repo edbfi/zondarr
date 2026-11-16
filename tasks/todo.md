@@ -46,7 +46,7 @@ tables go into the first migration; no operations yet.
 
 **Files:** `package.json`, `bun.lock`, `drizzle.config.ts`, `drizzle/`, `.gitignore`, `src/env.ts`,
 `src/hooks.server.ts`, `server/config/{config-error,error-code,database-path,secret-key}.ts`
-(+ tests), `server/db/{client,migrate,settings,owner}.ts` (+ tests),
+(+ tests), `server/db/{client,migrate}.ts` (+ tests), `server/db/{settings,owner}.ts`,
 `server/services/setup/startup.ts` (+ test), `tests/e2e/setup.test.ts`, `playwright.config.ts`,
 `README.md` (the database, backups, the platform package), `docs/SPEC.md` (status, tech stack,
 `db:generate` and `smoke`, the testing section, the `node_modules` line), `docs/decisions.md`
@@ -70,8 +70,9 @@ logged, then thrown. `handleError` writes every unexpected error through the log
   linear-time growth check, including a long run of capitals in a name.
 - [ ] `server/logging/logger.test.ts`: the entry's shape and one line per entry, even for a message
   holding a newline, and debug dropped unless enabled. `server/config/log-debug.test.ts`: `true`,
-  `false`, empty as unset, anything else refused without echoing it, checked before the database
-  folder exists (`stat`, never `Bun.file().exists()`, which is false for every folder).
+  `false`, empty as unset, anything else refused without echoing it. `startup.test.ts`: a bad value
+  stops startup before the database folder exists (`stat`, never `Bun.file().exists()`, which is
+  false for every folder).
 - [ ] `server/logging/unexpected-error.test.ts`: an unexpected error becomes one redacted `error`
   entry (a token in its message, stack and cause removed); a 404 and an expected error write
   nothing; what the hook returns is SvelteKit's generic message, never the error's text.
@@ -87,8 +88,9 @@ only "Internal Error".
 
 **Files:** `server/logging/{logger,redact,unexpected-error}.ts` (+ tests),
 `server/config/log-debug.ts` (+ test), `src/env.ts`, `src/hooks.server.ts`,
-`server/services/setup/startup.ts`, `tests/e2e/{setup,secret-key}.test.ts`, `README.md` (logs),
-`docs/decisions.md` (D11, and D14's logging half to Decided), `docs/SPEC.md`, `AGENTS.md`.
+`server/services/setup/startup.ts` (+ test), `tests/e2e/{setup,secret-key}.test.ts`,
+`README.md` (logs), `docs/decisions.md` (D11, and D14's logging half to Decided), `docs/SPEC.md`,
+`AGENTS.md`.
 
 **Size:** M.
 
@@ -117,7 +119,7 @@ the built server, installed a turn after `init` resolves.
 
 **Dependencies:** task 2.
 
-**Files:** `server/services/setup/startup.ts` (+ test), `server/logging/logger.ts`,
+**Files:** `server/services/setup/startup.ts` (+ test), `server/logging/logger.ts` (+ test),
 `src/hooks.server.ts`, `tests/e2e/setup.test.ts`, `README.md`, `AGENTS.md`.
 
 **Size:** M.
@@ -255,14 +257,14 @@ page is zondarr's first surface, so it brings the fonts and icons.
 
 **Acceptance criteria:**
 - [ ] `server/security/password.test.ts` first fails, then passes: the rules at their limits, NFC
-  and case, the patterns (`ΣΣΣ…`, `İabc…` included), "zondarr" and the username, the list, and an
-  argon2id round trip. `server/services/setup/claim.test.ts`: success; a field error leaving the
-  token unused; wrong and expired tokens never reaching the hash (the expired case with `Date.now`
-  frozen past 15 minutes, so a renewal can't make it pass); a second claim; two at once; a failed
-  transaction printing a new token, but not during shutdown. The username's 4-character floor is
-  counted before lower-casing (`İab`). `first-run.test.ts`: a restart reads the claim back, and the
-  renewal waits while a claim is in progress (`withClaimInProgress`, which lands here with its
-  first caller).
+  and case, the patterns (`ΣΣΣ…`, `İabc…` included), "zondarr" and the username (its 4-character
+  floor counted as written, before lower-casing: `İab`), the list, and an argon2id round trip.
+  `server/services/setup/claim.test.ts`: success; a field error leaving the token unused; wrong and
+  expired tokens never reaching the hash (the expired case with `Date.now` frozen past 15 minutes,
+  so a renewal can't make it pass); a second claim; two at once; a failed transaction printing a new
+  token, but not during shutdown. `first-run.test.ts`: a restart reads the claim back, and the
+  renewal waits while a claim is in progress (`withClaimInProgress`, which lands here with its first
+  caller).
 - [ ] `settings.test.ts` and `owner.test.ts`: `readSetting`, `writeSetting` and `insertOwner`, a
   second insert refused, and the creation and update times stored and read back in UTC.
 - [ ] `setup.test.ts`: a wrong token refused with the spec's message, the username kept and the
@@ -307,7 +309,8 @@ the instance through the form, so the smoke and language tests run on a claimed 
   answer; the gate's redirect carries the headers; a same-origin POST gets the 303 while unclaimed
   and the 405 once claimed; after a restart on a claimed file, `/` is served. The earlier cases
   that need a claimed server claim it first through a `claim(server)` helper that posts with
-  `Accept: text/html` (SvelteKit answers a form action to `*/*` in JSON): the headers on a 404 and
+  `Origin` set to the server's address and `Accept: text/html` (SvelteKit answers a form action to
+  `*/*` in JSON), without following the 303 to `/`: the headers on a 404 and
   the same-origin POST on `app.test`; the CSP check reads `/setup`.
 - [ ] `playwright.config.ts`: `wait.stdout` from the token line through "Listening on" replaces the
   `url` check, its named group putting the token in `ZONDARR_E2E_SETUP_TOKEN`;
