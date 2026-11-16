@@ -475,12 +475,13 @@ tests/e2e/setup.test.ts                     first run, health and the request ch
 tests/e2e/global-setup.ts                   claims the instance for the other tests
 ```
 
-The build also changes `package.json` (the six packages and `db:generate`), `vite.config.ts` (the
-form check off, the CSP, the exported options and Vitest's `include`), `panda.config.ts` (the font
-families), `src/routes/+layout.svelte` (the font imports), `playwright.config.ts` (a temporary
-database per run, the token captured from the server's output, the global setup), `messages/`, the
-README (the variables, `ORIGIN` and the proxy fix, the database and backups, first run, logs, and
-stopping), and `.gitignore` (`/data/` and `*.db*`).
+The build also changes `package.json` (the six packages and `db:generate`),
+`src/lib/server/config/secret-key.ts` (its private `codeOf` replaced by `error-code.ts`),
+`vite.config.ts` (the form check off, the CSP, the exported options and Vitest's `include`),
+`panda.config.ts` (the font families), `src/routes/+layout.svelte` (the font imports),
+`playwright.config.ts` (a temporary database per run, the token captured from the server's output,
+the global setup), `messages/`, the README (the variables, `ORIGIN` and the proxy fix, the database
+and backups, first run, logs, and stopping), and `.gitignore` (`/data/` and `*.db*`).
 
 ## Testing strategy
 
@@ -501,6 +502,8 @@ stopping), and `.gitignore` (`/data/` and `*.db*`).
   - shutdown against a stand-in process: `SIGHUP` passed on, exit 0 after cleanup, exit 1 when it
     throws and at the deadline, and no handlers in `dev`;
   - the health answers with a working and a failing database check;
+  - startup with a database path that names a folder or a file that isn't a database: stopped, with
+    Turso's reason kept and the path removed;
   - against a temporary database file: migrations on a new database and the migrators' rows,
     rollback isolation, the settings and owner operations, and the claim: success; a field error
     leaving the token unused; a wrong and an expired token never reaching the hash; a second claim;
@@ -527,8 +530,8 @@ stopping), and `.gitignore` (`/data/` and `*.db*`).
   - the page's scripts carry the CSP nonce, the policy matches directive for directive, the refusal
     page carries its own policy, and the browser reports no CSP violation;
   - the server refuses to start with an `ORIGIN` holding credentials (`https://u:p@host`) or a path
-    (`https://host/app`), a bad `ZONDARR_LOG_DEBUG`, or an unwritable database folder, without
-    echoing the value;
+    (`https://host/app`), a bad `ZONDARR_LOG_DEBUG`, an unwritable database folder, or a database
+    path that names a folder, without echoing the value;
   - `SIGHUP` and `SIGTERM` each shut it down with exit code 0;
   - neither the token nor the password appears in a response or a log entry.
   `smoke.test.ts` checks `/healthz`'s new answer instead of `ok`.
@@ -562,8 +565,9 @@ Approved with this spec, as obzorarr's own spec moved its rows:
   from the address bar no longer applies: a token in an address would reach the browser's history
   and a proxy's access log.
 - **Using up the token and creating the owner are two steps,** not the one atomic step zondarr's
-  note asked for: the token is used up before the hash, so a wrong guess costs nothing, and if
-  creating the owner then fails, a new token is printed, so nobody is left without one.
+  note asked for: the token is checked and used up before the slow hash, which stays outside the
+  owner's short transaction (D6), so a wrong guess costs nothing and two claims can't share a
+  token; if creating the owner then fails, a new token is printed, so nobody is left without one.
 - The rest of `setup`'s Module notes moves here.
 
 ## Boundaries

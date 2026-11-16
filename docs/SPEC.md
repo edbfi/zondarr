@@ -104,7 +104,9 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
   grows with repeated failures from a client address and ends by itself, never one that keeps the
   owner out until recovery. The password rules are `setup`'s, since the claim sets the first
   password ([SPEC-setup.md](SPEC-setup.md#first-run)).
-- `sign-in` closes the job half of D14: its session cleanup is the first background job.
+- `sign-in` closes the job half of D14: its session cleanup is the first background job, and it
+  adds the jobs' ten seconds to `setup`'s 5-second shutdown deadline
+  ([SPEC-setup.md](SPEC-setup.md#startup-and-shutdown)).
 - `plex-provider`: D18, including whether Plex keeps a share with no libraries (D23).
   `jellyfin-provider`: D19.
 - D13: `redemption`'s sign-in polling is the first JSON endpoint; its spec decides whether it needs
