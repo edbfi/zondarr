@@ -68,18 +68,20 @@ logged, then thrown. `handleError` writes every unexpected error through the log
   rules and each nested; the allowlist (`keyId`, `authError`, exact match, values still cleaned);
   encoded nested URLs up to three times, including a bare decoded query (`u=token%3Dabc`); and the
   linear-time growth check, including a long run of capitals in a name.
-- [ ] `server/logging/logger.test.ts`: the entry's shape, one line per entry, debug dropped unless
-  enabled, and `flushLogs()` through a slow pipe. `server/config/log-debug.test.ts`: `true`,
+- [ ] `server/logging/logger.test.ts`: the entry's shape and one line per entry, even for a message
+  holding a newline, and debug dropped unless enabled. `server/config/log-debug.test.ts`: `true`,
   `false`, empty as unset, anything else refused without echoing it, checked before the database
-  opens.
+  folder exists (`stat`, never `Bun.file().exists()`, which is false for every folder).
 - [ ] `server/logging/unexpected-error.test.ts`: an unexpected error becomes one redacted `error`
   entry (a token in its message, stack and cause removed); a 404 and an expected error write
-  nothing. `hooks.server.ts` exports `handleError`, which only calls it.
+  nothing; what the hook returns is SvelteKit's generic message, never the error's text.
+  `hooks.server.ts` exports `handleError`, which only calls it.
 - [ ] A startup failure is one log entry and the thrown error; `setup.test.ts` checks a bad
   `ZONDARR_LOG_DEBUG` prints one JSON line, and `secret-key.test.ts` still passes.
 
 **Verification:** the gates; in `preview`, a thrown error in a temporary route (not committed)
-prints one redacted JSON line and no stack from SvelteKit.
+prints one redacted JSON line and no stack from SvelteKit, and the page and its `__data.json` show
+only "Internal Error".
 
 **Dependencies:** task 1.
 
@@ -103,7 +105,9 @@ the built server, installed a turn after `init` resolves.
 - [ ] `server/services/setup/startup.test.ts` first fails, then passes, against a stand-in
   process: `SIGHUP` passed on, exit 0 only after the cleanup, the close before the flush, a failed
   close logged and still exit 0, exit 1 when the cleanup throws and at the deadline (its own entry
-  flushed for at most 250 ms), and no handler in `dev`.
+  flushed for at most 250 ms), exit 1 once the deadline has fired even if the cleanup then finishes,
+  and no handler in `dev`. `logger.test.ts`: `flushLogs()` waits for every entry's own write,
+  through a real shell pipe whose reader is slow.
 - [ ] `setup.test.ts`: `SIGHUP` and `SIGTERM` each shut the built server down with exit code 0.
 - [ ] The README lists adapter-bun's `SHUTDOWN_TIMEOUT`, `CONNECTION_IDLE_TIMEOUT` and
   `BODY_SIZE_LIMIT`, and says the container's stop timeout must exceed `SHUTDOWN_TIMEOUT` plus
@@ -135,7 +139,7 @@ join it, as the spec's table says: JSON, `no-store`, no version, no error text.
 
 **Verification:** the gates.
 
-**Dependencies:** task 1 (the database); after task 3 in order.
+**Dependencies:** task 2 (the logger), which follows task 1 (the database); after task 3 in order.
 
 **Files:** `server/services/health.ts` (+ test), `server/db/client.ts` (the health query),
 `src/routes/healthz/{,live/,ready/}+server.ts` (+ tests), `tests/e2e/{smoke,setup}.test.ts`,
@@ -171,7 +175,7 @@ Ground-floor choice 3 closes.
 **Dependencies:** task 4.
 
 **Files:** `server/config/origin.ts` (+ test), `server/security/headers.ts` (+ test), `src/env.ts`,
-`src/hooks.server.ts`, `server/services/setup/startup.ts`, `vite.config.ts`,
+`src/hooks.server.ts`, `server/services/setup/startup.ts` (+ test), `vite.config.ts`,
 `tests/e2e/setup.test.ts`, `README.md` (`ORIGIN`), `docs/SPEC.md` (ground-floor choice 3 closes),
 `AGENTS.md`.
 
@@ -223,9 +227,10 @@ memory at startup.
   biased bytes drawn again (a mocked byte stream), display, accepted and refused entries, constant
   time comparison, and the 15-minute boundary.
 - [ ] `server/services/setup/first-run.test.ts`, with a faked clock: a token and a new one at
-  expiry (none at 59 ms of a 60 ms life, one at 60 ms); the full address with `ORIGIN`; no renewal
-  while a claim is in progress; none after stopping or once an owner exists. `db/owner.ts` gains
-  `ownerExists`.
+  expiry (none at 59 ms of a 60 ms life, one at 60 ms); the full address with `ORIGIN`; none after
+  stopping or once an owner exists. `db/owner.ts` gains `ownerExists`; `owner.test.ts` checks it
+  and the schema's one-row limit.
+- [ ] `startup.test.ts`: `SIGTERM` and `SIGINT` stop first run's timer (`stopWork`).
 - [ ] `setup.test.ts`: the token line before "Listening on"; neither form of the token in a log
   entry or a response.
 
@@ -234,7 +239,7 @@ memory at startup.
 **Dependencies:** task 6.
 
 **Files:** `server/security/bootstrap-token.ts` (+ test), `server/services/setup/first-run.ts`
-(+ test), `server/services/setup/startup.ts`, `server/db/owner.ts` (+ test),
+(+ test), `server/services/setup/startup.ts` (+ test), `server/db/owner.ts` (+ test),
 `tests/e2e/setup.test.ts`, `AGENTS.md`.
 
 **Size:** M.
@@ -252,13 +257,20 @@ page is zondarr's first surface, so it brings the fonts and icons.
 - [ ] `server/security/password.test.ts` first fails, then passes: the rules at their limits, NFC
   and case, the patterns (`ΣΣΣ…`, `İabc…` included), "zondarr" and the username, the list, and an
   argon2id round trip. `server/services/setup/claim.test.ts`: success; a field error leaving the
-  token unused; wrong and expired tokens never reaching the hash; a second claim; two at once; a
-  failed transaction printing a new token, but not during shutdown. `first-run.test.ts`: a restart
-  reads the claim back.
+  token unused; wrong and expired tokens never reaching the hash (the expired case with `Date.now`
+  frozen past 15 minutes, so a renewal can't make it pass); a second claim; two at once; a failed
+  transaction printing a new token, but not during shutdown. The username's 4-character floor is
+  counted before lower-casing (`İab`). `first-run.test.ts`: a restart reads the claim back, and the
+  renewal waits while a claim is in progress (`withClaimInProgress`, which lands here with its
+  first caller).
+- [ ] `settings.test.ts` and `owner.test.ts`: `readSetting`, `writeSetting` and `insertOwner`, a
+  second insert refused, and the creation and update times stored and read back in UTC.
 - [ ] `setup.test.ts`: a wrong token refused with the spec's message, the username kept and the
   rest cleared; the right one, in upper case without dashes, claims and lands on `/`; `/setup` and
   its action then answer 404, also after a restart; neither the token nor the password in a
-  response or a log entry. `src/routes/setup/token-format.test.ts` covers the dashes.
+  response (every body awaited) or a log entry. On `/setup`, Outfit and IBM Plex Mono load
+  (`document.fonts`) with no CSP violation. `src/routes/setup/token-format.test.ts` covers the
+  dashes.
 - [ ] The page follows `route-setup.md` through `/impeccable`, every string a `setup_…` message in
   both languages, with the Outfit, IBM Plex Mono and `@lucide/svelte` packages added and the font
   tokens naming them. Checked at 360, 390, 768 and 1440 px, 200% zoom, the keyboard, reduced
@@ -270,7 +282,7 @@ page is zondarr's first surface, so it brings the fonts and icons.
 **Dependencies:** task 7.
 
 **Files:** `server/security/{password.ts,common-passwords.txt}` (+ test),
-`server/services/setup/{claim,first-run}.ts` (+ tests), `server/db/{owner,settings}.ts`,
+`server/services/setup/{claim,first-run}.ts` (+ tests), `server/db/{owner,settings}.ts` (+ tests),
 `src/routes/setup/{+page.svelte,+page.server.ts,token-format.ts}` (+ test),
 `src/routes/+layout.svelte`, `panda.config.ts`, `package.json`, `bun.lock`,
 `messages/{en,da}.json`, `tests/e2e/setup.test.ts`, `.impeccable/surfaces/route-setup.md` (its
@@ -293,7 +305,10 @@ the instance through the form, so the smoke and language tests run on a claimed 
   a restart.
 - [ ] `setup.test.ts`: every page sends a fresh instance to `/setup`, while the health paths
   answer; the gate's redirect carries the headers; a same-origin POST gets the 303 while unclaimed
-  and the 405 once claimed; after a restart on a claimed file, `/` is served.
+  and the 405 once claimed; after a restart on a claimed file, `/` is served. The earlier cases
+  that need a claimed server claim it first through a `claim(server)` helper that posts with
+  `Accept: text/html` (SvelteKit answers a form action to `*/*` in JSON): the headers on a 404 and
+  the same-origin POST on `app.test`; the CSP check reads `/setup`.
 - [ ] `playwright.config.ts`: `wait.stdout` from the token line through "Listening on" replaces the
   `url` check, its named group putting the token in `ZONDARR_E2E_SETUP_TOKEN`;
   `tests/e2e/global-setup.ts` claims through the form; `smoke.test.ts` and `i18n.test.ts` pass
