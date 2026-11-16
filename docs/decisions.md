@@ -58,8 +58,8 @@ Kit generates SQL migrations, which are reviewed and committed. Migrations run b
 accepts requests or starts jobs, with one migration owner per database. The legacy app's optional
 client-server store isn't carried over.
 
-Drizzle must be the plain `1.0.0-rc.5` or a later `rc`-tagged or stable release (D26; validation
-open in D15) that keeps its Turso transaction fix (Drizzle
+Drizzle must be the plain `1.0.0-rc.5` or a later `rc`-tagged or stable release (D26; validated
+in D15) that keeps its Turso transaction fix (Drizzle
 [`25abe07`](https://github.com/drizzle-team/drizzle-orm/commit/25abe0785e09cb562d999c9b6b8d92d85e3e7053),
 using the API from [Turso #7898](https://github.com/tursodatabase/turso/pull/7898)). Never
 `1.0.0-rc.4`: it can roll back unrelated writes that share the connection, and upgrading Turso alone
@@ -143,6 +143,32 @@ and a server share are different relationships.
 
 Why: a maintained library covers most operations, and one provider boundary keeps the access rules
 (share, friendship, home user) explicit and testable.
+
+### D15. The Turso and Drizzle pair
+
+`@tursodatabase/database` 0.8.3 with `drizzle-orm` and `drizzle-kit` 1.0.0-rc.5 passed D5's
+validation in `setup`, on Linux arm64 and x64 with no `node`, `npm` or `npx` on `PATH`.
+`package.json` holds the current versions, and the tests below rerun on every update:
+- **Migrations:** Drizzle Kit generates them into `drizzle/`. The built server applies them from
+  its own bundle (Vite imports each `migration.sql` as text) through Drizzle's record migrator for
+  Turso, `drizzle-orm/tursodatabase/wasm-migrator`, and a second start applies nothing. It records
+  each migration's folder name and time as Drizzle Kit's file migrator does, but leaves the `hash`
+  empty; Drizzle reads the hash only to upgrade a migrations table from before 1.0, which no
+  zondarr database has. `db/migrate.test.ts` compares the two on every run.
+- **Type checking** passes with the schema, client and migrator.
+- **The production build** opens the database through Turso's native binding. The binding can't
+  be bundled, because Turso's loader finds it with a runtime `require`, so the platform's package
+  (`@tursodatabase/database-linux-x64-gnu` or `-linux-arm64-gnu`) ships beside `build/`. Without
+  any `node_modules`, Bun would quietly download the package when the server starts, so the README
+  starts the built server with `--no-install`, and without the package it stops with "Cannot find
+  native binding".
+- **Rollback isolation:** a transaction that rolls back leaves a concurrent write on the same
+  connection in place (`db/client.test.ts`, which fails on `1.0.0-rc.4`).
+
+Why: the plain release candidate carries the Turso transaction fix D5 needs, and every check D5
+named passed with it, as obzorarr found first. Shipping one platform package is the fallback for a
+binding that can't be bundled; bundling it would mean copying a native file into wherever the
+bundler places Turso's loader, which breaks silently when the chunks move.
 
 ### D20. Shared opening modules and owner sign-in, in the same shape in every app
 
@@ -375,13 +401,6 @@ generated client.
 
 The logging library (D11) and the concrete job lifecycle implementation (D7) aren't chosen. Close
 before the first background job lands.
-
-### D15. Turso and Drizzle versions
-
-The exact Drizzle ORM and Drizzle Kit pair for Turso is still to be validated in the app: migrations,
-type checking, production builds and rollback isolation (D5). Only a focused rollback-isolation check
-has passed (Drizzle `1.0.0-rc.5-5935859` with Turso `0.8.3`); the plain `1.0.0-rc.5` carries the
-same fix, and the validation uses it. Closes with the first database module.
 
 ### D16. Runtime validation gaps
 

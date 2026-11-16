@@ -89,6 +89,27 @@ the old key back, which still reads everything.
 **Backups:** keep a copy of the key with your backups, apart from the database, and restore the
 same key alongside them. Without it, stored secrets can't be read.
 
+## Database
+
+Zondarr keeps everything it stores in one database file: `data/zondarr.db` in its working
+directory, or the path `ZONDARR_DATABASE_PATH` names. Zondarr creates the file's folder if it is
+missing, and won't start if it can't create or write to it, or can't open the file as a database.
+Put the folder on a persistent volume.
+
+**Backups:** stop Zondarr, then copy the whole folder. Recent writes live in files beside the
+database (`zondarr.db-wal`), so a copy of the database file alone can miss them, and a copy taken
+while Zondarr runs can be incomplete. Back up the master key separately
+([Master key](#master-key)), and keep its file outside this folder.
+
+| Variable | Holds | Default |
+| --- | --- | --- |
+| `ZONDARR_DATABASE_PATH` | the database file's path, absolute or against the working directory | `data/zondarr.db` |
+
+**Running the build yourself:** `bun ./build` needs one package beside `build/`, Turso's native
+binding for your platform, as `bun ci` installs it:
+`node_modules/@tursodatabase/database-linux-x64-gnu` (or `-linux-arm64-gnu`). Start the server with
+`bun --no-install ./build`, so a missing package stops it instead of being downloaded.
+
 ## Working on it
 
 Start with [AGENTS.md](AGENTS.md): the house rules, the workflow and where each document lives.

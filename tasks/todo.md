@@ -16,26 +16,26 @@ configuration (`ZONDARR_DATABASE_PATH` for now), then the database, opened and m
 tables go into the first migration; no operations yet.
 
 **Acceptance criteria:**
-- [ ] `server/config/database-path.test.ts` first fails, then passes: the default `data/zondarr.db`
+- [x] `server/config/database-path.test.ts` first fails, then passes: the default `data/zondarr.db`
   against the working directory, an empty variable counting as unset, a folder that is created, and
   a folder that can't be created or written refused with one line naming the variable and never
   echoing the path (a regular file as the parent, so it holds as root).
-- [ ] `server/db/migrate.test.ts`, against a temporary file: the bundled migrations apply to a new
+- [x] `server/db/migrate.test.ts`, against a temporary file: the bundled migrations apply to a new
   database, both tables exist, a second run applies nothing, and the rows match Drizzle Kit's file
   migrator's but for the empty `hash`. `server/db/client.test.ts` holds D5's rollback-isolation
   check and fails on `drizzle-orm@1.0.0-rc.4`.
-- [ ] `startup.test.ts`: a path that names a folder or a non-database file stops startup with
+- [x] `startup.test.ts`: a path that names a folder or a non-database file stops startup with
   Turso's reason and without the path. `server/config/error-code.ts` holds the system-error-code
   helper, and `config/secret-key.ts` uses it in place of its private `codeOf`.
-- [ ] `@tursodatabase/database`, `drizzle-orm` and `drizzle-kit` are exact-pinned dev dependencies
+- [x] `@tursodatabase/database`, `drizzle-orm` and `drizzle-kit` are exact-pinned dev dependencies
   at the newest D5 and D26 allow; `db:generate` runs Drizzle Kit, then Biome; the first migration
   holds `settings` (key, value, update time) and `owner` (fixed id checked to be 1, username,
   password hash, creation and update times), reviewed and committed.
-- [ ] `tests/e2e/setup.test.ts`: the built server migrates a new file, starts again on it applying
+- [x] `tests/e2e/setup.test.ts`: the built server migrates a new file, starts again on it applying
   nothing, and refuses an unwritable folder and a path naming a folder without echoing either.
   `playwright.config.ts` gives each run a temporary database, created and removed only in the
   runner process.
-- [ ] D15's validation passes with its evidence in the PR body: migrations, `check`,
+- [x] D15's validation passes with its evidence in the PR body: migrations, `check`,
   `bun --no-install ./build` with the platform package beside `build/` on Linux arm64 and x64
   (CI), rollback isolation, and all of it with failing `node`, `npm` and `npx` on `PATH`.
 
