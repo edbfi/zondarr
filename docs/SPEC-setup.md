@@ -239,6 +239,11 @@ leaves the token unused. The claim stores no address, and nothing but the owner 
 pointer. After it, the claim no longer exists: `/setup` answers "not found" once first run is
 complete (D20), and the claim action answers it whenever the instance is claimed.
 
+**A failed claim** answers with the "Error: " title and the error summary first in the form (D27):
+its field problems link to their fields, and its page-level one, a server failure, marks no field.
+It keeps the last answer until the next, while a field's own message clears as it is edited. With
+JavaScript it takes focus after each failure; without, nothing is focused.
+
 **Owner credentials,** in `security/password.ts`, which `sign-in`'s password change and recovery
 reuse:
 - **The username** is stored with its case kept, and `sign-in` compares it after `toLowerCase()`,

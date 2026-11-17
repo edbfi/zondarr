@@ -725,10 +725,19 @@ export const GET: RequestHandler = () => healthResponse();
     its own policy and the viewer's language; and a same-origin POST with no `Sec-Fetch-*` headers
     passes, on `localhost` and on a plain-HTTP host name that isn't loopback (Chromium's
     `--host-resolver-rules`); a fresh server prints its bootstrap token before it listens, in no log
-    entry or response; a wrong token is refused keeping the username, the right one typed in upper
-    case without dashes claims, and `/setup` and its action then answer 404, also after a restart,
-    with neither the token nor the password in a response or log entry; and the claim page's fonts
-    load from the app with no CSP violation.
+    entry or response; a wrong token is refused keeping the username, with focus on the error
+    summary, again after a field error; the right one typed in upper case without dashes claims, and
+    `/setup` and its action then answer 404, also after a restart, with neither the token nor the
+    password in a response or log entry; and the claim page's fonts load from the app with no CSP
+    violation.
+  - `error-summary.test.ts` checks the failed claims (D27), each on a fresh built server: without
+    JavaScript, a first visit has no summary and nothing focused, and a refusal titles the page
+    "Error: …" and lists the problems, a field's as a link that Tab and Enter follow into the field;
+    with JavaScript, the summary takes focus after a failure and an identical repeat, stays with its
+    title while the next claim is sent and as the fields are edited, a link puts focus in its field,
+    a server failure marks no field, and it fits in Danish at 360px and at 200% zoom; and a claim
+    before a late script loads posts natively, and hydration then takes no focus. `server.ts` starts
+    the built servers that it and `setup.test.ts` use.
   - `i18n.test.ts` checks that a Danish browser gets `/` in Danish with `<html lang="da">` and
     `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
     that pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en`

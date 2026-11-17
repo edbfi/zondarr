@@ -2,6 +2,8 @@
 	"placeholder_title": "Zondarr bliver bygget om.",
 	"placeholder_status": "Invitationssiderne og administrationen er på vej tilbage. Invitationslinks kan ikke åbnes endnu.",
 	"language_switcher_label": "Sprog",
+	"error_page_title": "Fejl: {{title}}",
+	"error_summary_title": "Der er et problem",
 	"error_access_denied_title": "Adgang nægtet",
 	"error_access_denied_description": "Anmodningen blev afvist, fordi den ikke kom fra dette websted.",
 	"setup_page_title": "Tag Zondarr i brug",

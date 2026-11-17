@@ -2,6 +2,8 @@
 	"placeholder_title": "Zondarr is being rebuilt.",
 	"placeholder_status": "The invitation pages and the admin console are on their way back. Invitation links don't open yet.",
 	"language_switcher_label": "Language",
+	"error_page_title": "Error: {{title}}",
+	"error_summary_title": "There is a problem",
 	"error_access_denied_title": "Access denied",
 	"error_access_denied_description": "The request was refused because it didn't come from this site.",
 	"setup_page_title": "Claim this Zondarr",
