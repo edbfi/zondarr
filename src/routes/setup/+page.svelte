@@ -2,6 +2,7 @@
 import EyeIcon from "@lucide/svelte/icons/eye";
 import EyeOffIcon from "@lucide/svelte/icons/eye-off";
 import { onMount, tick } from "svelte";
+import ErrorSummary, { type Problem } from "#lib/components/forms/ErrorSummary.svelte";
 import LanguageSwitcher from "#lib/components/layout/LanguageSwitcher.svelte";
 import { m } from "#lib/paraglide/messages.js";
 import { css } from "#styled-system/css";
@@ -26,6 +27,7 @@ onMount(() => {
 let edited = $state({ token: false, username: false, password: false });
 let tokenInput = $state<HTMLInputElement>();
 let passwordInput = $state<HTMLInputElement>();
+let summary = $state<ErrorSummary>();
 
 const usernameMessages = {
 	empty: () => m.setup_username_empty(),
@@ -41,17 +43,29 @@ const passwordMessages = {
 	common: () => m.setup_password_common(),
 };
 
-const tokenError = $derived(
-	form?.tokenRefused && !edited.token ? m.setup_token_refused() : undefined,
+/** What the last answer said of each field; the summary keeps it until the next answer (D27). */
+const tokenProblem = $derived(form?.tokenRefused ? m.setup_token_refused() : undefined);
+const usernameProblem = $derived(
+	form?.usernameError ? usernameMessages[form.usernameError]() : undefined,
 );
-const usernameError = $derived(
-	form?.usernameError && !edited.username ? usernameMessages[form.usernameError]() : undefined,
+const passwordProblem = $derived(
+	form?.passwordError ? passwordMessages[form.passwordError]() : undefined,
 );
-const passwordError = $derived(
-	form?.passwordError && !edited.password ? passwordMessages[form.passwordError]() : undefined,
-);
+/** What each field shows beside itself, until it is edited. */
+const tokenError = $derived(edited.token ? undefined : tokenProblem);
+const usernameError = $derived(edited.username ? undefined : usernameProblem);
+const passwordError = $derived(edited.password ? undefined : passwordProblem);
 // "Use at least … characters." already says what the helper says.
 const passwordHelp = $derived(!(passwordError && form?.passwordError === "too-short"));
+
+/** The summary's problems: the fields' in their order, then the page's (D27). */
+const problems = $derived<Problem[]>([
+	...(tokenProblem ? [{ message: tokenProblem, href: "#token" }] : []),
+	...(usernameProblem ? [{ message: usernameProblem, href: "#username" }] : []),
+	...(passwordProblem ? [{ message: passwordProblem, href: "#password" }] : []),
+	...(form?.failed ? [{ message: m.setup_failed() }] : []),
+]);
+const title = $derived(m.setup_page_title());
 
 /** The token helper with its format example set like the console line it describes. */
 const FORMAT = "\u0001";
@@ -94,7 +108,7 @@ function stepOverDash(event: InputEvent & { currentTarget: HTMLInputElement }) {
 
 /**
  * While the claim runs, the button says so and can't be pressed again. A failed claim keeps the
- * username, clears the token and the password, and moves focus to the first field to fix.
+ * username, clears the token and the password, and moves focus to the error summary (D27).
  */
 const submit: SubmitFunction = () => {
 	submitting = true;
@@ -111,8 +125,7 @@ const submit: SubmitFunction = () => {
 		if (tokenInput) tokenInput.value = "";
 		if (passwordInput) passwordInput.value = "";
 		await tick();
-		// The first field to fix; after a server failure, the token, which the message asks for.
-		(document.querySelector<HTMLElement>("[aria-invalid='true']") ?? tokenInput)?.focus();
+		if (result.type === "failure") summary?.focus();
 	};
 };
 
@@ -123,6 +136,8 @@ const error = css({ textStyle: "caption", color: "danger", fontWeight: "semibold
 const control = css({
 	minHeight: "controlHeight",
 	paddingInline: "md",
+	// An error summary's link scrolls here: the label above stays in view (D27).
+	scrollMarginBlockStart: "xxl",
 	bg: "surface",
 	color: "text",
 	caretColor: "primary",
@@ -138,7 +153,7 @@ const control = css({
 </script>
 
 <svelte:head>
-	<title>{m.setup_page_title()}</title>
+	<title>{problems.length > 0 ? m.error_page_title({ title }) : title}</title>
 </svelte:head>
 
 <div
@@ -200,6 +215,8 @@ const control = css({
 				marginBlockStart: "xl",
 			})}
 		>
+			<ErrorSummary bind:this={summary} {problems} />
+
 			<div class={field}>
 				<label class={label} for="token">{m.setup_token_label()}</label>
 				<input
@@ -282,6 +299,10 @@ const control = css({
 						bind:this={passwordInput}
 						class={css({
 							flex: "1",
+							// It shrinks below its own width, so Show/Hide fits at 200% zoom on a phone.
+							minWidth: "[0]",
+							// An error summary's link scrolls here: the label above stays in view (D27).
+							scrollMarginBlockStart: "xxl",
 							minHeight: "controlHeight",
 							paddingInline: "md",
 							bg: "transparent",
@@ -341,10 +362,6 @@ const control = css({
 					</p>
 				{/if}
 			</div>
-
-			{#if form?.failed}
-				<p class={error} role="alert">{m.setup_failed()}</p>
-			{/if}
 
 			<button
 				type="submit"

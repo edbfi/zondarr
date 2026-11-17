@@ -4,66 +4,11 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, expect, type Page, test } from "@playwright/test";
 import { connect } from "@tursodatabase/database";
+import { type Server, spawnServer, startServer } from "./server.ts";
 
 // First run and the request checks on the built server (SPEC.md, "Testing strategy"). Each
 // test starts its own server, with a generated key and a database in its own temporary folder.
-const BUILD = fileURLToPath(new URL("../../build", import.meta.url));
 const MIGRATIONS = fileURLToPath(new URL("../../drizzle", import.meta.url));
-
-const randomKey = () => crypto.getRandomValues(new Uint8Array(32)).toBase64();
-
-/** A built server that started: its address, everything it printed so far, and how to stop it. */
-type Server = {
-	url: string;
-	output: () => string;
-	stop: (signal?: "SIGTERM" | "SIGHUP") => Promise<number | null>;
-};
-
-/**
- * Spawns the built server in `cwd` with a generated key, a free port and `env`, and nothing else
- * from the test's environment.
- */
-const spawnServer = (cwd: string, env: Record<string, string>) =>
-	Bun.spawn([process.execPath, "--no-env-file", BUILD], {
-		cwd,
-		env: { HOST: "127.0.0.1", PORT: "0", ZONDARR_SECRET_KEY: randomKey(), ...env },
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-
-/**
- * Starts the built server with `env` and resolves once it listens, or rejects with its output if
- * it exits or is still starting after 10 s.
- */
-async function startServer(cwd: string, env: Record<string, string>): Promise<Server> {
-	const server = spawnServer(cwd, env);
-	let output = "";
-	const collect = async (stream: ReadableStream<Uint8Array>) => {
-		const decoder = new TextDecoder();
-		for await (const chunk of stream) output += decoder.decode(chunk, { stream: true });
-	};
-	const collected = Promise.all([collect(server.stdout), collect(server.stderr)]);
-	const deadline = Date.now() + 10_000;
-	while (Date.now() < deadline) {
-		const url = /Listening on (http:\/\/\S+?)\/?\s/.exec(output)?.[1];
-		if (url !== undefined) {
-			return {
-				url,
-				output: () => output,
-				stop: async (signal = "SIGTERM") => {
-					server.kill(signal);
-					await collected;
-					return server.exited;
-				},
-			};
-		}
-		if (server.exitCode !== null) break;
-		await Bun.sleep(50);
-	}
-	server.kill("SIGKILL");
-	await collected;
-	throw new Error(`the server didn't start:\n${output}`);
-}
 
 /** Runs the built server with `env` until it exits by itself, killing it after 10 s. */
 async function runToExit(cwd: string, env: Record<string, string>) {
@@ -580,17 +525,22 @@ test.describe("the claim", () => {
 				"That setup token isn't valid. Use the newest one the server printed.",
 			);
 			await expect(page.locator("#token")).toHaveAttribute("aria-invalid", "true");
+			// The error summary takes focus (D27), and lists the refusal as a link to the token.
+			const summary = page.getByRole("region", { name: "There is a problem" });
+			await expect(summary).toBeFocused();
+			await expect(summary.getByRole("link")).toHaveAttribute("href", "#token");
 			await expect(page.locator("#username")).toHaveValue("Owner");
 			await expect(page.locator("#token")).toHaveValue("");
 			await expect(page.locator("#password")).toHaveValue("");
 
-			// A field error marks its field and moves focus there, leaving the token unused.
+			// A field error marks its field and focuses the summary again, leaving the token unused.
 			await page.locator("#token").fill(token);
 			await page.locator("#password").fill("too short");
 			await page.getByRole("button", { name: "Claim and create owner" }).click();
 			await expect(page.locator("#password")).toHaveAttribute("aria-invalid", "true");
-			await expect(page.locator("#password")).toBeFocused();
 			await expect(page.locator("#password-error")).toHaveText("Use at least 15 characters.");
+			await expect(summary.getByRole("link")).toHaveText(["Use at least 15 characters."]);
+			await expect(summary).toBeFocused();
 
 			await page.locator("#token").fill(token.toUpperCase().replaceAll("-", ""));
 			await page.locator("#password").fill(PASSWORD);

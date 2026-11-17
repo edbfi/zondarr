@@ -25,8 +25,8 @@ Heading 'Claim this Zondarr'. One line: 'Enter the setup token from the server's
 
 ## Acceptance criteria
 
-- Errors sit beside their field with helper/error IDs and `aria-invalid`; a wrong or expired token gets one message that names the server's output, never which of the two it was.
-- After a failed submit, the username is kept; the token and password are not, and focus goes to the first field in error.
+- After a failed submit the title starts with 'Error: ', and the error summary (D27) is first in the form: 'There is a problem', then the problems in field order, each field's linking to it, a page-level one as text. Field errors also sit beside their field with helper/error IDs and `aria-invalid`. With JavaScript, focus moves to the summary after each failure; without it, nothing is focused. A wrong or expired token gets one message that names the server's output, never which of the two it was.
+- After a failed submit, the username is kept; the token and password are not.
 - The token field takes the token with or without dashes and in any case, and is set in IBM Plex Mono like the console line it came from; it is not a password field, so the person can check what they typed. Dashes are inserted as the token is typed, and without JavaScript it still takes any form.
 - The Show/Hide control is a labelled button with a 20px line eye icon at the end of the password field; it appears only once the page has script, and the form works without it.
 - No server, member, Plex or Jellyfin detail appears, and no address the server guessed.
