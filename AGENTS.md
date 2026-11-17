@@ -327,9 +327,10 @@ src/
                                  once mounted
     (public)/+page.svelte        `/`: placeholder page, its text from the messages, and the
                                  language switcher
-    setup/                       `/setup`, the claim: +page.svelte (the form), +page.server.ts
-                                 (its load and the claim action), token-format.ts (the token
-                                 field's dashes as it is typed)
+    setup/                       `/setup`, the claim: +page.svelte (a skip link to the main
+                                 content, shown only while it has focus, then the header and the
+                                 form), +page.server.ts (its load and the claim action),
+                                 token-format.ts (the token field's dashes as it is typed)
     healthz/                     `+server.ts`: `/healthz`, overall health; `live/`, `ready/`:
                                  liveness and readiness
     (public)/join/ (admin)/ api/ later: public join flow, admin console, JSON endpoints
@@ -389,6 +390,8 @@ tests/
   e2e/global-setup.ts            claims the web server's fresh instance for the other tests
   e2e/error-summary.test.ts      failed claims without and with JavaScript, and with a late script:
                                  the title, the summary, its links and where focus goes
+  e2e/skip-link.test.ts          the claim page's skip link, with and without JavaScript and
+                                 in Danish
   e2e/server.ts                  starts a built server of a test's own, with a generated key
   e2e/i18n.test.ts               the built server serves each viewer's language, the browser
                                  keeps it, and the switcher changes it

@@ -737,7 +737,11 @@ export const GET: RequestHandler = () => healthResponse();
     title while the next claim is sent and as the fields are edited, a link puts focus in its field,
     a server failure marks no field, and it fits in Danish at 360px and at 200% zoom; and a claim
     before a late script loads posts natively, and hydration then takes no focus. `server.ts` starts
-    the built servers that it and `setup.test.ts` use.
+    the built servers that it, `setup.test.ts` and `skip-link.test.ts` use.
+  - `skip-link.test.ts` checks, on the claim page of a fresh built server, that the first Tab shows
+    "Skip to main content", which takes no room until then and then shows in full inside the
+    viewport, and that following it moves focus to the main content, whose next Tab reaches the
+    first field, without JavaScript too and in Danish.
   - `i18n.test.ts` checks that a Danish browser gets `/` in Danish with `<html lang="da">` and
     `Vary: Cookie, Accept-Language`, and the switcher marks "Dansk" as current, with `lang="da"`;
     that pressing "English" in the switcher reloads `/` in English, writes `PARAGLIDE_LOCALE=en`
