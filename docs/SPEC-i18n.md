@@ -198,8 +198,9 @@ would be switched and lose focus (WCAG 2.2, 3.2.2 On Input).
 - **Sharing the cookie:** it keeps Paraglide's default name. Cookies ignore ports, so every app on
   the same host shares it. A choice made in one edbfi app carries over to the others there. A value
   another app wrote that isn't `en` or `da` is ignored.
-- **Without JavaScript** the switcher does nothing, and the browser's preferred languages still
-  apply.
+- **Without JavaScript** its buttons would do nothing, so the switcher stays hidden until the page
+  has hydrated, keeping its place so nothing moves when it appears; the browser's preferred
+  languages still apply.
 - **Keyboard focus** is one global rule in Panda's `globalCss` (SPEC.md's Design tokens): a
   per-component outline would need a 2px offset that no spacing token has (`strictTokens` refuses
   it), and one rule keeps the ring the same on every later control.
