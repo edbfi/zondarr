@@ -145,13 +145,16 @@ test.describe("the switcher before the page has script", () => {
 			for (let i = 0; i < 8; i++) {
 				await page.keyboard.press("Tab");
 				expect(
-					await page.evaluate(() => document.activeElement?.closest("fieldset") !== null),
+					await page.evaluate(
+						() => document.activeElement?.closest('fieldset[aria-label="Language"]') !== null,
+					),
 				).toBe(false);
 			}
 		});
 	});
 
 	test("appears once the page hydrates, in the place it kept", async ({ page }) => {
+		const errors = consoleErrors(page);
 		let release = () => {};
 		const released = new Promise<void>((resolve) => {
 			release = resolve;
@@ -171,5 +174,6 @@ test.describe("the switcher before the page has script", () => {
 		await page.locator("html[data-hydrated]").waitFor({ state: "attached" });
 		await expect(switcher(page).getByRole("button", { name: "Dansk" })).toBeVisible();
 		expect(await switcherBox(page).boundingBox()).toEqual(before);
+		expect(errors).toEqual([]);
 	});
 });
