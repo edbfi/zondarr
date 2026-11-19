@@ -1,6 +1,7 @@
 # Decisions
 
 Each entry is a decision and why it was made. Open entries keep their number when they're settled.
+A settled decision the owner changes is rewritten in place with the date; git keeps the old text.
 The stack entries are the stack every edbfi rewrite app shares
 ([Shared groundwork](../AGENTS.md#shared-groundwork)), cut down to what applies to zondarr.
 Versions live in `package.json` and `bun.lock`.
@@ -221,7 +222,7 @@ keeps its own copy ([Shared groundwork](../AGENTS.md#shared-groundwork)).
   zimuarr), the owner can link their account to their own Plex account in the admin settings once
   setup is done. After that, "Sign in with Plex" also signs them in as the owner. The password
   keeps working, and Plex sign-in for the owner stays off until they link. Where an app has users
-  besides the owner, those users sign in with Plex.
+  besides the owner, those users sign in with Plex; in zondarr, also with Jellyfin (below).
 - **`oidc-sign-in`.** The owner can also link their account to one OpenID Connect provider, such as
   Authentik, Authelia, Pocket ID or Tinyauth, which then signs them in as the owner. It uses
   discovery and the authorization code flow with PKCE, and keys the link on the provider's issuer
@@ -235,9 +236,13 @@ keeps its own copy ([Shared groundwork](../AGENTS.md#shared-groundwork)).
     Plex sign-ins always do. A provider that doesn't send `amr` never gets the offer.
 
 Each app's connection modules add their own first-run steps after `setup`, such as adding the first
-media server here. Invitees never sign in to zondarr; Plex sign-in on the join page only proves
-which Plex account gets the share. The owner can't sign in with a Jellyfin account (owner decision:
-Jellyfin is a local server, while Plex sign-in runs on Plex's own site).
+media server here. Members sign in to zondarr with their Plex account or their Jellyfin one, to see
+their account's live status (owner decision, 2026-11-19; [PRODUCT.md](../PRODUCT.md), Product
+Purpose). How a Jellyfin member signs in is for the spec of the module that adds member sign-in;
+zondarr still never stores a member's password (PRODUCT.md). On the join page, Plex sign-in only
+proves which Plex account gets the share.
+The owner can't sign in with a Jellyfin account (owner decision: Jellyfin is a local server, while
+Plex sign-in runs on Plex's own site).
 
 Why: the owner wants the five apps to look and work alike, and everything else depends on these
 modules: every app stores upstream secrets, shows text that must be translatable, needs a safe first
@@ -429,6 +434,16 @@ focus, and it does the same skipping on every load. An alert already in the page
 read out, so `role="alert"` did nothing for the no-JavaScript reload. One summary, focused only by
 the enhanced form and found by the "Error: " title and the Tab key otherwise, says every problem
 once, in order, in both cases. The owner approved it on 2026-11-17, after a council review.
+
+### D28. One kind of server per invitation
+
+An invitation covers one or several servers of one kind, Plex or Jellyfin, with chosen libraries;
+someone who should get both receives two links (owner decision, 2026-11-19). Nothing should prevent
+invitations that mix the two being added later.
+
+Why: the owner judged mixed invitations brittle. The legacy app's were broken: the join page showed
+the Jellyfin form and the server then required Plex sign-in. Undoing a Plex share after a Jellyfin
+failure is only best effort.
 
 ## Open
 

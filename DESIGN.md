@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: "Zondarr Golden Welcome × Velvet Premiere"
-description: "Proposed design seed for review; not extracted from implemented components."
+description: "Tokens of the screens built so far; the visual direction is open (see Overview)."
 colors:
   background: "#222137"
   surface: "#302D3B"
@@ -99,9 +99,7 @@ components:
 
 ## Overview
 
-Golden Welcome × Velvet Premiere. A deliberate blend: Golden Welcome's warm gold arched light and soft geometric UI; Velvet Premiere's deep indigo, muted lavender and elegant serif display. Admin uses the same muted gold and indigo, flat and practical, with Outfit headings; serif reserved for public welcome and success. Gold primary, lavender informational.
-
-Use this as a proposed implementation target; tokens remain reviewable design decisions. [Product context](PRODUCT.md) and the [surface briefs](.impeccable/surfaces/) define behavior.
+The visual direction is open: the owner withdrew Golden Welcome × Velvet Premiere, and the next direction is designed from the Product Purpose in [PRODUCT.md](PRODUCT.md). Until it lands, the tokens below are the current baseline: the ones the screens built so far use, such as the claim at `/setup`. The look this file describes, in tokens or prose, is not a target for a surface that isn't built yet; what it requires for accessibility and behavior, such as focus, labels and states, still holds. The same goes for the [surface briefs](.impeccable/surfaces/): their look is not a target, and the behavior they specify still holds, except where PRODUCT.md or [docs/SPEC.md](docs/SPEC.md) says otherwise.
 
 ## Colors
 
@@ -163,8 +161,8 @@ Tables use 44px standard rows, 36px only for dense desktop operation, 14px label
 
 ## Do’s and Don’ts
 
-- Preserve this app's palette and type hierarchy across every route; do not blend the five applications into one theme.
-- Keep welcome/experience screens expressive and operational controls quiet.
+- Keep this app's own palettes and type hierarchy across every route; do not blend the five applications into one theme.
+- Motion and effects follow the house rule and this app's showcase surfaces ([AGENTS.md](AGENTS.md#design)).
 - Treat product permissions and status transitions as behavior supplied by the server.
 - Use [demo fixtures](tests/fixtures/demo-fixtures.json) for stable visual tests, then substitute real server data.
 - Use existing project primitives and tokens. This repository's rewrite stack specifies Panda CSS and Ark UI; map these values into those systems without adding a competing component library.
