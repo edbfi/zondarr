@@ -298,8 +298,8 @@ and `preview` need, see the README's [Master key](README.md#master-key).
 - Product: [PRODUCT.md](PRODUCT.md).
 - Design: [DESIGN.md](DESIGN.md), the [surface briefs](.impeccable/surfaces/) (one per route;
   dynamic segments use SvelteKit's form, as in `route:/join/[code]`, and the handoff's demo paths
-  such as `route:/join/MOVIENIGHT` resolve too), [screens and references](docs/design/),
-  [design tokens](panda.config.ts), [demo fixtures](tests/fixtures/demo-fixtures.json).
+  such as `route:/join/MOVIENIGHT` resolve too), [design tokens](panda.config.ts),
+  [demo fixtures](tests/fixtures/demo-fixtures.json).
 - Decisions: [docs/decisions.md](docs/decisions.md).
 
 ## Structure

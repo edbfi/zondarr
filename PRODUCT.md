@@ -66,8 +66,6 @@ What exists:
 - **The legacy app's code:** the `legacy-old/v1` branch, for reference only; nothing is ported from it (AGENTS.md).
 - **Decisions and project spec:** [docs/decisions.md](docs/decisions.md) and [docs/SPEC.md](docs/SPEC.md).
 - **Upstream notes:** [docs/research/plex.md](docs/research/plex.md) and [docs/research/jellyfin.md](docs/research/jellyfin.md), how Plex and Jellyfin behaved for the legacy app, not re-verified.
-- **Design mockups:** ten generated screens in `docs/design/screens/`, `01-public-invitation.webp` through `10-recovery-and-components.webp`, covering the invitee flow, a 390px mobile board, the admin console and a states-and-components board. They are composition references; their text is illustrative, and the surface briefs' raster corrections win (DESIGN.md).
-- **Direction references:** `docs/design/references/golden-welcome.webp` and `docs/design/references/velvet-premiere.webp`, the two references the confirmed direction blends.
 - **Surface briefs:** ten proposed briefs in `.impeccable/surfaces/`, one per route: the first-run claim, five admin and four invitee.
 - **Demo data:** [tests/fixtures/demo-fixtures.json](tests/fixtures/demo-fixtures.json) is fictional. It and the names in the briefs are the canonical demo content.
 - **Identity asset:** `static/zondarr-logo.svg`, used in the README and as the favicon.
@@ -78,8 +76,8 @@ What does not exist, and must not be fabricated:
 - No real members, communities, customers, testimonials, case studies, press or quotes. The fixture and brief names are fictional and must never be presented as real usage.
 - No usage numbers, benchmarks, analytics or uptime figures. The legacy app was dogfooded by its author, but nothing quantifies that.
 - No release, version number or changelog for either the legacy app or the rewrite. No hosted service, pricing or plans exist (the invitee brief rules out public pricing).
-- No screenshots of the legacy app (none on `main` or `legacy-old/v1`) and none of rewrite screens; the mockups are generated design seeds, not captures of working software.
-- No approved Plex or Jellyfin brand marks in the repo (DESIGN.md says not to reproduce generated connector logos).
+- No screenshots of the legacy app (none on `main` or `legacy-old/v1`) and none of rewrite screens.
+- No approved Plex or Jellyfin brand marks in the repo (DESIGN.md says connectors use the approved real marks or labelled generic icons, never an imitation logo).
 - No user research or interviews.
 - No email delivery, notifications or persistent member portal; copy must not imply them.
 
