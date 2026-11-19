@@ -17,9 +17,7 @@ Dense invitation list and right creation drawer with grouped targets, restrictio
 
 ## Visual reference
 
-[Detailed mockup](../../docs/design/screens/05-invitations-editor.webp)
-
-Use the shared [design system](../../DESIGN.md). Match hierarchy, density and palette while building real semantic components. This is a screen composition; any side-by-side stages are separate routes or states.
+None yet. Use the shared [design system](../../DESIGN.md).
 
 ## Required content
 
@@ -27,27 +25,18 @@ Use the shared [design system](../../DESIGN.md). Match hierarchy, density and pa
 
 ## Acceptance criteria
 
-Use codes letters/digits only. FAMILY has 2 remaining hence Limited. Distinguish invite expiry from member duration. No email send field; share via copy link. Canonical status MOVIENIGHT 2/5 is Limited because three uses remain; fixture is authoritative.
+Use codes letters/digits only. A capped active invitation with three or fewer remaining uses is Limited, so MOVIENIGHT 2/5 and FAMILY 1/3 are Limited; the fixture is authoritative. Distinguish invite expiry from member duration. No email send field; share via copy link. The page title and other operational headings use Outfit; DM Serif Display is only for public welcome and preview surfaces (DESIGN.md).
 
 - Preserve audience boundaries from [product context](../../PRODUCT.md).
-- Use canonical data in [demo fixtures](../../tests/fixtures/demo-fixtures.json); do not infer calculations from raster text.
-- Apply the raster corrections below.
+- Use canonical data in [demo fixtures](../../tests/fixtures/demo-fixtures.json).
 - Make loading, empty, failure, pending and saved states available where the workflow needs them.
 - Test keyboard focus, visible labels, disabled behavior and 200% zoom; target 360, 390, 768 and 1440px viewports.
 - Read reduced-motion preference before animating. Long names and translated text must wrap without hiding the primary action.
 
 ## Copy-link feedback
 
-[States and components board](../../docs/design/screens/10-recovery-and-components.webp), copy-link specimen: admin toast 'Invitation link copied', with primary and secondary variants. Gold action, lavender info.
-
-## Raster corrections
-
-Use the images for composition and visual character. Use DESIGN.md, PRODUCT.md, this brief's acceptance criteria and the demo fixtures for exact values and behavior. Body copy, chart axes, tiny icons and font glyphs remain illustrative raster renderings. Rebuild them as native accessible UI and verify them against the specification. A PNG cannot verify focus order, screen-reader announcements, permission checks or real responsiveness.
-
-- The admin dashboard uses Outfit headings; the invitation-list raster uses a serif title. Resolve operational headings to Outfit per DESIGN.md, reserving DM Serif Display for public welcome and preview surfaces.
-- A capped active invitation with three or fewer remaining uses is Limited. MOVIENIGHT at 2/5 therefore has status Limited; use the fixture rather than the raster's Active label.
-- The copy-link specimen's address (`https://zondarr.example/invite/7K3pQ9`) is illustrative. Copy the real join link for the code.
+Admin toast 'Invitation link copied', with primary and secondary variants. Copy link copies the code's real join link. Gold action, lavender info.
 
 ## Handoff prompt
 
-> Implement only this surface in Zondarr's existing application. Read PRODUCT.md, DESIGN.md and this brief first. Use the attached detailed image as a composition reference and the named tokens as exact values. Preserve Golden Welcome × Velvet Premiere. Keep the server's domain decisions authoritative. Reuse existing Panda CSS tokens and Ark UI primitives. Build native accessible controls, then compare desktop/mobile screenshots and audit the required states. Do not add incidental actions visible only in the raster.
+> Implement only this surface in Zondarr's existing application. Read PRODUCT.md, DESIGN.md and this brief first. Use the named tokens as exact values. Preserve Golden Welcome × Velvet Premiere. Keep the server's domain decisions authoritative. Reuse existing Panda CSS tokens and Ark UI primitives. Build native accessible controls, then check desktop and mobile and audit the required states.
