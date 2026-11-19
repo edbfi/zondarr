@@ -2,7 +2,25 @@
 
 <!-- impeccable:product-schema 1 -->
 
-Private Plex/Jellyfin invitations and member administration with a cinematic invitee onboarding flow.
+## Product Purpose
+
+zondarr is an invitation platform for Plex and Jellyfin media servers, with complete parity between the two. Everything it does works for both. Where a media server itself cannot do something, zondarr says so plainly and never hides or fakes it.
+
+It is split in two parts:
+
+- **The admin,** the instance's owner, has a full admin dashboard, with settings and everything else. They write the steps a user goes through in a built-in markdown editor that is easy and intuitive, with images uploaded from their own computer or embedded inline. Steps can come before the account is created, after it, both, or not at all; with none, a user opens the link and joins straight away. If the admin wants, they add challenges the user has to get through: wait timers, clicks, quizzes and so on.
+- **The user,** the invitee or member, receives the invitation and is guided through the process the admin created for them. Whatever the admin wrote is presented in a beautiful, modern way that makes sense, with readability first. Signing in with their Plex account, or their Jellyfin one, they see the live status of their account: days remaining, and the libraries and functions they have, such as downloads or parental controls.
+
+It has succeeded when:
+
+- Plex and Jellyfin have complete parity, each properly tested, and stay separate pieces in the code;
+- what the admin writes is beautiful and easy to read for the user;
+- the editor is easy and intuitive, images included;
+- a user can see the live status of their account;
+- the admin side is a full dashboard;
+- an invitation for one server with chosen libraries works as smoothly as one for several;
+- sharing a link or code is the default way to invite. Email is optional: once the admin has set it up, zondarr can send invitations, warn a member before their access ends, and send other notifications, each of which the admin switches on or off;
+- every screen is beautiful, motion is subtle outside the showcase surfaces and never distracting, and there are a few colour schemes to choose from, light and dark.
 
 ## Platform
 
@@ -10,13 +28,14 @@ web
 
 ## Users
 
-Public shell owner wordmark Home Cinema, Help, thin numbered progress; no admin navigation or Powered by footer. Invitee access summary is the final redemption receipt, not a persistent member account portal. Admin shell: 224px sidebar Dashboard, Invitations, Members, Servers, Wizards, Logs, Settings.
+Public shell owner wordmark Home Cinema, Help, thin numbered progress; no admin navigation or Powered by footer. Invitee access summary is the final redemption receipt; members sign in with their Plex or Jellyfin account to see their account's live status. Admin shell: 224px sidebar Dashboard, Invitations, Members, Servers, Wizards, Logs, Settings.
 
 ## Primary tasks
 
 - **Invitee:** Invitation landing. Proposed route: `/join/MOVIENIGHT`.
 - **Invitee:** House rules and required interaction. Proposed route: `/join/MOVIENIGHT/welcome`.
-- **Invitee:** Plex join and access summary. Proposed route: `/join/MOVIENIGHT/account → /complete`.
+- **Invitee:** Plex or Jellyfin join and access summary. Proposed route: `/join/MOVIENIGHT/account → /complete`.
+- **Member:** Sign in and see the account's live status. No route yet ([docs/SPEC.md](docs/SPEC.md), Not in the map yet).
 - **Admin:** Admin community overview. Proposed route: `/admin`.
 - **Admin:** Invitation list and editor. Proposed route: `/admin/invitations`.
 - **Admin:** Member details and library access. Proposed route: `/admin/members/alex`.
@@ -25,39 +44,35 @@ Public shell owner wordmark Home Cinema, Help, thin numbered progress; no admin 
 
 ## Positioning
 
-Zondarr is the front door to an owner's private Plex and Jellyfin servers, and its scope is strictly membership: who gets an account, on which servers, with which libraries, for how long, and after agreeing to what. It sits beside the media servers as a peer of tools such as Wizarr or Overseerr-style request managers, but it does not manage media, requests, downloads, subtitles, playback or transcoding, and it sends no email or notifications.
+Zondarr is the front door to an owner's private Plex and Jellyfin servers, and its scope is strictly membership: who gets an account, on which servers, with which libraries, for how long, and after agreeing to what. It sits beside the media servers as a peer of tools such as Wizarr or Overseerr-style request managers, but it does not manage media, requests, downloads, subtitles, playback or transcoding. It sends email only once the admin has set it up.
 
 The mechanism the record supports:
 
-- One invitation code and link can grant accounts on several servers of either product at once. Each provider declares its capabilities, join style and permissions, so no screen hard-codes Plex or Jellyfin (D12, D19).
+- One invitation code and link can grant accounts on one or several servers of one kind, Plex or Jellyfin, with chosen libraries; someone who should get both receives two links (D28). Each provider declares its capabilities, join style and permissions, so no screen hard-codes Plex or Jellyfin (D12, D19).
 - The owner can require a reusable welcome wizard (house rules, terms, a timed read, a quiz) that the invitee must finish before an account exists. The server enforces the step order and completion with signed tokens, and quiz answers never reach the browser.
 - Plex members get a direct library share with their own Plex account and no friend request to accept, because a pending friend request was the biggest drop-off in Plex onboarding.
-- The public join page belongs to the owner's community, not to the tool: it carries no "Powered by Zondarr" footer, and invitees never sign in to Zondarr.
+- The public join page belongs to the owner's community, not to the tool: it carries no "Powered by Zondarr" footer.
 
 ## Operating Context
 
 - **Deployment:** one self-hosted instance per owner, run as one container, one process and one HTTP port, with the database file on a persistent volume; container packaging lives in the separate `zondarr-docker` repository (D4, D5). It runs on a trusted network or behind a reverse proxy; if a proxy rewrites the host, [docs/SPEC-setup.md](docs/SPEC-setup.md) explains when `ORIGIN` or a proxy fix is needed.
 - **Scale:** one owner's servers (typically one to a few), hundreds to low thousands of members and dozens of invitations.
-- **Roles:** one owner account, the only administrator (there are no co-administrators), invitees who only ever see the public join page, and the operator who deploys the instance and whose environment settings lock the matching console settings.
-- **How an invitation travels:** the admin copies the invite link and shares it out of band, since Zondarr sends no email. Codes are also read aloud and typed by hand, which is why generated codes avoid ambiguous characters (route-admin-invitations brief).
+- **Roles:** one owner account, the only administrator (there are no co-administrators), invitees and members, who see the public join page and, signed in, their own account's status, and the operator who deploys the instance and whose environment settings lock the matching console settings.
+- **How an invitation travels:** by default the admin copies the invite link and shares it out of band; once the admin has set up email, Zondarr can send the invitation too. Codes are also read aloud and typed by hand, which is why generated codes avoid ambiguous characters (route-admin-invitations brief).
 - **Devices:** the whole join flow must work on a phone as well as on a computer. The record makes no claim about which devices invitees actually use.
-- **What happens after joining:** the invitee leaves Zondarr for their Plex or Jellyfin apps. The completion page is a receipt with a next step such as installing a Plex player, not a member portal (route-join-code-complete brief).
+- **What happens after joining:** the invitee leaves Zondarr for their Plex or Jellyfin apps, and can come back and sign in to see their account's live status. The completion page is a receipt; what to do next, such as installing a player, is the admin's to write as steps after the account is created (Product Purpose).
 - **Background work:** Zondarr polls the media servers. Library and user sync, invitation expiry and session cleanup run unattended as in-process jobs, and there are no webhooks (D7).
 - **Project state:** the legacy app shipped and was used by its author but was never formally released. The rewrite has its ground floor, its first two modules, `secrets` and `i18n` (English and Danish, with a language switcher), and `setup` (startup, the database, logging, the request checks, health and claiming the instance for its owner): no sign-in, providers or other product modules yet (docs/SPEC.md). Routes in the surface briefs are proposed information architecture.
 
 ## Product requirements
 
-- Admin accounts distinct from member accounts. Invitees join Plex/Jellyfin, not a new Zondarr account.
+- Admin accounts distinct from member accounts. Invitees join Plex/Jellyfin, not a new Zondarr account, and sign in to Zondarr with that same account.
 - Public views expose server names/types and permitted libraries, never server addresses, IDs, secrets or quiz answers.
 - Used up differs from Expired. Invitation deletion preserves existing members.
-- Plex joins through existing Plex account; Jellyfin may create username/password. No automatic email delivery.
+- Plex joins through existing Plex account; Jellyfin may create username/password. Email is optional (Product Purpose).
 - Member expiry follows the owner's policy: disable by default, delete only if the owner chooses it. The invitation shows what will happen at expiry. Wizard order enforced, required terms explicit.
-- Privacy: Zondarr stores members' usernames, their account ids on each server, optional emails and Plex relationship types, and no media activity. For the owner it stores the links to their OIDC account and their optional Plex account and, encrypted, the media servers' API keys, the OIDC client secret and the two-factor secret. It never stores a member's password. A Plex sign-in token, an invitee's or the owner's, is deleted once a join or sign-in succeeds with it, or when its ten-minute sign-in window ends. It talks only to the media servers, Plex's account service and the owner's OIDC provider, if one is connected.
+- Privacy: Zondarr stores members' usernames, their account ids on each server, optional emails and Plex relationship types, and no media activity. For the owner it stores the links to their OIDC account and their optional Plex account and, encrypted, the media servers' API keys, the OIDC client secret and the two-factor secret. It never stores a member's password. A Plex sign-in token, an invitee's or the owner's, is deleted once a join or sign-in succeeds with it, or when its ten-minute sign-in window ends. From the server it connects only to the media servers, Plex's account service, the owner's OIDC provider, if one is connected, and the mail server the admin sets up for email, if any. What email and member sign-in store is decided in their modules' specs.
 - Copy is plain, direct and in the second person, in short full sentences. A destructive confirmation says it can't be undone, and an empty state pairs a short title with one sentence on how the list fills. Labels and headings use sentence case, as DESIGN.md sets for titles. The admin console explains or avoids technical terms such as circuit breaker, environment variable and event stream. These rules are written for English; Danish keeps their intent.
-
-## Confirmed visual direction
-
-Golden Welcome × Velvet Premiere. A deliberate blend: Golden Welcome's warm gold arched light and soft geometric UI; Velvet Premiere's deep indigo, muted lavender and elegant serif display. Admin uses the same muted gold and indigo, flat and practical, with Outfit headings; serif reserved for public welcome and success. Gold primary, lavender informational. The selected direction is confirmed; these expanded layouts and exact token values are a proposed design seed for review.
 
 ## Evidence on Hand
 
@@ -79,12 +94,12 @@ What does not exist, and must not be fabricated:
 - No screenshots of the legacy app (none on `main` or `legacy-old/v1`) and none of rewrite screens.
 - No approved Plex or Jellyfin brand marks in the repo (DESIGN.md says connectors use the approved real marks or labelled generic icons, never an imitation logo).
 - No user research or interviews.
-- No email delivery, notifications or persistent member portal; copy must not imply them.
+- None of email delivery, notifications or member sign-in is built yet; copy must not imply them before they are.
 
 ## Product Principles
 
-1. **The owner's door, not the tool's.** The public flow speaks for the owner's community, and invitees never get a Zondarr account or see admin concerns. Each audience sees only what its job needs (Product requirements above).
-2. **Membership, and nothing else.** Zondarr decides who gets in, where, to what, for how long and after agreeing to what. Media, requests, playback and messaging belong to other tools; a new capability has to serve membership to belong here.
+1. **The owner's door, not the tool's.** The public flow speaks for the owner's community, and invitees and members never see admin concerns. Each audience sees only what its job needs (Product requirements above).
+2. **Membership, and nothing else.** Zondarr decides who gets in, where, to what, for how long and after agreeing to what. Media, requests and playback belong to other tools; a new capability has to serve membership to belong here.
 3. **Tell the true state.** Show the real reason a code fails, make a failed share visible instead of quietly downgrading it, and never claim behaviour that isn't built (route-admin and route-admin-members-id briefs).
 4. **Safe to run unattended.** Background work is idempotent and destructive only by the owner's explicit policy: sync reports stale members instead of deleting them, deleting an invitation or wizard never removes members, expiry disables a member unless the owner chose deletion, and an account is created exactly once (D7, D23).
 5. **No product is special-cased.** Plex and Jellyfin are providers that declare what they can do, so a new server platform means a new provider, not new screens (D12, D19; AGENTS.md).

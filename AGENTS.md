@@ -217,7 +217,9 @@ Design work uses Impeccable: `/impeccable` in Claude Code and OpenCode, `$impecc
 - One surface brief at a time. Tokens only through Panda; Ark UI is the only primitive library.
 - Check 360, 390, 768 and 1440 px, keyboard focus, 200% zoom, reduced motion and every state the
   brief names (loading, empty, failure, pending, saved, disabled).
-- Expressive styling only on entry and recap surfaces; operational screens stay quiet.
+- Every screen is beautiful. The app's showcase surfaces, which its own section names, go all in on
+  motion and effects; everywhere else motion is subtle: it makes the interface feel polished, modern
+  and light, and never distracts from the work or decorates for its own sake.
 
 ### Docs
 
@@ -265,10 +267,10 @@ one of those; the cleanup procedures below still apply to every PR.
 ## zondarr
 
 zondarr lets the owner of private Plex and Jellyfin servers invite people with a code and a link.
-The invitee walks through the owner's welcome steps, then joins with their Plex account or a new
-Jellyfin account; the owner manages invitations, members, servers and welcome wizards from an admin
-console. It is being rewritten from scratch; the previous version is on the `legacy-old/v1` branch,
-for reference only.
+The invitee goes through the owner's steps, if there are any, and joins with their Plex account or a
+new Jellyfin account; members sign in to see their account's live status, and the owner manages
+invitations, members, servers and welcome wizards from an admin console. It is being rewritten from
+scratch; the previous version is on the `legacy-old/v1` branch, for reference only.
 
 **Status:** the ground floor is built: an empty SvelteKit app on Bun with Panda tokens, health,
 unit tests, one e2e smoke and the Bun web CI ([`docs/SPEC.md`](docs/SPEC.md)). Product modules
@@ -288,6 +290,11 @@ module 4, `sign-in`, comes next.
 
 **Commands:** the table in [docs/SPEC.md](docs/SPEC.md#commands); for the master key that `dev`
 and `preview` need, see the README's [Master key](README.md#master-key).
+
+**Design.** zondarr names no showcase surface: the join pages are beautiful but put readability
+first, so they keep to subtle motion. The visual direction is open: it is designed from PRODUCT.md's
+Product Purpose, and until then [DESIGN.md](DESIGN.md) says what its tokens and the surface briefs
+still stand for.
 
 **Boundaries.**
 - Plex and Jellyfin sit behind server-only providers that declare their capabilities; no service or

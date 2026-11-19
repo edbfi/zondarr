@@ -8,9 +8,9 @@ built; module 3, `setup` ([SPEC-setup.md](SPEC-setup.md)), is built, and `sign-i
 ## Objective
 
 zondarr lets the owner of private Plex and Jellyfin servers invite people with a code and a link:
-the invitee completes the owner's welcome steps and joins the servers, and the owner manages
-invitations, members, servers and wizards from an admin console
-([PRODUCT.md](../PRODUCT.md)).
+the invitee goes through the owner's steps, if there are any, and joins the servers, members sign in
+to see their account's live status, and the owner manages invitations, members, servers and wizards
+from an admin console ([PRODUCT.md](../PRODUCT.md), Product Purpose).
 
 **The ground floor:** an empty, production-shaped SvelteKit app that builds,
 type-checks, tests, lints and serves on Bun, styled from the design tokens, with the edbfi Bun web
@@ -19,9 +19,10 @@ make the first module spec cheap to build: every later PR adds behaviour, not pl
 
 ## Capability map
 
-**Status:** approved by the owner (2026-10-24; shared rows aligned 2026-10-30). Module ids never
-change. Each module gets its own `docs/SPEC-<id>.md`, which the owner approves just before it is
-built.
+**Status:** approved by the owner (2026-10-24; shared rows aligned 2026-10-30; 2026-11-19: one kind
+of server per invitation in `invitations`' and `redemption`'s Module notes (D28), a receipt without
+built-in guidance in `redemption`'s, and markdown content in `wizards`'). Module ids never change.
+Each module gets its own `docs/SPEC-<id>.md`, which the owner approves just before it is built.
 Sources: [PRODUCT.md](../PRODUCT.md), [decisions.md](decisions.md) and the
 [surface briefs](../.impeccable/surfaces/).
 
@@ -65,6 +66,18 @@ either order works. The first five are the opening every edbfi app shares (D20).
 two providers adds the provider contract with its capability declarations (`plex-provider`'s Module
 notes) and the SSRF-safe outbound HTTP (D8). `redemption` is the first time an invitee gets
 something they can use, so everything before it is the shortest path there.
+
+### Not in the map yet
+
+PRODUCT.md's Product Purpose adds capabilities that no module above covers:
+- members signing in and seeing their account's live status, which shows the functions their server
+  reports, parental controls among them where the server has them (D20);
+- optional email through a mail server (SMTP) the admin sets up, and the notifications the admin
+  switches on or off;
+- uploading images in the step editor;
+- colour schemes.
+
+A revision of the map, which the owner approves, adds them before any of them is specified.
 
 ### Where modules live
 
@@ -126,7 +139,6 @@ Paths are under `src/lib/server/`, except those starting with `routes/` (under `
   default set.
 - The debug mode's auth bypass, test-only PIN endpoint and API documentation pages: development
   tooling, not product.
-- Email, notifications and a member portal (PRODUCT.md).
 - **The container image's first start** (deferred: a note, not a design). It is specified and
   built only when Zondarr is first tested through its image (`edbfi/zondarr-docker`); building
   images through GitHub, including the nightly build of `main`, is a later goal. The intent, with
@@ -194,10 +206,13 @@ Decision numbers in these blocks are zondarr's; each app cites its own.
 - **Who needs a session** (zondarr). The owner's session is required everywhere except static
   assets, the join flow (`join`, `redemption`), the claim, owner sign-in with its two-factor
   challenge and its Plex and OIDC steps, recovery, and the three health paths (`/healthz`,
-  `/healthz/live`, `/healthz/ready`). Someone without a session who opens an owner page goes to
-  owner sign-in. `/` sends the owner to `/admin` and anyone else to owner sign-in, and a signed-in
-  owner who opens owner sign-in, or a first-run step once first run is complete, goes to `/admin`
-  (the claim answers "not found" once an owner exists, D20).
+  `/healthz/live`, `/healthz/ready`). Member sign-in and members' own pages, once a module adds
+  them ([Not in the map yet](#not-in-the-map-yet)), never need the owner's session: sign-in is
+  open, and the pages need the member's own session. Someone without a session who opens an owner
+  page goes to owner sign-in. `/` sends the owner to `/admin`
+  and anyone else to owner sign-in, and a signed-in owner who opens owner sign-in, or a first-run
+  step once first run is complete, goes to `/admin` (the claim answers "not found" once an owner
+  exists, D20).
 - **Rate limits** apply per client address. The client address comes from the connection, or from a
   header and a proxy depth (default 1) set in the environment (zondarr: set them only when every
   request passes through that proxy). (zondarr) Signing in, recovery (D20), the claim (`setup`),
@@ -365,10 +380,10 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   before the account exists, or after, where it can be cancelled. Steps are added once the wizard is
   saved. Their positions run from 0 with no gaps, renumbered when a step is deleted or moved.
   Deleting a wizard deletes its steps and clears invitations' links to it.
-- **A step** has a title, formatted content, a primary language (English by default) with any
-  translations, and zero or more interactions, at most one of each type, all of which must be
-  completed. Each interaction has a display position. Deleting a step deletes its interactions and
-  translations.
+- **A step** has a title, content written in markdown, a primary language (English by default)
+  with any translations, and zero or more interactions, at most one of each type, all of which must
+  be completed. Each interaction has a display position. Deleting a step deletes its interactions
+  and translations.
 - **Editing:** turning an interaction on or off saves at once; its settings are checked as they're
   typed and saved shortly after a valid change. The preview shows the invitee's view exactly and
   records no progress.
@@ -404,9 +419,10 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
 
 - **An invitation** has a code, an optional expiry, optional maximum uses with its use count, an
   optional access duration in days, enabled, its target servers (at least one, each existing and
-  enabled), its allowed libraries (on those servers; none chosen means all of them) and optional
-  pre- and post-registration wizards (enabled ones). The use count never exceeds the maximum. People
-  who joined with it keep their access when it is deleted, and the confirmation says so.
+  enabled, all Plex or all Jellyfin, D28), its allowed libraries (on those servers; none chosen
+  means all of them) and optional pre- and post-registration wizards (enabled ones). The use count
+  never exceeds the maximum. People who joined with it keep their access when it is deleted, and the
+  confirmation says so.
 - **An invitation that loses its targets** is disabled until the owner edits it: when its last
   target server is deleted, or when it had chosen libraries and library sync or a server's deletion
   removes every one of them. It is never widened to all libraries (PRODUCT.md principle 4).
@@ -463,9 +479,8 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
 
 - **Registration** follows the targets' join style. For Jellyfin: a username (3–32 characters:
   lowercase letters, digits and underscores, starting with a letter), a password (8–128 characters,
-  which can be shown) and an optional email. For Plex: sign-in with Plex. An invitation with both
-  uses the Jellyfin form and still needs the Plex sign-in for its Plex targets. The Jellyfin
-  password goes only to Jellyfin; zondarr never stores it.
+  which can be shown) and an optional email. For Plex: sign-in with Plex. The Jellyfin password
+  goes only to Jellyfin; zondarr never stores it.
 - **Plex sign-in.** The server asks Plex for a PIN (retrying transient failures) and keeps the
   attempt under an opaque random handle for ten minutes, so Plex's ids never reach the browser; it
   returns the handle, Plex's sign-in link and the expiry. The page opens the link in a popup and
@@ -503,8 +518,9 @@ This block is zondarr's own: obzorarr, the reference, had nothing to carry for `
   10. then, in the background, apply library restrictions (not for Plex friend invitations, which
       set them when inviting) and the default permissions: streaming and transcoding on, downloads
       and offline sync off. Failures here are only logged, because the member already has access.
-- **The receipt** shows the created accounts' usernames and, when a Plex server was a target, Open
-  Plex, which opens the Plex web app, never the server's own address.
+- **The receipt** shows the created accounts' usernames and never a server's own address. It has
+  no built-in next step, including the Open Plex shortcut in the complete page's brief: what to do
+  next is the owner's to write, as a post-registration wizard (PRODUCT.md, Product Purpose).
 - **A failure after the reservation** undoes every local change the join made: it releases the
   reserved use, makes the redemption token usable again, and leaves the local members and identities
   as they were (removing stale records and creating the new ones are one short transaction after the
@@ -653,8 +669,7 @@ export const GET: RequestHandler = () => healthResponse();
 - Keyboard focus is one global rule in `globalCss`: DESIGN.md's 2px `secondary` ring with a 2px
   offset on every `:focus-visible` element, so controls don't each restyle it.
 - The placeholder page uses only Panda tokens: no raw colour, size or font values in components. Its
-  heading uses the `h1` style (Outfit); DM Serif Display stays reserved for the public welcome and
-  success surfaces.
+  heading uses the `h1` style (Outfit).
 
 ## Testing strategy
 
@@ -782,10 +797,9 @@ zondarr is a Bun web repo with edbfi-ci's Bun web templates:
 Choices 1–3 were settled for the first rewrite app's skeleton and are reused here, since zondarr's
 design doesn't call for anything different; choices 4 and 5 are zondarr's own.
 
-1. **Fonts.** DESIGN.md wants DM Serif Display, Outfit and IBM Plex Mono bundled locally (the legacy
-   app loaded them from a hosted service). `setup`'s claim page, the first surface, bundled Outfit
-   and IBM Plex Mono; DM Serif Display keeps its system fallback until the first public welcome
-   surface bundles it.
+1. **Fonts.** Fonts are bundled locally (DESIGN.md; the legacy app loaded them from a hosted
+   service). `setup`'s claim page, the first surface, bundled Outfit and IBM Plex Mono; DM Serif
+   Display, which DESIGN.md's tokens still name, isn't bundled and keeps its system fallback.
 2. **Ark UI before its first use.** The skeleton installs `@ark-ui/svelte`, so the Panda and Ark
    pairing and `check-peers` are settled early; the first `ui/` wrapper comes with the first surface
    that needs one.
